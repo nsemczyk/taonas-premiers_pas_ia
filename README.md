@@ -151,6 +151,44 @@ Le script est sans effet s'il est rejoué.
 Désactiver un quiz sans le supprimer : `UPDATE quizzes SET actif = 0 WHERE slug = '...';`
 Il disparaît de l'accueil et `save.php` refuse les enregistrements.
 
+## Évaluation à froid (suivi après formation)
+
+Questionnaire envoyé quelques semaines après la formation, pour mesurer ce que
+les participants ont réellement réutilisé. **Il n'est accessible depuis aucune
+page publique** : chaque participant reçoit un lien personnel à usage unique.
+
+### Générer et suivre les liens
+
+`eval-froide-liens.php?cle=VOTRE_CLE` génère un lien par participant (avec un
+libellé facultatif : nom, email…) et affiche leur statut — *en attente* ou
+*répondu*. Copiez chaque lien dans le message de relance envoyé au participant.
+
+Un lien vaut `evaluation-froide.php?t=TOKEN`. **Une seule réponse par lien** :
+après envoi, le token est consommé (colonne `used_at`) et une nouvelle visite
+affiche « Vous avez déjà répondu ». La consommation est atomique — un double-clic
+ou un rechargement n'enregistre jamais deux fois.
+
+### Consulter et exporter les réponses
+
+`eval-froide-resultats.php?cle=VOTRE_CLE` (aussi accessible depuis le tableau de
+bord) présente une synthèse (répartition de chaque question) puis le détail de
+chaque réponse. Le lien « Exporter en PDF » produit `export-eval-froide.php`,
+un questionnaire par page, cases cochées — même rendu FPDF que l'export de
+satisfaction, pour l'archivage ou le financeur.
+
+Le champ Nom / Prénom est facultatif ; le libellé du lien permet de retrouver
+qui a répondu même sans nom saisi.
+
+### Activer sur une base existante
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-eval-froide.sql
+```
+
+À jouer une seule fois avec un compte administrateur (l'utilisateur applicatif
+ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-même
+(intitulés, options) vit dans `eval-froide-questions.php`.
+
 ## RGPD
 
 - Collecte minimale : prénom, réponses, score, horodatage. Ni nom, ni IP, ni cookie.
@@ -169,6 +207,7 @@ Il disparaît de l'accueil et `save.php` refuse les enregistrements.
 |---|---|
 | `schema.sql` | Tables + quiz final pré-rempli (10 questions) |
 | `migration-etapes.sql` | Ajout de la table `etapes` sur une base existante |
+| `migration-eval-froide.sql` | Ajout des tables de l'évaluation à froid sur une base existante |
 | `config.example.php` | Identifiants BDD + clé animateur + helpers |
 | `etapes.php` | Lecture des étapes ouvertes (aucune sortie, helpers seuls) |
 | `horodatage.php` | Conversion des horodatages serveur vers l'heure locale (helpers seuls) |
@@ -178,5 +217,10 @@ Il disparaît de l'accueil et `save.php` refuse les enregistrements.
 | `save.php` | Enregistrement du résultat (POST JSON, validations serveur) |
 | `resultats.php` | Tableau de bord animateur : détail par journée + bilan global (protégé par clé) |
 | `export-satisfaction.php` | Export PDF des questionnaires d'une journée, un par page (protégé par clé) |
+| `eval-froide-questions.php` | Définitions du questionnaire à froid (intitulés, options, disposition) — helpers seuls |
+| `evaluation-froide.php` | Formulaire d'évaluation à froid, accès par lien unique `?t=TOKEN` (invisible depuis l'accueil) |
+| `eval-froide-liens.php` | Génération et suivi des liens uniques (protégé par clé) |
+| `eval-froide-resultats.php` | Consultation des réponses à froid : synthèse + détail (protégé par clé) |
+| `export-eval-froide.php` | Export PDF des évaluations à froid, une par page (protégé par clé) |
 | `lib/fpdf/` | Bibliothèque FPDF (fpdf.php + font/), licence permissive, à conserver telle quelle |
 | `style.css` | Styles partagés (navy/gold, gros boutons tactiles) |

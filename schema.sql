@@ -251,3 +251,48 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2026-07-29 13:23:11
+
+--
+-- Évaluation à froid (suivi après formation). Mêmes tables que
+-- migration-eval-froide.sql, incluses ici pour une installation neuve.
+--
+
+CREATE TABLE IF NOT EXISTS `eval_froide_tokens` (
+  `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `token`      CHAR(32)     NOT NULL,
+  `libelle`    VARCHAR(120) DEFAULT NULL,
+  `created_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `used_at`    TIMESTAMP    NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_token` (`token`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `eval_froide` (
+  `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `token_id`       INT UNSIGNED NOT NULL,
+  `nom_prenom`     VARCHAR(120) DEFAULT NULL,
+  `q2_usages`      VARCHAR(255) DEFAULT NULL,
+  `q2_autre`       VARCHAR(255) DEFAULT NULL,
+  `q3_autonomie`   VARCHAR(20)  DEFAULT NULL,
+  `q4_prompt`      VARCHAR(20)  DEFAULT NULL,
+  `q5_candidature` VARCHAR(20)  DEFAULT NULL,
+  `q5_usages`      VARCHAR(255) DEFAULT NULL,
+  `q5_autre`       VARCHAR(255) DEFAULT NULL,
+  `q6_changement`  VARCHAR(20)  DEFAULT NULL,
+  `q7_entretiens`  VARCHAR(30)  DEFAULT NULL,
+  `q7_ia_prepa`    VARCHAR(10)  DEFAULT NULL,
+  `q8_utile`       VARCHAR(20)  DEFAULT NULL,
+  `q9_autonomie`   VARCHAR(20)  DEFAULT NULL,
+  `q10_apprise`    TEXT,
+  `q11_freins`     VARCHAR(255) DEFAULT NULL,
+  `q11_autre`      VARCHAR(255) DEFAULT NULL,
+  `q12_manque`     TEXT,
+  `q13_poursuivre` VARCHAR(20)  DEFAULT NULL,
+  `q13_sujets`     VARCHAR(255) DEFAULT NULL,
+  `q13_autre`      VARCHAR(255) DEFAULT NULL,
+  `q14_situation`  VARCHAR(40)  DEFAULT NULL,
+  `q14_autre`      VARCHAR(255) DEFAULT NULL,
+  `created_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_token` (`token_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

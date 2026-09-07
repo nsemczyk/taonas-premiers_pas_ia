@@ -393,6 +393,9 @@ if ($dateInitiale === '' && ($code = session_code_clean($_GET['s'] ?? '')) !== '
       <button type="button" class="btn btn-ghost" id="btn-global" style="margin-top:14px">
         Bilan toutes sessions
       </button>
+      <a class="btn btn-ghost" style="margin-top:10px" href="eval-froide-resultats.php?cle=<?= rawurlencode(CLE_ANIMATEUR) ?>">
+        Évaluation à froid
+      </a>
     </aside>
 
     <div class="dash-main">

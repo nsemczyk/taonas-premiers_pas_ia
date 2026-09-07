@@ -1,0 +1,351 @@
+/* Formation IA générative — identité Sam le jardinier
+   navy #1F3572 · gold #C9A227 · cream #FAF6EC · vert feuille #3E7C4F */
+
+:root {
+  --navy: #1F3572;
+  --navy-deep: #162654;
+  --gold: #C9A227;
+  --gold-soft: #E8D48A;
+  --cream: #FAF6EC;
+  --paper: #FFFFFF;
+  --ink: #23283A;
+  --muted: #6B7080;
+  --leaf: #3E7C4F;
+  --leaf-soft: #DDEEE2;
+  --error: #B3402A;
+  --error-soft: #F7E3DD;
+  --radius: 14px;
+  --shadow: 0 2px 10px rgba(31, 53, 114, 0.10);
+}
+
+* { box-sizing: border-box; }
+
+/* .btn (display:block) et .answers (display:grid) l'emportent sinon sur le
+   [hidden] du navigateur, à spécificité égale : l'attribut ne masquerait rien. */
+[hidden] { display: none !important; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--cream);
+}
+
+.wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px 16px 56px;
+}
+
+/* ---------- header ---------- */
+.site-head {
+  background: var(--navy);
+  color: #fff;
+  padding: 22px 16px 26px;
+  text-align: center;
+  border-bottom: 5px solid var(--gold);
+}
+.site-head h1 {
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+  font-size: clamp(1.5rem, 5vw, 2.1rem);
+  font-weight: 700;
+  margin: 0 0 4px;
+  letter-spacing: 0.01em;
+}
+.site-head p {
+  margin: 0;
+  color: var(--gold-soft);
+  font-size: 0.95rem;
+}
+
+/* ---------- cards ---------- */
+.card {
+  background: var(--paper);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-top: 18px;
+}
+.card h2 {
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+  font-size: 1.25rem;
+  color: var(--navy);
+  margin: 0 0 10px;
+}
+.card p.lead { margin: 0 0 14px; color: var(--muted); font-size: 1rem; }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: block;
+  width: 100%;
+  min-height: 58px;
+  padding: 14px 18px;
+  border: none;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: transform 0.06s ease, background 0.15s ease;
+}
+.btn:active { transform: scale(0.98); }
+.btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+.btn-primary { background: var(--navy); color: #fff; }
+.btn-primary:hover { background: var(--navy-deep); }
+.btn-gold { background: var(--gold); color: var(--navy-deep); }
+.btn-gold:hover { background: #B8931F; }
+.btn-ghost {
+  background: transparent;
+  color: var(--navy);
+  border: 2px solid var(--navy);
+}
+.btn + .btn { margin-top: 12px; }
+
+/* ---------- documents à copier ---------- */
+details.doc {
+  margin-top: 12px;
+  border: 1px solid #E4E0D2;
+  border-radius: 10px;
+  background: var(--cream);
+}
+details.doc summary {
+  cursor: pointer;
+  padding: 12px 14px;
+  font-weight: 600;
+  color: var(--navy);
+  list-style-position: inside;
+}
+details.doc pre {
+  margin: 0;
+  padding: 0 16px 16px;
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 0.98rem;
+  color: var(--ink);
+}
+.copied-note {
+  display: none;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--leaf-soft);
+  color: var(--leaf);
+  font-weight: 600;
+  text-align: center;
+}
+.copied-note.show { display: block; }
+
+/* ---------- quiz ---------- */
+.leaf-path {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 18px 0 6px;
+}
+.leaf-path span {
+  width: 16px;
+  height: 16px;
+  background: #E4E0D2;
+  border-radius: 50% 50% 50% 4px; /* forme feuille */
+  transform: rotate(45deg);
+  transition: background 0.25s ease;
+}
+.leaf-path span.done { background: var(--leaf); }
+.leaf-path span.now { background: var(--gold); }
+
+.q-count { text-align: center; color: var(--muted); font-size: 0.9rem; margin: 0 0 10px; }
+
+.q-text {
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--navy);
+  text-align: center;
+  margin: 6px 0 22px;
+  min-height: 3.2em;
+}
+
+.answers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+/* margin-top: la règle .btn + .btn vise les boutons empilés ; ici elle
+   décalerait FAUX vers le bas et étirerait VRAI de 12 px de plus. */
+.answers .btn { min-height: 72px; font-size: 1.4rem; margin-top: 0; }
+.btn-vrai { background: var(--leaf); color: #fff; }
+.btn-faux { background: var(--error); color: #fff; }
+
+.feedback {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: var(--radius);
+  font-size: 1.05rem;
+}
+.feedback.ok  { background: var(--leaf-soft); border-left: 6px solid var(--leaf); }
+.feedback.ko  { background: var(--error-soft); border-left: 6px solid var(--error); }
+.feedback strong { display: block; font-size: 1.15rem; margin-bottom: 4px; }
+/* « Question suivante » suit le feedback, pas un .btn : il faut l'espacer ici */
+.feedback + .btn { margin-top: 16px; }
+
+.score-final {
+  text-align: center;
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 8px 0;
+}
+
+/* ---------- formulaire prénom ---------- */
+label.field { display: block; font-weight: 600; color: var(--navy); margin-bottom: 6px; }
+input.field {
+  width: 100%;
+  min-height: 54px;
+  padding: 12px 14px;
+  font-size: 1.15rem;
+  font-family: inherit;
+  border: 2px solid #D8D3C4;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+input.field:focus { border-color: var(--navy); outline: none; }
+
+/* ---------- résultats live ---------- */
+table.board { width: 100%; border-collapse: collapse; font-size: 1rem; }
+table.board th, table.board td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #EDE9DC; }
+table.board th { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.bar { height: 10px; background: var(--leaf-soft); border-radius: 6px; overflow: hidden; margin-bottom: 4px; }
+.bar i { display: block; height: 100%; background: var(--leaf); }
+.stat-big { font-size: 2.4rem; font-weight: 700; color: var(--navy); font-family: "Bricolage Grotesque", system-ui, sans-serif; }
+
+/* ---------- tableau de bord animateur ---------- */
+.wrap-large { max-width: 1080px; }
+
+.dash { display: grid; grid-template-columns: 340px 1fr; gap: 18px; align-items: start; }
+.dash-side { position: sticky; top: 16px; }
+@media (max-width: 860px) {
+  .dash { grid-template-columns: 1fr; }
+  .dash-side { position: static; }
+  /* la liste ne doit pas repousser le détail hors de l'écran */
+  select.listbox { height: 180px; }
+}
+
+select.listbox {
+  width: 100%;
+  padding: 6px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--ink);
+  background: #fff;
+  border: 2px solid #D8D3C4;
+  border-radius: 10px;
+}
+select.listbox:focus { border-color: var(--navy); outline: none; }
+select.listbox option { padding: 8px 6px; border-radius: 6px; }
+
+.dash-main h3 {
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+  font-size: 1.05rem;
+  color: var(--navy);
+  margin: 24px 0 8px;
+}
+
+.stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  justify-content: space-around;
+  text-align: center;
+  margin: 6px 0 18px;
+}
+.stat-row > div { font-size: 0.9rem; color: var(--muted); }
+
+.pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--cream);
+  border: 1px solid #E4E0D2;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--navy);
+  white-space: nowrap;
+}
+
+.muted { color: var(--muted); font-size: 0.9rem; }
+
+.verbatim {
+  border-left: 4px solid var(--gold);
+  padding-left: 12px;
+  margin: 10px 0;
+  font-size: 1rem;
+}
+
+.rgpd {
+  margin-top: 28px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ---------- étapes verrouillées ---------- */
+.card-locked {
+  background: #F4F1E6;
+  box-shadow: none;
+  border: 2px dashed #DCD7C5;
+}
+.card-locked h2 { color: var(--muted); }
+.card-locked p.lead { margin: 0; }
+.lock { font-size: 0.95rem; }
+
+/* Bandeau « nouvelle étape », posé au-dessus du contenu */
+.bandeau {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  background: var(--navy);
+  color: #fff;
+  box-shadow: 0 -2px 12px rgba(31, 53, 114, 0.25);
+}
+.bandeau .btn { width: auto; min-height: 48px; padding: 10px 22px; margin-top: 0; }
+
+/* ---------- pilotage animateur ---------- */
+.pilot-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #EDE9DC;
+}
+.pilot-row:last-of-type { border-bottom: none; }
+.pilot-titre { font-weight: 600; color: var(--navy); }
+.btn-etat {
+  width: auto;
+  min-height: 48px;
+  min-width: 120px;
+  padding: 10px 18px;
+  margin-top: 0;
+  font-size: 1rem;
+}
+.btn-etat.est-ouverte { background: var(--leaf); color: #fff; }
+.btn-etat.est-fermee  { background: #E4E0D2; color: var(--muted); }
+.btn[disabled] { opacity: 0.5; cursor: default; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}

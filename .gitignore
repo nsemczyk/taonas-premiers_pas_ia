@@ -1,0 +1,5 @@
+# Configuration locale (mot de passe BDD + clé animateur) — jamais versionnée
+config.php
+
+# Réglages locaux de Claude Code
+.claude/settings.local.json

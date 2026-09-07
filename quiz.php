@@ -73,6 +73,9 @@ $estBonus   = ($slug === $BONUS_SLUG);
       <a class="btn btn-ghost" href="quiz.php?slug=<?= e($BONUS_SLUG) ?>">Tenter le quiz bonus (facultatif)</a>
     </div>
     <?php endif; ?>
+    <div style="text-align:center;margin-top:16px">
+      <a class="btn btn-primary" href="index.php">Retour à l'accueil</a>
+    </div>
   </section>
 
 </main>

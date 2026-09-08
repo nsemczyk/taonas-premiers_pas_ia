@@ -60,31 +60,31 @@ try {
 }
 
 $repondus = array_filter($tokens, fn ($t) => $t['used_at'] !== null);
+$en_attente = count($tokens) - count($repondus);
 ?><!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="assets/favicon-couleur.png">
 <meta name="robots" content="noindex">
 <title>Liens — évaluation à froid</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
 .gen { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
 .gen .field { flex:1; min-width:180px; padding:12px 14px; font-size:1.05rem;
-  font-family:inherit; border:2px solid #D8D3C4; border-radius:10px; }
+  font-family:inherit; border:2px solid #C2C3C7; border-radius:0; }
 .gen .nb { flex:0 0 90px; min-width:70px; }
 .gen label { display:block; font-weight:600; color:var(--navy); margin-bottom:6px; font-size:.95rem; }
 table.liens { width:100%; border-collapse:collapse; margin-top:8px; }
-table.liens th, table.liens td { text-align:left; padding:10px 8px; border-bottom:1px solid #E4E0D2; vertical-align:top; font-size:.95rem; }
+table.liens th, table.liens td { text-align:left; padding:10px 8px; border-bottom:1px solid #C2C3C7; vertical-align:top; font-size:.95rem; }
 table.liens th { color:var(--navy); }
 .lien-url { font-family:monospace; font-size:.82rem; word-break:break-all; color:var(--muted); }
 .badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:.82rem; font-weight:600; white-space:nowrap; }
 .badge-attente { background:var(--cream); color:var(--navy); }
-.badge-repondu { background:#DCEFD8; color:#2C6E2C; }
+.badge-repondu { background:#EDF1DE; color:#4E5A1C; }
 .mini { padding:6px 12px; font-size:.9rem; }
-.copied { color:#2C6E2C; font-weight:600; font-size:.85rem; margin-left:6px; opacity:0; transition:opacity .2s; }
+.copied { color:#4E5A1C; font-weight:600; font-size:.85rem; margin-left:6px; opacity:0; transition:opacity .2s; }
 .copied.show { opacity:1; }
 .muted { color:var(--muted); }
 form.inline { display:inline; }
@@ -102,6 +102,11 @@ form.inline { display:inline; }
 <?php if ($table_ok): ?>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
     <a class="btn btn-ghost" href="eval-froide-resultats.php?cle=<?= rawurlencode(CLE_ANIMATEUR) ?>">Voir les réponses</a>
+    <?php if ($en_attente > 0): ?>
+    <a class="btn btn-primary" href="export-eval-froide-liens.php?cle=<?= rawurlencode(CLE_ANIMATEUR) ?>">
+      Exporter les liens en attente (Excel) · <?= (int)$en_attente ?>
+    </a>
+    <?php endif; ?>
   </div>
 <?php endif; ?>
 

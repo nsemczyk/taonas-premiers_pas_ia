@@ -223,4 +223,5 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `eval-froide-resultats.php` | Consultation des réponses à froid : synthèse + détail (protégé par clé) |
 | `export-eval-froide.php` | Export PDF des évaluations à froid, une par page (protégé par clé) |
 | `lib/fpdf/` | Bibliothèque FPDF (fpdf.php + font/), licence permissive, à conserver telle quelle |
-| `style.css` | Styles partagés (navy/gold, gros boutons tactiles) |
+| `style.css` | Styles partagés — Design System TAONAS (palette bleue, Eric Machat / Effra CC, angles vifs) |
+| `assets/` | Polices TAONAS (Eric Machat, Effra CC) et logos ; référencés par `style.css` |

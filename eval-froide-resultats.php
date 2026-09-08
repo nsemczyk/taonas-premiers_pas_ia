@@ -73,26 +73,25 @@ function ef_rendu_reponse(array $q, array $r): string
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="assets/favicon-couleur.png">
 <meta name="robots" content="noindex">
 <title>Évaluation à froid — réponses</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
 .nav { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
 .q { margin:16px 0 4px; font-weight:600; color:var(--navy); }
 .q .num { color:var(--gold); font-weight:700; margin-right:6px; }
-.sub-q { margin-left:14px; padding-left:12px; border-left:3px solid #E4E0D2; }
+.sub-q { margin-left:14px; padding-left:12px; border-left:3px solid #C2C3C7; }
 .rep { font-weight:600; }
 .libre { white-space:pre-line; }
 .vide { color:var(--muted); }
 .chip { display:inline-block; padding:2px 10px; margin:2px 2px 2px 0; border-radius:999px;
   background:var(--cream); color:var(--navy); font-size:.9rem; }
-.chip-autre { background:#F0E9D6; font-style:italic; }
+.chip-autre { background:#D6ECF6; font-style:italic; }
 .bars { margin:2px 0 12px; }
 .bar-row { display:flex; align-items:center; gap:8px; margin:3px 0; font-size:.92rem; }
 .bar-label { flex:0 0 46%; }
-.bar-track { flex:1; height:14px; background:#EFEBDD; border-radius:7px; overflow:hidden; }
+.bar-track { flex:1; height:14px; background:#E2F3FA; border-radius:0; overflow:hidden; }
 .bar-fill { height:100%; background:var(--gold); }
 .bar-n { flex:0 0 34px; text-align:right; color:var(--muted); }
 .resp-head { display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap; }

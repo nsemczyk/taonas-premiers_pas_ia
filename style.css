@@ -1,21 +1,53 @@
-/* Formation IA générative — identité Sam le jardinier
-   navy #1F3572 · gold #C9A227 · cream #FAF6EC · vert feuille #3E7C4F */
+/* Formation IA générative — Design System TAONAS
+   Palette bleue (nuit → glacier), accent bleu vif unique.
+   Titres : Eric Machat (serif) · Corps : Effra CC (sans).
+   Polices et logos dans assets/ ; substituts Georgia / Segoe UI si absents. */
+
+@font-face { font-family:'Eric Machat'; src:url('assets/fonts/EricMachat-Light.otf') format('opentype'); font-weight:100 350; font-style:normal; font-display:swap; }
+@font-face { font-family:'Eric Machat'; src:url('assets/fonts/EricMachat-Regular.otf') format('opentype'); font-weight:351 900; font-style:normal; font-display:swap; }
+@font-face { font-family:'Eric Machat'; src:url('assets/fonts/EricMachat-Italic.otf') format('opentype'); font-weight:100 900; font-style:italic; font-display:swap; }
+@font-face { font-family:'Eric Machat Headline'; src:url('assets/fonts/EricMachatHeadline-Light.otf') format('opentype'); font-weight:100 350; font-style:normal; font-display:swap; }
+@font-face { font-family:'Eric Machat Headline'; src:url('assets/fonts/EricMachatHeadline-Regular.otf') format('opentype'); font-weight:351 900; font-style:normal; font-display:swap; }
+@font-face { font-family:'Effra CC'; src:url('assets/fonts/EffraCC-Light.otf') format('opentype'); font-weight:100 450; font-style:normal; font-display:swap; }
+@font-face { font-family:'Effra CC'; src:url('assets/fonts/EffraCC-Medium.otf') format('opentype'); font-weight:451 900; font-style:normal; font-display:swap; }
 
 :root {
-  --navy: #1F3572;
-  --navy-deep: #162654;
-  --gold: #C9A227;
-  --gold-soft: #E8D48A;
-  --cream: #FAF6EC;
+  /* Palette TAONAS */
+  --nuit:    #15162C;   /* fond sombre, texte principal sur clair */
+  --indigo:  #292F6C;   /* texte secondaire sur clair */
+  --marque:  #1B3E90;   /* couleur de marque, liens, action principale */
+  --vif:     #47B4E8;   /* accent unique — signale, ne décore pas */
+  --doux:    #7193CC;   /* tertiaire */
+  --clair:   #AFDEF4;   /* texte courant sur sombre */
+  --glacier: #E2F3FA;   /* surfaces, cartes légères, tags */
+  --blanc:   #F9FCFF;   /* fond principal clair */
+  --gris:    #C2C3C7;   /* filets, séparateurs */
+  --olive:   #636E24;   /* validation, ponctuel */
+  --brique:  #8A3B14;   /* erreur, interdit */
+
+  /* Polices */
+  --font-titre: 'Eric Machat', Georgia, 'Times New Roman', serif;
+  --font-corps: 'Effra CC', 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+
+  /* Alias de compatibilité : les anciennes variables pointent vers la palette
+     TAONAS, pour que les styles inline des pages basculent sans y toucher. */
+  --navy: var(--marque);
+  --navy-deep: var(--nuit);
+  --gold: var(--vif);
+  --gold-soft: var(--clair);
+  --cream: var(--glacier);
   --paper: #FFFFFF;
-  --ink: #23283A;
-  --muted: #6B7080;
-  --leaf: #3E7C4F;
-  --leaf-soft: #DDEEE2;
-  --error: #B3402A;
-  --error-soft: #F7E3DD;
-  --radius: 14px;
-  --shadow: 0 2px 10px rgba(31, 53, 114, 0.10);
+  --ink: var(--nuit);
+  --muted: var(--indigo);
+  --leaf: var(--olive);
+  --leaf-soft: #EDF1DE;
+  --error: var(--brique);
+  --error-soft: #F5E7DF;
+
+  /* Charte : angles vifs partout, arrondi total réservé aux tags/pastilles. */
+  --radius: 0px;
+  --radius-pill: 999px;
+  --shadow: none;
 }
 
 * { box-sizing: border-box; }
@@ -28,11 +60,13 @@ html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-corps);
+  font-weight: 300;
   font-size: 1.125rem;
   line-height: 1.55;
   color: var(--ink);
-  background: var(--cream);
+  background: var(--blanc);
+  -webkit-font-smoothing: antialiased;
 }
 
 .wrap {
@@ -43,90 +77,125 @@ body {
 
 /* ---------- header ---------- */
 .site-head {
-  background: var(--navy);
-  color: #fff;
-  padding: 22px 16px 26px;
+  position: relative;
+  overflow: hidden;
+  background: var(--nuit);
+  background-image: radial-gradient(120% 140% at 88% 30%, var(--marque) 0%, rgba(27,62,144,0) 60%);
+  color: var(--blanc);
+  padding: 34px 20px 32px;
   text-align: center;
-  border-bottom: 5px solid var(--gold);
+  border-bottom: 2px solid var(--marque);
+  border-image: linear-gradient(90deg, var(--vif), var(--marque)) 1;
+}
+/* Symbole en filigrane, débordant du cadre (charte : opacité ~9 %). */
+.site-head::after {
+  content: "";
+  position: absolute;
+  right: -70px;
+  top: -70px;
+  width: 260px;
+  height: 260px;
+  background: url('assets/favicon-blanc.png') center/contain no-repeat;
+  opacity: 0.09;
+  pointer-events: none;
+}
+/* Logo TAONAS blanc, centré au-dessus du titre de page. */
+.site-head::before {
+  content: "";
+  display: block;
+  width: 190px;
+  height: 40px;
+  margin: 0 auto 18px;
+  background: url('assets/logo-blanc.png') center/contain no-repeat;
+  position: relative;
 }
 .site-head h1 {
-  font-family: "Bricolage Grotesque", system-ui, sans-serif;
-  font-size: clamp(1.5rem, 5vw, 2.1rem);
-  font-weight: 700;
-  margin: 0 0 4px;
-  letter-spacing: 0.01em;
+  position: relative;
+  font-family: var(--font-titre);
+  font-size: clamp(1.9rem, 6vw, 2.8rem);
+  font-weight: 300;
+  line-height: 1.06;
+  margin: 0 0 10px;
+  text-wrap: pretty;
 }
 .site-head p {
+  position: relative;
   margin: 0;
-  color: var(--gold-soft);
-  font-size: 0.95rem;
+  color: var(--clair);
+  font-size: 1rem;
+  font-weight: 300;
 }
 
 /* ---------- cards ---------- */
 .card {
   background: var(--paper);
+  border: 1px solid var(--gris);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 20px;
+  padding: 26px 24px;
   margin-top: 18px;
 }
 .card h2 {
-  font-family: "Bricolage Grotesque", system-ui, sans-serif;
-  font-size: 1.25rem;
-  color: var(--navy);
-  margin: 0 0 10px;
+  font-family: var(--font-titre);
+  font-weight: 300;
+  font-size: 1.6rem;
+  line-height: 1.12;
+  color: var(--nuit);
+  margin: 0 0 12px;
 }
-.card p.lead { margin: 0 0 14px; color: var(--muted); font-size: 1rem; }
+.card p.lead { margin: 0 0 14px; color: var(--indigo); font-size: 1rem; }
 
 /* ---------- buttons ---------- */
 .btn {
   display: block;
   width: 100%;
-  min-height: 58px;
-  padding: 14px 18px;
-  border: none;
+  min-height: 56px;
+  padding: 15px 22px;
+  border: 2px solid transparent;   /* aligne la hauteur des pleins et des contours */
   border-radius: var(--radius);
-  font-family: inherit;
-  font-size: 1.15rem;
-  font-weight: 700;
+  font-family: var(--font-corps);
+  font-size: 1.1rem;
+  font-weight: 500;
   cursor: pointer;
   text-align: center;
   text-decoration: none;
-  transition: transform 0.06s ease, background 0.15s ease;
+  transition: transform 0.06s ease, background 0.15s ease, color 0.15s ease;
 }
 .btn:active { transform: scale(0.98); }
-.btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.btn:focus-visible { outline: 3px solid var(--vif); outline-offset: 2px; }
 
-.btn-primary { background: var(--navy); color: #fff; }
-.btn-primary:hover { background: var(--navy-deep); }
-.btn-gold { background: var(--gold); color: var(--navy-deep); }
-.btn-gold:hover { background: #B8931F; }
+.btn-primary { background: var(--marque); color: var(--blanc); border-color: var(--marque); }
+.btn-primary:hover { background: var(--nuit); border-color: var(--nuit); }
+/* Bouton accent : l'unique touche de bleu vif, sur une action ponctuelle forte. */
+.btn-gold { background: var(--vif); color: var(--nuit); border-color: var(--vif); }
+.btn-gold:hover { background: var(--marque); color: var(--blanc); border-color: var(--marque); }
 .btn-ghost {
   background: transparent;
-  color: var(--navy);
-  border: 2px solid var(--navy);
+  color: var(--marque);
+  border: 2px solid var(--marque);
 }
+.btn-ghost:hover { background: var(--glacier); }
 .btn + .btn { margin-top: 12px; }
 
 /* ---------- documents à copier ---------- */
 details.doc {
   margin-top: 12px;
-  border: 1px solid #E4E0D2;
-  border-radius: 10px;
-  background: var(--cream);
+  border: 1px solid var(--gris);
+  border-radius: var(--radius);
+  background: var(--glacier);
 }
 details.doc summary {
   cursor: pointer;
   padding: 12px 14px;
-  font-weight: 600;
-  color: var(--navy);
+  font-weight: 500;
+  color: var(--marque);
   list-style-position: inside;
 }
 details.doc pre {
   margin: 0;
   padding: 0 16px 16px;
   white-space: pre-wrap;
-  font-family: inherit;
+  font-family: var(--font-corps);
   font-size: 0.98rem;
   color: var(--ink);
 }
@@ -134,39 +203,40 @@ details.doc pre {
   display: none;
   margin-top: 10px;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--leaf-soft);
-  color: var(--leaf);
-  font-weight: 600;
+  color: var(--olive);
+  font-weight: 500;
   text-align: center;
 }
 .copied-note.show { display: block; }
 
 /* ---------- quiz ---------- */
+/* Progression : triade de points TAONAS, du gris à l'accent. */
 .leaf-path {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   margin: 18px 0 6px;
 }
 .leaf-path span {
-  width: 16px;
-  height: 16px;
-  background: #E4E0D2;
-  border-radius: 50% 50% 50% 4px; /* forme feuille */
-  transform: rotate(45deg);
+  width: 12px;
+  height: 12px;
+  background: var(--gris);
+  border-radius: 50%;
   transition: background 0.25s ease;
 }
-.leaf-path span.done { background: var(--leaf); }
-.leaf-path span.now { background: var(--gold); }
+.leaf-path span.done { background: var(--marque); }
+.leaf-path span.now { background: var(--vif); }
 
-.q-count { text-align: center; color: var(--muted); font-size: 0.9rem; margin: 0 0 10px; }
+.q-count { text-align: center; color: var(--indigo); font-size: 0.9rem; margin: 0 0 10px; }
 
 .q-text {
-  font-family: "Bricolage Grotesque", system-ui, sans-serif;
-  font-size: 1.35rem;
-  font-weight: 600;
-  color: var(--navy);
+  font-family: var(--font-titre);
+  font-size: 1.55rem;
+  font-weight: 300;
+  line-height: 1.2;
+  color: var(--nuit);
   text-align: center;
   margin: 6px 0 22px;
   min-height: 3.2em;
@@ -175,9 +245,9 @@ details.doc pre {
 .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 /* margin-top: la règle .btn + .btn vise les boutons empilés ; ici elle
    décalerait FAUX vers le bas et étirerait VRAI de 12 px de plus. */
-.answers .btn { min-height: 72px; font-size: 1.4rem; margin-top: 0; }
-.btn-vrai { background: var(--leaf); color: #fff; }
-.btn-faux { background: var(--error); color: #fff; }
+.answers .btn { min-height: 72px; font-size: 1.3rem; margin-top: 0; }
+.btn-vrai { background: var(--olive); color: var(--blanc); border-color: var(--olive); }
+.btn-faux { background: var(--brique); color: var(--blanc); border-color: var(--brique); }
 
 .feedback {
   margin-top: 16px;
@@ -185,44 +255,44 @@ details.doc pre {
   border-radius: var(--radius);
   font-size: 1.05rem;
 }
-.feedback.ok  { background: var(--leaf-soft); border-left: 6px solid var(--leaf); }
-.feedback.ko  { background: var(--error-soft); border-left: 6px solid var(--error); }
+.feedback.ok  { background: var(--leaf-soft); border-left: 3px solid var(--olive); }
+.feedback.ko  { background: var(--error-soft); border-left: 3px solid var(--brique); }
 .feedback strong { display: block; font-size: 1.15rem; margin-bottom: 4px; }
 /* « Question suivante » suit le feedback, pas un .btn : il faut l'espacer ici */
 .feedback + .btn { margin-top: 16px; }
 
 .score-final {
   text-align: center;
-  font-family: "Bricolage Grotesque", system-ui, sans-serif;
-  font-size: 3rem;
-  font-weight: 700;
-  color: var(--navy);
+  font-family: var(--font-titre);
+  font-size: 3.4rem;
+  font-weight: 300;
+  color: var(--marque);
   margin: 8px 0;
 }
 
 /* ---------- formulaire prénom ---------- */
-label.field { display: block; font-weight: 600; color: var(--navy); margin-bottom: 6px; }
+label.field { display: block; font-weight: 500; color: var(--marque); margin-bottom: 6px; }
 input.field {
   width: 100%;
   min-height: 54px;
   padding: 12px 14px;
   font-size: 1.15rem;
-  font-family: inherit;
-  border: 2px solid #D8D3C4;
-  border-radius: 10px;
+  font-family: var(--font-corps);
+  border: 2px solid var(--gris);
+  border-radius: var(--radius);
   background: #fff;
   color: var(--ink);
   margin-bottom: 16px;
 }
-input.field:focus { border-color: var(--navy); outline: none; }
+input.field:focus { border-color: var(--marque); outline: none; }
 
 /* ---------- résultats live ---------- */
 table.board { width: 100%; border-collapse: collapse; font-size: 1rem; }
-table.board th, table.board td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #EDE9DC; }
-table.board th { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
-.bar { height: 10px; background: var(--leaf-soft); border-radius: 6px; overflow: hidden; margin-bottom: 4px; }
-.bar i { display: block; height: 100%; background: var(--leaf); }
-.stat-big { font-size: 2.4rem; font-weight: 700; color: var(--navy); font-family: "Bricolage Grotesque", system-ui, sans-serif; }
+table.board th, table.board td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--gris); }
+table.board th { color: var(--indigo); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.bar { height: 10px; background: var(--glacier); border-radius: var(--radius-pill); overflow: hidden; margin-bottom: 4px; }
+.bar i { display: block; height: 100%; background: var(--marque); }
+.stat-big { font-size: 2.8rem; font-weight: 300; color: var(--marque); font-family: var(--font-titre); }
 
 /* ---------- tableau de bord animateur ---------- */
 .wrap-large { max-width: 1080px; }
@@ -239,20 +309,21 @@ table.board th { color: var(--muted); font-size: 0.85rem; text-transform: upperc
 select.listbox {
   width: 100%;
   padding: 6px;
-  font-family: inherit;
+  font-family: var(--font-corps);
   font-size: 0.9rem;
   color: var(--ink);
   background: #fff;
-  border: 2px solid #D8D3C4;
-  border-radius: 10px;
+  border: 2px solid var(--gris);
+  border-radius: var(--radius);
 }
-select.listbox:focus { border-color: var(--navy); outline: none; }
-select.listbox option { padding: 8px 6px; border-radius: 6px; }
+select.listbox:focus { border-color: var(--marque); outline: none; }
+select.listbox option { padding: 8px 6px; }
 
 .dash-main h3 {
-  font-family: "Bricolage Grotesque", system-ui, sans-serif;
-  font-size: 1.05rem;
-  color: var(--navy);
+  font-family: var(--font-titre);
+  font-weight: 300;
+  font-size: 1.25rem;
+  color: var(--nuit);
   margin: 24px 0 8px;
 }
 
@@ -264,25 +335,25 @@ select.listbox option { padding: 8px 6px; border-radius: 6px; }
   text-align: center;
   margin: 6px 0 18px;
 }
-.stat-row > div { font-size: 0.9rem; color: var(--muted); }
+.stat-row > div { font-size: 0.9rem; color: var(--indigo); }
 
 .pill {
   display: inline-block;
-  padding: 2px 10px;
-  border-radius: 999px;
-  background: var(--cream);
-  border: 1px solid #E4E0D2;
+  padding: 4px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--glacier);
+  border: none;
   font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--navy);
+  font-weight: 500;
+  color: var(--marque);
   white-space: nowrap;
 }
 
-.muted { color: var(--muted); font-size: 0.9rem; }
+.muted { color: var(--indigo); font-size: 0.9rem; }
 
 .verbatim {
-  border-left: 4px solid var(--gold);
-  padding-left: 12px;
+  border-left: 3px solid var(--vif);
+  padding-left: 14px;
   margin: 10px 0;
   font-size: 1rem;
 }
@@ -290,17 +361,17 @@ select.listbox option { padding: 8px 6px; border-radius: 6px; }
 .rgpd {
   margin-top: 28px;
   font-size: 0.82rem;
-  color: var(--muted);
+  color: var(--indigo);
   text-align: center;
 }
 
 /* ---------- étapes verrouillées ---------- */
 .card-locked {
-  background: #F4F1E6;
+  background: var(--glacier);
   box-shadow: none;
-  border: 2px dashed #DCD7C5;
+  border: 1px dashed var(--doux);
 }
-.card-locked h2 { color: var(--muted); }
+.card-locked h2 { color: var(--indigo); }
 .card-locked p.lead { margin: 0; }
 .lock { font-size: 0.95rem; }
 
@@ -317,9 +388,8 @@ select.listbox option { padding: 8px 6px; border-radius: 6px; }
   justify-content: center;
   flex-wrap: wrap;
   padding: 14px 16px;
-  background: var(--navy);
-  color: #fff;
-  box-shadow: 0 -2px 12px rgba(31, 53, 114, 0.25);
+  background: var(--nuit);
+  color: var(--blanc);
 }
 .bandeau .btn { width: auto; min-height: 48px; padding: 10px 22px; margin-top: 0; }
 
@@ -330,10 +400,10 @@ select.listbox option { padding: 8px 6px; border-radius: 6px; }
   align-items: center;
   justify-content: space-between;
   padding: 10px 0;
-  border-bottom: 1px solid #EDE9DC;
+  border-bottom: 1px solid var(--gris);
 }
 .pilot-row:last-of-type { border-bottom: none; }
-.pilot-titre { font-weight: 600; color: var(--navy); }
+.pilot-titre { font-weight: 500; color: var(--marque); }
 .btn-etat {
   width: auto;
   min-height: 48px;
@@ -342,8 +412,8 @@ select.listbox option { padding: 8px 6px; border-radius: 6px; }
   margin-top: 0;
   font-size: 1rem;
 }
-.btn-etat.est-ouverte { background: var(--leaf); color: #fff; }
-.btn-etat.est-fermee  { background: #E4E0D2; color: var(--muted); }
+.btn-etat.est-ouverte { background: var(--olive); color: var(--blanc); border-color: var(--olive); }
+.btn-etat.est-fermee  { background: var(--glacier); color: var(--indigo); border-color: var(--gris); }
 .btn[disabled] { opacity: 0.5; cursor: default; }
 
 @media (prefers-reduced-motion: reduce) {

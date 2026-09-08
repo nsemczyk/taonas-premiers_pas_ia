@@ -44,10 +44,9 @@ $reste   = count(array_filter($etapes, fn($e) => !$e['ouverte']));
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="assets/favicon-couleur.png">
 <meta name="robots" content="noindex">
 <title>Pilotage de la journée</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>

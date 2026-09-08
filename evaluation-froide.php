@@ -92,17 +92,16 @@ if ($etat === 'form' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // --- Rendu des groupes de réponses -----------------------------------------
-// Choix unique (radios) : aucune réponse n'est obligatoire.
-function ef_radios(string $name, array $options): string
+// Choix unique : liste déroulante. Aucune réponse n'est obligatoire.
+function ef_select(string $name, array $options, string $current = ''): string
 {
-    $h = '<div class="choices">';
+    $h = '<select class="field select" name="' . e($name) . '" id="' . e($name) . '">';
+    $h .= '<option value="">— Choisir une réponse —</option>';
     foreach ($options as $code => $label) {
-        $id = $name . '-' . $code;
-        $h .= '<label for="' . $id . '">'
-            . '<input type="radio" name="' . $name . '" id="' . $id . '" value="' . e($code) . '">'
-            . e($label) . '</label>';
+        $sel = ($current !== '' && (string)$code === $current) ? ' selected' : '';
+        $h .= '<option value="' . e($code) . '"' . $sel . '>' . e($label) . '</option>';
     }
-    return $h . '</div>';
+    return $h . '</select>';
 }
 
 // Choix multiple (cases à cocher).
@@ -120,12 +119,12 @@ function ef_checks(string $name, array $options): string
 ?><!DOCTYPE html>
 <html lang="fr">
 <head>
+<script>document.documentElement.className += ' js';</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="assets/favicon-couleur.png">
 <meta name="robots" content="noindex">
 <title>Évaluation à froid — Premiers pas avec l'IA générative</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
 fieldset { border:none; margin:0 0 22px; padding:0; }
@@ -133,19 +132,26 @@ legend { font-weight:600; color:var(--navy); font-size:1.05rem; margin-bottom:2p
 .section-num { color:var(--gold); font-weight:700; margin-right:6px; }
 .choices label {
   display:block; padding:12px 14px; margin-top:8px;
-  border:2px solid #E4E0D2; border-radius:12px; background:#fff; cursor:pointer;
+  border:2px solid #C2C3C7; border-radius:0; background:#fff; cursor:pointer;
 }
 .choices input { margin-right:10px; transform:scale(1.3); }
 .choices label:has(input:checked) { border-color:var(--gold); background:var(--cream); }
-.sous-question { margin:10px 0 0 0; padding:14px 16px; border-left:4px solid #E4E0D2; background:#FAF8F1; border-radius:0 12px 12px 0; }
+.sous-question { margin:10px 0 0 0; padding:14px 16px; border-left:4px solid #C2C3C7; background:#F4FAFD; border-radius:0; }
 .sous-question legend { font-size:.98rem; }
-input.field, textarea.field { width:100%; padding:12px 14px; font-size:1.05rem;
-  font-family:inherit; border:2px solid #D8D3C4; border-radius:10px; }
+input.field, textarea.field, select.field { width:100%; padding:12px 14px; font-size:1.05rem;
+  font-family:inherit; border:2px solid #C2C3C7; border-radius:0; }
 textarea.field { min-height:90px; }
-input.field:focus, textarea.field:focus { border-color:var(--navy); outline:none; }
+input.field:focus, textarea.field:focus, select.field:focus { border-color:var(--navy); outline:none; }
+select.field { background:#fff; cursor:pointer; -webkit-appearance:none; -moz-appearance:none; appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%23103B5A' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 14px center; background-size:12px; padding-right:40px; }
 .autre-inline { margin-top:8px; }
+/* Sous-questions conditionnelles : visibles seulement si JS est actif et
+   la réponse déclenchante est sélectionnée. Sans JS, tout reste affiché. */
+.js .cond { display:none; }
+.js .cond.is-visible { display:block; }
 .err { background:var(--error-soft); border-left:6px solid var(--error); padding:12px 14px;
-  border-radius:10px; margin-bottom:16px; font-weight:600; }
+  border-radius:0; margin-bottom:16px; font-weight:600; }
 .intro { color:var(--muted); }
 .intro p { margin:0 0 10px; }
 </style>
@@ -218,18 +224,18 @@ input.field:focus, textarea.field:focus { border-color:var(--navy); outline:none
 
     <fieldset>
       <legend><span class="section-num">3.</span>Aujourd'hui, vous sentez-vous capable d'utiliser seul(e) une IA générative ?</legend>
-      <?= ef_radios('q3_autonomie', $EF_SIMPLE['q3_autonomie']) ?>
+      <?= ef_select('q3_autonomie', $EF_SIMPLE['q3_autonomie'], $_POST['q3_autonomie'] ?? '') ?>
     </fieldset>
 
     <fieldset>
       <legend><span class="section-num">4.</span>Depuis la formation, vous sentez-vous plus à l'aise pour rédiger une consigne efficace à une IA (« prompt ») ?</legend>
-      <?= ef_radios('q4_prompt', $EF_SIMPLE['q4_prompt']) ?>
+      <?= ef_select('q4_prompt', $EF_SIMPLE['q4_prompt'], $_POST['q4_prompt'] ?? '') ?>
     </fieldset>
 
     <fieldset>
       <legend><span class="section-num">5.</span>Depuis la formation, avez-vous utilisé l'IA pour une candidature réelle ?</legend>
-      <?= ef_radios('q5_candidature', $EF_SIMPLE['q5_candidature']) ?>
-      <div class="sous-question">
+      <?= ef_select('q5_candidature', $EF_SIMPLE['q5_candidature'], $_POST['q5_candidature'] ?? '') ?>
+      <div class="sous-question cond" data-depends="q5_candidature" data-show-values="plusieurs,une">
         <fieldset style="margin:0">
           <legend>Si oui, pour quoi ? <span style="font-weight:400;color:var(--muted)">(plusieurs réponses possibles)</span></legend>
           <?= ef_checks('q5_usages', $EF_MULTI['q5_usages']) ?>
@@ -240,28 +246,28 @@ input.field:focus, textarea.field:focus { border-color:var(--navy); outline:none
 
     <fieldset>
       <legend><span class="section-num">6.</span>Depuis la formation, avez-vous changé votre manière de rechercher un emploi grâce à ce que vous avez appris ?</legend>
-      <?= ef_radios('q6_changement', $EF_SIMPLE['q6_changement']) ?>
+      <?= ef_select('q6_changement', $EF_SIMPLE['q6_changement'], $_POST['q6_changement'] ?? '') ?>
     </fieldset>
 
     <fieldset>
       <legend><span class="section-num">7.</span>Depuis la formation, avez-vous obtenu un ou plusieurs entretiens d'embauche ?</legend>
-      <?= ef_radios('q7_entretiens', $EF_SIMPLE['q7_entretiens']) ?>
-      <div class="sous-question">
+      <?= ef_select('q7_entretiens', $EF_SIMPLE['q7_entretiens'], $_POST['q7_entretiens'] ?? '') ?>
+      <div class="sous-question cond" data-depends="q7_entretiens" data-show-values="oui">
         <fieldset style="margin:0">
           <legend>Si oui, avez-vous utilisé l'IA pour préparer au moins un de ces entretiens ?</legend>
-          <?= ef_radios('q7_ia_prepa', $EF_SIMPLE['q7_ia_prepa']) ?>
+          <?= ef_select('q7_ia_prepa', $EF_SIMPLE['q7_ia_prepa'], $_POST['q7_ia_prepa'] ?? '') ?>
         </fieldset>
       </div>
     </fieldset>
 
     <fieldset>
       <legend><span class="section-num">8.</span>Avec le recul, cette formation vous est-elle utile dans votre recherche d'emploi ?</legend>
-      <?= ef_radios('q8_utile', $EF_SIMPLE['q8_utile']) ?>
+      <?= ef_select('q8_utile', $EF_SIMPLE['q8_utile'], $_POST['q8_utile'] ?? '') ?>
     </fieldset>
 
     <fieldset>
       <legend><span class="section-num">9.</span>Aujourd'hui, l'utilisation de l'IA vous permet-elle de réaliser certaines démarches avec davantage d'autonomie ?</legend>
-      <?= ef_radios('q9_autonomie', $EF_SIMPLE['q9_autonomie']) ?>
+      <?= ef_select('q9_autonomie', $EF_SIMPLE['q9_autonomie'], $_POST['q9_autonomie'] ?? '') ?>
     </fieldset>
 
     <fieldset>
@@ -282,8 +288,8 @@ input.field:focus, textarea.field:focus { border-color:var(--navy); outline:none
 
     <fieldset>
       <legend><span class="section-num">13.</span>Souhaiteriez-vous poursuivre votre apprentissage de l'intelligence artificielle ?</legend>
-      <?= ef_radios('q13_poursuivre', $EF_SIMPLE['q13_poursuivre']) ?>
-      <div class="sous-question">
+      <?= ef_select('q13_poursuivre', $EF_SIMPLE['q13_poursuivre'], $_POST['q13_poursuivre'] ?? '') ?>
+      <div class="sous-question cond" data-depends="q13_poursuivre" data-show-values="oui,peut_etre">
         <fieldset style="margin:0">
           <legend>Si oui ou peut-être, quels sujets vous intéresseraient ? <span style="font-weight:400;color:var(--muted)">(plusieurs réponses possibles)</span></legend>
           <?= ef_checks('q13_sujets', $EF_MULTI['q13_sujets']) ?>
@@ -294,7 +300,7 @@ input.field:focus, textarea.field:focus { border-color:var(--navy); outline:none
 
     <fieldset>
       <legend><span class="section-num">14.</span>Depuis la formation, votre situation professionnelle a-t-elle évolué ?</legend>
-      <?= ef_radios('q14_situation', $EF_SIMPLE['q14_situation']) ?>
+      <?= ef_select('q14_situation', $EF_SIMPLE['q14_situation'], $_POST['q14_situation'] ?? '') ?>
       <input class="field autre-inline" name="q14_autre" type="text" maxlength="255" placeholder="Autre (facultatif)">
     </fieldset>
 
@@ -308,5 +314,31 @@ input.field:focus, textarea.field:focus { border-color:var(--navy); outline:none
 <?php endif; ?>
 
 </main>
+
+<script>
+// Sous-questions conditionnelles : chaque bloc .cond n'apparaît que si la
+// réponse de son <select> déclencheur figure dans data-show-values.
+// Quand il est masqué, ses champs sont réinitialisés pour ne pas transmettre
+// de réponse à une question invisible.
+(function () {
+  document.querySelectorAll('.cond[data-depends]').forEach(function (bloc) {
+    var control = document.querySelector('[name="' + bloc.getAttribute('data-depends') + '"]');
+    if (!control) return;
+    var declencheurs = (bloc.getAttribute('data-show-values') || '').split(',');
+
+    function maj() {
+      var afficher = declencheurs.indexOf(control.value) !== -1;
+      bloc.classList.toggle('is-visible', afficher);
+      if (!afficher) {
+        bloc.querySelectorAll('select, input[type="text"], textarea').forEach(function (c) { c.value = ''; });
+        bloc.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(function (c) { c.checked = false; });
+      }
+    }
+
+    control.addEventListener('change', maj);
+    maj(); // état initial (utile après un rechargement où la réponse est déjà posée)
+  });
+})();
+</script>
 </body>
 </html>

@@ -135,17 +135,16 @@ function smileys(string $name, array $options): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="assets/favicon-couleur.png">
 <meta name="robots" content="noindex">
 <title>Votre avis sur la journée</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
 .smileys { display:flex; justify-content:space-between; gap:6px; margin:10px 0 4px; }
 .smileys input { position:absolute; opacity:0; width:1px; height:1px; }
 .smileys label {
   flex:1; text-align:center; font-size:2rem; line-height:1;
-  padding:12px 0; border:2px solid #E4E0D2; border-radius:12px;
+  padding:12px 0; border:2px solid #C2C3C7; border-radius:0;
   background:#fff; cursor:pointer; filter:grayscale(1); opacity:.6;
   transition: transform .06s ease;
 }
@@ -158,15 +157,15 @@ legend { font-weight:600; color:var(--navy); font-size:1.05rem; margin-bottom:2p
 .section-title:first-of-type { margin-top:0; }
 .choices label {
   display:block; padding:12px 14px; margin-top:8px;
-  border:2px solid #E4E0D2; border-radius:12px; background:#fff; cursor:pointer;
+  border:2px solid #C2C3C7; border-radius:0; background:#fff; cursor:pointer;
 }
 .choices input { margin-right:10px; transform:scale(1.3); }
 .choices label:has(input:checked) { border-color:var(--gold); background:var(--cream); }
 textarea.field { width:100%; min-height:110px; padding:12px 14px; font-size:1.05rem;
-  font-family:inherit; border:2px solid #D8D3C4; border-radius:10px; }
+  font-family:inherit; border:2px solid #C2C3C7; border-radius:0; }
 textarea.field:focus { border-color:var(--navy); outline:none; }
 .err { background:var(--error-soft); border-left:6px solid var(--error); padding:12px 14px;
-  border-radius:10px; margin-bottom:16px; font-weight:600; }
+  border-radius:0; margin-bottom:16px; font-weight:600; }
 </style>
 </head>
 <body>

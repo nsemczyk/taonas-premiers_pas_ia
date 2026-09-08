@@ -88,31 +88,35 @@ class EvalFroidePdf extends FPDF
         $this->MultiCell(self::L_UTILE, 5, $this->txt(($num !== '' ? $num . '. ' : '') . $intitule), 0, 'L');
     }
 
-    // Case à cocher : croix tracée quand c'est la réponse retenue
-    private function caseACocher(float $x, float $y, bool $cochee): void
+    // Réponse à choix unique : uniquement le libellé retenu, indenté.
+    // Si rien n'a été renseigné, on l'indique en gris plutôt que de lister
+    // toutes les options possibles.
+    public function reponse(string $texte, bool $renseigne = true): void
     {
-        $c = 3.4;
-        $this->Rect($x, $y, $c, $c);
-        if ($cochee) {
-            $m = 0.7;
-            $this->Line($x + $m, $y + $m, $x + $c - $m, $y + $c - $m);
-            $this->Line($x + $c - $m, $y + $m, $x + $m, $y + $c - $m);
+        if (!$renseigne || $texte === '') {
+            $this->SetFont('Helvetica', 'I', 8.5);
+            $this->SetTextColor(120);
+            $texte = 'Non renseigné';
+        } else {
+            $this->SetFont('Helvetica', '', 9);
+            $this->SetTextColor(0);
         }
+        $this->SetX(22);
+        $this->MultiCell(self::L_UTILE - 7, 4.8, $this->txt($texte), 0, 'L');
+        $this->SetTextColor(0);
+        $this->Ln(0.6);
     }
 
-    /**
-     * Liste d'options en cases à cocher, une par ligne (comme le questionnaire
-     * papier). $coches = liste des codes retenus.
-     */
-    public function options(array $options, array $coches): void
+    // Réponses à choix multiple : une puce par réponse cochée seulement.
+    public function reponsesMulti(array $libelles): void
     {
-        $this->SetFont('Helvetica', '', 8.5);
-        foreach ($options as $code => $libelle) {
+        $this->SetFont('Helvetica', '', 9);
+        $this->SetTextColor(0);
+        foreach ($libelles as $lib) {
             $y = $this->GetY();
-            $this->caseACocher(17, $y + 0.7, in_array((string)$code, $coches, true));
             $this->SetXY(22, $y);
-            $this->MultiCell(self::L_UTILE - 7, 4.6, $this->txt($libelle), 0, 'L');
-            $this->Ln(0.6);
+            $this->MultiCell(self::L_UTILE - 7, 4.8, $this->txt('- ' . $lib), 0, 'L');
+            $this->Ln(0.4);
         }
     }
 
@@ -141,22 +145,22 @@ class EvalFroidePdf extends FPDF
         return $nl;
     }
 
-    // Zone de texte libre, encadrée comme sur le questionnaire papier
-    public function zoneTexte(?string $contenu, float $hauteurMin = 16): void
+    // Zone de texte libre : encadré ajusté au contenu réellement saisi.
+    // Vide, on l'indique en gris au lieu d'un grand cadre vierge.
+    public function zoneTexte(?string $contenu): void
     {
         $contenu = trim((string)$contenu);
-        $this->SetFont('Helvetica', '', 9);
-        $this->Ln(1);
+        $this->Ln(0.5);
 
         if ($contenu === '') {
-            $this->Rect(15, $this->GetY(), self::L_UTILE, $hauteurMin);
-            $this->Ln($hauteurMin + 2.5);
+            $this->reponse('', false);
             return;
         }
 
+        $this->SetFont('Helvetica', '', 9);
         $texte   = $this->txt($contenu);
         $hLigne  = 4.4;
-        $hauteur = max($hauteurMin, $this->nbLignes(self::L_UTILE, $texte) * $hLigne + 3);
+        $hauteur = $this->nbLignes(self::L_UTILE, $texte) * $hLigne + 3;
 
         $y = $this->GetY();
         $this->Rect(15, $y, self::L_UTILE, $hauteur);
@@ -221,23 +225,39 @@ foreach ($reponses as $i => $r) {
     }
 }
 
-// Rend une question (ou sous-question) selon son type.
+// Rend une question (ou sous-question) : seules les réponses retenues sont
+// imprimées, jamais la liste complète des options possibles.
 function rendre_reponse_pdf(EvalFroidePdf $pdf, array $q, array $r): void
 {
     global $EF_SIMPLE, $EF_MULTI;
+
     if ($q['type'] === 'texte') {
-        $pdf->zoneTexte($r[$q['field']]);
+        $pdf->zoneTexte($r[$q['field']] ?? '');
         return;
     }
+
+    $autre = !empty($q['autre']) ? trim((string)($r[$q['autre']] ?? '')) : '';
+
     if ($q['type'] === 'simple') {
-        $code = trim((string)$r[$q['field']]);
-        $pdf->options($EF_SIMPLE[$q['opt']], $code === '' ? [] : [$code]);
+        $code = trim((string)($r[$q['field']] ?? ''));
+        if ($code === '' && $autre === '') {
+            $pdf->reponse('', false);
+            return;
+        }
+        if ($code !== '') {
+            $pdf->reponse(ef_libelle_simple($EF_SIMPLE[$q['opt']], $code));
+        }
     } else {
-        $codes = array_filter(array_map('trim', explode(',', (string)$r[$q['field']])), fn ($c) => $c !== '');
-        $pdf->options($EF_MULTI[$q['opt']], array_values($codes));
+        $libelles = ef_libelles_multi($EF_MULTI[$q['opt']], $r[$q['field']] ?? '');
+        if (!$libelles && $autre === '') {
+            $pdf->reponse('', false);
+            return;
+        }
+        $pdf->reponsesMulti($libelles);
     }
-    if (!empty($q['autre'])) {
-        $pdf->autre($r[$q['autre']]);
+
+    if ($autre !== '') {
+        $pdf->autre($autre);
     }
 }
 

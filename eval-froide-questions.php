@@ -153,7 +153,9 @@ function ef_texte_clean(?string $v, int $max): string
 //   field  : colonne SQL
 //   opt    : clé dans $EF_SIMPLE / $EF_MULTI (types simple/multi)
 //   autre  : colonne du « Autre : … » libre (facultatif)
-//   sub    : sous-questions conditionnelles (même forme)
+//   sub    : sous-questions conditionnelles (même forme). Une sous-question
+//            peut porter 'show' => [codes] : elle ne concerne alors que les
+//            réponses dont la question parente vaut l'un de ces codes.
 $EF_QUESTIONS = [
     ['num' => '2',  'q' => "Depuis la formation, pour quoi avez-vous utilisé l'IA ?",
         'type' => 'multi', 'field' => 'q2_usages', 'opt' => 'q2_usages', 'autre' => 'q2_autre'],
@@ -164,14 +166,16 @@ $EF_QUESTIONS = [
     ['num' => '5',  'q' => "Depuis la formation, avez-vous utilisé l'IA pour une candidature réelle ?",
         'type' => 'simple', 'field' => 'q5_candidature', 'opt' => 'q5_candidature',
         'sub' => [
-            ['q' => "Si oui, pour quoi ?", 'type' => 'multi', 'field' => 'q5_usages', 'opt' => 'q5_usages', 'autre' => 'q5_autre'],
+            ['q' => "Si oui, pour quoi ?", 'type' => 'multi', 'field' => 'q5_usages', 'opt' => 'q5_usages', 'autre' => 'q5_autre',
+                'show' => ['plusieurs', 'une']],
         ]],
     ['num' => '6',  'q' => "Avez-vous changé votre manière de rechercher un emploi ?",
         'type' => 'simple', 'field' => 'q6_changement', 'opt' => 'q6_changement'],
     ['num' => '7',  'q' => "Depuis la formation, avez-vous obtenu un ou plusieurs entretiens d'embauche ?",
         'type' => 'simple', 'field' => 'q7_entretiens', 'opt' => 'q7_entretiens',
         'sub' => [
-            ['q' => "Si oui, avez-vous utilisé l'IA pour en préparer au moins un ?", 'type' => 'simple', 'field' => 'q7_ia_prepa', 'opt' => 'q7_ia_prepa'],
+            ['q' => "Si oui, avez-vous utilisé l'IA pour en préparer au moins un ?", 'type' => 'simple', 'field' => 'q7_ia_prepa', 'opt' => 'q7_ia_prepa',
+                'show' => ['oui']],
         ]],
     ['num' => '8',  'q' => "Avec le recul, cette formation vous est-elle utile dans votre recherche d'emploi ?",
         'type' => 'simple', 'field' => 'q8_utile', 'opt' => 'q8_utile'],
@@ -186,11 +190,24 @@ $EF_QUESTIONS = [
     ['num' => '13', 'q' => "Souhaiteriez-vous poursuivre votre apprentissage de l'IA ?",
         'type' => 'simple', 'field' => 'q13_poursuivre', 'opt' => 'q13_poursuivre',
         'sub' => [
-            ['q' => "Si oui ou peut-être, quels sujets vous intéresseraient ?", 'type' => 'multi', 'field' => 'q13_sujets', 'opt' => 'q13_sujets', 'autre' => 'q13_autre'],
+            ['q' => "Si oui ou peut-être, quels sujets vous intéresseraient ?", 'type' => 'multi', 'field' => 'q13_sujets', 'opt' => 'q13_sujets', 'autre' => 'q13_autre',
+                'show' => ['oui', 'peut_etre']],
         ]],
     ['num' => '14', 'q' => "Depuis la formation, votre situation professionnelle a-t-elle évolué ?",
         'type' => 'simple', 'field' => 'q14_situation', 'opt' => 'q14_situation', 'autre' => 'q14_autre'],
 ];
+
+// Une sous-question conditionnelle ne concerne que certaines réponses : elle
+// n'est pertinente que si la réponse à sa question parente ($parent) figure
+// dans $sub['show']. Sans clé 'show', elle s'applique toujours.
+function ef_sous_question_pertinente(array $parent, array $sub, array $reponse): bool
+{
+    if (empty($sub['show'])) {
+        return true;
+    }
+    $val = trim((string)($reponse[$parent['field']] ?? ''));
+    return in_array($val, $sub['show'], true);
+}
 
 // Libellé d'un code de choix unique ('' si vide ; le code brut si inconnu,
 // pour ne jamais perdre une réponse d'un ancien enregistrement).

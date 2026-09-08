@@ -219,6 +219,10 @@ foreach ($reponses as $i => $r) {
         rendre_reponse_pdf($pdf, $q, $r);
 
         foreach ($q['sub'] ?? [] as $sub) {
+            // Sous-question sans objet pour cette réponse : on ne l'imprime pas.
+            if (!ef_sous_question_pertinente($q, $sub, $r)) {
+                continue;
+            }
             $pdf->question('', $sub['q']);
             rendre_reponse_pdf($pdf, $sub, $r);
         }

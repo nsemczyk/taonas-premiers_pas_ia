@@ -179,6 +179,67 @@ satisfaction, pour l'archivage ou le financeur.
 Le champ Nom / Prénom est facultatif ; le libellé du lien permet de retrouver
 qui a répondu même sans nom saisi.
 
+### Être prévenu par mail à chaque réponse
+
+Facultatif. Une fois configuré, chaque questionnaire rempli déclenche un mail
+portant en pièce jointe **la page PDF de cette réponse seulement** — même mise
+en page que l'export complet — nommée d'après le token du lien utilisé, par
+exemple `a1b2c3d4e5f60718293a4b5c6d7e8f90.pdf`. Le corps du message se limite à
+l'essentiel (qui, quand, compteur de réponses) : le détail est dans le PDF.
+
+Le mail part après l'affichage de la page de remerciement : si le serveur de
+mail est lent ou injoignable, la réponse est déjà enregistrée et le participant
+n'attend pas. Un échec d'envoi est seulement journalisé (`error_log`) et ne
+casse jamais le questionnaire. Si FPDF est absent, le mail part quand même,
+sans pièce jointe et avec les réponses en clair dans le corps.
+
+L'envoi passe par un serveur SMTP authentifié (`lib/smtp.php`), pas par la
+fonction `mail()` de PHP : la plupart des hébergements mutualisés n'ont pas de
+serveur de mail local, et les messages envoyés sans expéditeur authentifié
+finissent en indésirables.
+
+**Avec une adresse Gmail**, le mot de passe du compte ne fonctionne pas : il
+faut un *mot de passe d'application*.
+
+1. Activer la validation en deux étapes sur le compte Google
+   (https://myaccount.google.com/security) — sans elle, l'étape suivante
+   n'apparaît pas.
+2. Créer un mot de passe d'application sur
+   https://myaccount.google.com/apppasswords. Google affiche 16 caractères ;
+   c'est cette valeur qui va dans `SMTP_PASS` (les espaces sont acceptés).
+3. Reporter le bloc « Notification par mail » de `config.example.php` dans
+   `config.php`, avec `MAIL_ACTIF` à `true`, l'adresse Gmail dans `SMTP_USER`
+   et `MAIL_EXPEDITEUR`, et la ou les adresses à prévenir dans `MAIL_DEST`.
+
+Gmail impose que `MAIL_EXPEDITEUR` soit l'adresse du compte `SMTP_USER` (ou un
+alias validé dans « Envoyer des e-mails en tant que ») : toute autre valeur est
+réécrite. Quota : 500 messages par jour, très au-delà des besoins ici.
+
+Vérifier la configuration avant la vraie campagne :
+
+```bash
+php test-mail.php              # envoie un message d'essai
+php test-mail.php derniere     # renvoie la notification de la dernière réponse reçue
+```
+
+Sans accès SSH, les mêmes tests depuis un navigateur :
+`test-mail.php?cle=VOTRE_CLE` et `test-mail.php?cle=VOTRE_CLE&derniere=1`.
+Le script affiche la configuration lue et, en cas d'échec, le message exact du
+serveur. `test-mail.php` n'est utile qu'à la mise en place et peut être
+supprimé ensuite.
+
+Pannes les plus fréquentes :
+
+| Message | Cause |
+|---|---|
+| `535` / authentification refusée | mot de passe d'application incorrect, ou validation en deux étapes non activée |
+| `connexion … impossible` | port 587 (ou 465) bloqué en sortie par l'hébergeur — demander son ouverture, ou utiliser le serveur SMTP de l'hébergeur au lieu de Gmail |
+| `passage en TLS refusé` | extension `openssl` absente, ou certificats racine du système manquants |
+
+Pour un serveur SMTP autre que Gmail, seules changent les valeurs de
+`SMTP_HOTE`, `SMTP_PORT`, `SMTP_SECURITE` (`tls` pour 587, `ssl` pour 465) et
+les identifiants ; le reste est identique.
+
 ### Activer sur une base existante
 
 ```bash
@@ -222,6 +283,10 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `eval-froide-liens.php` | Génération et suivi des liens uniques (protégé par clé) |
 | `eval-froide-resultats.php` | Consultation des réponses à froid : synthèse + détail (protégé par clé) |
 | `export-eval-froide.php` | Export PDF des évaluations à froid, une par page (protégé par clé) |
+| `eval-froide-pdf.php` | Mise en page PDF des évaluations à froid, partagée par l'export et la notification — helpers seuls |
+| `eval-froide-notification.php` | Mail au formateur à chaque réponse à froid, page PDF en pièce jointe (inerte sans configuration) |
+| `test-mail.php` | Vérification de la configuration d'envoi de mail (CLI ou `?cle=`), supprimable après |
+| `lib/smtp.php` | Client SMTP minimal (serveur authentifié, TLS, pièces jointes), sans dépendance |
 | `lib/fpdf/` | Bibliothèque FPDF (fpdf.php + font/), licence permissive, à conserver telle quelle |
 | `style.css` | Styles partagés — Design System TAONAS (palette bleue, Eric Machat / Effra CC, angles vifs) |
 | `assets/` | Polices TAONAS (Eric Machat, Effra CC) et logos ; référencés par `style.css` |

@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/config.php';
 require __DIR__ . '/eval-froide-questions.php';
+require __DIR__ . '/eval-froide-notification.php';
 
 // ---------------------------------------------------------------------------
 // Accès par lien unique : ?t=TOKEN. Aucune entrée depuis l'accueil.
@@ -79,9 +80,14 @@ if ($etat === 'form' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $ph   = implode(', ', array_fill(0, count($cols), '?'));
             $ins  = $pdo->prepare("INSERT INTO eval_froide ($noms) VALUES ($ph)");
             $ins->execute(array_values($cols));
+            $reponse_id = (int)$pdo->lastInsertId();
 
             $pdo->commit();
             $etat = 'merci';
+
+            // Prévenir le formateur par mail, une fois la page rendue.
+            // Inerte tant que la notification n'est pas configurée.
+            ef_notif_programmer($reponse_id);
         }
     } catch (PDOException $e) {
         if ($pdo->inTransaction()) {

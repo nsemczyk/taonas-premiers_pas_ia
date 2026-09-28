@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/horodatage.php';
+require __DIR__ . '/core/horodatage.php';
 
 // Plus de code de session à saisir : la journée suffit à regrouper les avis
 $session = aujourdhui_local();
@@ -94,13 +94,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$erreur) {
         $st = db()->prepare(
             'INSERT INTO satisfaction
-             (session_code, prenom,
+             (formation, session_code, prenom,
               sat_accueil, sat_animation, sat_clarte, sat_contenu, sat_exercices, sat_supports, sat_duree,
               capable_utiliser_ia, capable_prompt, capable_cv, capable_lettre, capable_recherche_emploi,
               rythme, apprecie, ameliore, recommande, interesse_formations, autres_formations_lesquelles)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $st->execute([
+            formation_slug(),
             $session,
             $prenom !== '' ? $prenom : null,
             $notes['sat_accueil'], $notes['sat_animation'], $notes['sat_clarte'], $notes['sat_contenu'],
@@ -182,11 +183,11 @@ textarea.field:focus { border-color:var(--navy); outline:none; }
     <h2>Merci !</h2>
     <p>Votre avis est bien enregistré. Il servira à améliorer la prochaine journée.</p>
     <p style="font-size:2.5rem;margin:8px 0">🌱</p>
-    <a class="btn btn-primary" href="index.php">Retour à l'accueil</a>
+    <a class="btn btn-primary" href="<?= e(avec_f('index.php')) ?>">Retour à l'accueil</a>
   </section>
 <?php else: ?>
 
-  <form method="post" class="card" action="satisfaction.php">
+  <form method="post" class="card" action="<?= e(avec_f('satisfaction.php')) ?>">
 
     <?php if ($erreur): ?><div class="err"><?= e($erreur) ?></div><?php endif; ?>
 

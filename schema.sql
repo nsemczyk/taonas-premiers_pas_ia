@@ -296,3 +296,28 @@ CREATE TABLE IF NOT EXISTS `eval_froide` (
   PRIMARY KEY (`id`),
   KEY `idx_token` (`token_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Plusieurs formations (dossiers formations/<slug>/) : mêmes modifications que
+-- migration-formations.sql, incluses ici pour une installation neuve. Tout ce
+-- qui précède appartient au niveau 1 ('n1', valeur par défaut).
+--
+
+ALTER TABLE `etapes`
+  ADD COLUMN IF NOT EXISTS `formation` varchar(32) NOT NULL DEFAULT 'n1',
+  DROP INDEX IF EXISTS `cle`,
+  ADD UNIQUE KEY IF NOT EXISTS `uq_formation_cle` (`formation`, `cle`);
+
+-- Deux formations peuvent chacune avoir leur « quiz-final »
+ALTER TABLE `quizzes`
+  ADD COLUMN IF NOT EXISTS `formation` varchar(32) NOT NULL DEFAULT 'n1',
+  DROP INDEX IF EXISTS `slug`,
+  ADD UNIQUE KEY IF NOT EXISTS `uq_formation_slug` (`formation`, `slug`);
+
+ALTER TABLE `satisfaction`
+  ADD COLUMN IF NOT EXISTS `formation` varchar(32) NOT NULL DEFAULT 'n1',
+  ADD KEY IF NOT EXISTS `idx_formation` (`formation`, `created_at`);
+
+ALTER TABLE `eval_froide_tokens`
+  ADD COLUMN IF NOT EXISTS `formation` varchar(32) NOT NULL DEFAULT 'n1',
+  ADD KEY IF NOT EXISTS `idx_formation` (`formation`);

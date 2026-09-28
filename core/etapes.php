@@ -1,16 +1,20 @@
 <?php
 // Étapes de la journée : le contenu de l'accueil s'ouvre depuis pilotage.php.
+// Chaque formation a ses propres étapes (colonne `formation`).
 // Ce fichier ne produit aucune sortie, il ne définit que des helpers.
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/formation.php';
 
 // Toutes les étapes, dans l'ordre du déroulé (volumes minuscules : une requête suffit).
-// null si la table n'existe pas encore : migration-etapes.sql n'a pas été jouée.
+// null si la table n'existe pas encore : migration-etapes.sql (ou
+// migration-formations.sql) n'a pas été jouée.
 function etapes_toutes(): ?array
 {
     static $etapes = false;
     if ($etapes === false) {
         try {
-            $etapes = db()->query('SELECT cle, titre, ouverte FROM etapes ORDER BY ordre')->fetchAll();
+            $st = db()->prepare('SELECT cle, titre, ouverte FROM etapes WHERE formation = ? ORDER BY ordre');
+            $st->execute([formation_slug()]);
+            $etapes = $st->fetchAll();
         } catch (PDOException $e) {
             $etapes = null;
         }

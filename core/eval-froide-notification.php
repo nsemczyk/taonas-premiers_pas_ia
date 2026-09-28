@@ -14,10 +14,10 @@
 // Configuration : voir le bloc « Notification par mail » de config.example.php.
 // Sans configuration, tout ce fichier est inerte.
 
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/formation.php';
 require_once __DIR__ . '/eval-froide-questions.php';
 require_once __DIR__ . '/horodatage.php';
-require_once __DIR__ . '/lib/smtp.php';
+require_once __DIR__ . '/../lib/smtp.php';
 // Le PDF est chargé à la demande : sans FPDF, la notification part sans pièce
 // jointe plutôt que de ne pas partir du tout (voir ef_notif_pdf()).
 
@@ -117,6 +117,9 @@ function ef_notif_corps(array $r, array $stats, bool $detail = false): string
     $l = [];
     $l[] = 'Nouvelle évaluation à froid reçue.';
     $l[] = '';
+    if (count(formations_disponibles()) > 1) {
+        $l[] = 'Pour   : ' . formation($r['formation'] ?? null)['titre'];
+    }
     $l[] = 'De     : ' . $qui;
     $l[] = 'Reçue  : ' . moment_local((string)$r['created_at'])->format('d/m/Y à H:i');
     if ($stats['liens'] > 0) {
@@ -125,7 +128,10 @@ function ef_notif_corps(array $r, array $stats, bool $detail = false): string
 
     $url = trim((string)ef_notif_conf('SITE_URL', ''));
     if ($url !== '' && defined('CLE_ANIMATEUR')) {
-        $l[] = 'Bilan  : ' . rtrim($url, '/') . '/eval-froide-resultats.php?cle=' . rawurlencode(CLE_ANIMATEUR);
+        $l[] = 'Bilan  : ' . url_formation(
+            rtrim($url, '/') . '/eval-froide-resultats.php?cle=' . rawurlencode(CLE_ANIMATEUR),
+            formation($r['formation'] ?? null)['slug']
+        );
     }
 
     $l[] = '';
@@ -190,7 +196,7 @@ function ef_notif_envoyer(int $reponse_id): void
     }
 
     $st = db()->prepare(
-        'SELECT r.*, t.libelle, t.token
+        'SELECT r.*, t.libelle, t.token, t.formation
            FROM eval_froide r
            LEFT JOIN eval_froide_tokens t ON t.id = r.token_id
           WHERE r.id = ?'
@@ -201,11 +207,17 @@ function ef_notif_envoyer(int $reponse_id): void
         return;
     }
 
-    // Repères de progression : combien de liens créés, combien de réponses.
+    // Repères de progression, pour la formation de cette réponse : combien de
+    // liens créés, combien de réponses.
     $stats = ['liens' => 0, 'reponses' => 0];
     try {
-        $stats['liens']    = (int)db()->query('SELECT COUNT(*) FROM eval_froide_tokens')->fetchColumn();
-        $stats['reponses'] = (int)db()->query('SELECT COUNT(*) FROM eval_froide')->fetchColumn();
+        $st = db()->prepare('SELECT COUNT(*) FROM eval_froide_tokens WHERE formation = ?');
+        $st->execute([$r['formation']]);
+        $stats['liens'] = (int)$st->fetchColumn();
+        $st = db()->prepare('SELECT COUNT(*) FROM eval_froide e
+                               JOIN eval_froide_tokens t ON t.id = e.token_id WHERE t.formation = ?');
+        $st->execute([$r['formation']]);
+        $stats['reponses'] = (int)$st->fetchColumn();
     } catch (PDOException $e) {
         // Simple confort : on envoie le mail même sans ces compteurs.
     }

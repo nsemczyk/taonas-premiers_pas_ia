@@ -32,6 +32,75 @@ ne coûte rien).
 3. Ouvrir le tableau de bord (pour vous, pas au projecteur pendant le quiz) :
    `https://votredomaine.fr/resultats.php?cle=VOTRE_CLE`
 
+## Plusieurs formations
+
+Le site sert plusieurs formations — niveau 1, niveau 2… — avec un socle commun.
+Trois étages :
+
+- **À la racine** : uniquement des pages (accueil, quiz, pilotage, tableau de
+  bord, exports…). Elles sont communes à toutes les formations.
+- **`core/`** : le socle PHP inclus par les pages (formation courante, étapes,
+  heures locales, briques de l'accueil, évaluation à froid). Jamais servi
+  directement.
+- **`formations/<slug>/`** : ce qui est propre à une formation.
+  `formation.php` porte ses réglages (titre, accroche, quiz bonus),
+  `accueil.php` ses cartes, dans l'ordre de la journée.
+
+La formation se choisit dans l'adresse : `?f=n2`. Sans paramètre, c'est le
+niveau 1 (`n1`) : toutes les adresses d'avant, liens d'évaluation à froid déjà
+envoyés compris, fonctionnent à l'identique. Une adresse avec un `f` inconnu
+répond « Formation inconnue » plutôt que d'enregistrer au mauvais endroit.
+Pour une autre formation par défaut : `define('FORMATION_DEFAUT', 'n2');` dans
+`config.php`.
+
+Côté participants, le QR code d'une journée de niveau 2 pointe donc vers
+`https://votredomaine.fr/?f=n2`. Côté animateur, dès que deux formations sont
+installées, des onglets apparaissent en tête de la télécommande, du tableau de
+bord et des pages d'évaluation à froid ; chaque page ne montre et ne modifie
+que la formation choisie. Un lien d'évaluation à froid, lui, porte sa formation :
+le participant n'a rien à ajouter.
+
+En base, `etapes`, `quizzes`, `satisfaction` et `eval_froide_tokens` ont une
+colonne `formation` ; les résultats de quiz suivent leur quiz, les évaluations à
+froid leur lien. Deux formations peuvent chacune avoir leur `quiz-final` et
+leur étape `quiz`.
+
+### Ajouter une formation
+
+1. Copier `formations/n1/` vers `formations/n2/`, puis adapter `formation.php`
+   (titres) et `accueil.php` (cartes). Les briques disponibles sont dans
+   `core/blocs.php` : `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`. Un
+   dossier préfixé par `_` (brouillon) est ignoré.
+2. Déclarer ses étapes et ses quiz en SQL :
+
+```sql
+INSERT INTO etapes (formation, cle, titre, ordre) VALUES
+  ('n2', 'intro', 'Pour commencer', 1),
+  ('n2', 'quiz',  'Les quiz',       2),
+  ('n2', 'avis',  'Votre avis',     3);
+INSERT INTO quizzes (formation, slug, titre) VALUES ('n2', 'quiz-final', 'Le grand quiz du niveau 2');
+```
+
+Les clés d'étape (`intro`, `quiz`…) sont celles qu'utilise `accueil.php`.
+
+Limite actuelle, assumée : le questionnaire de satisfaction et celui de
+l'évaluation à froid sont encore ceux du niveau 1. Chaque réponse est bien
+rattachée à sa formation, mais les questions sont communes ; elles deviendront
+propres à chaque formation quand celles du niveau 2 seront arrêtées.
+
+### Passer une base existante en multi-formations
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-formations.sql
+```
+
+**D'abord la migration, ensuite le code** : l'ancien code fonctionne encore
+une fois la migration jouée, le nouveau a besoin de la colonne `formation`.
+Tout l'existant est rattaché au niveau 1. À jouer une seule fois avec un compte
+administrateur ; sans effet s'il est rejoué. Au déploiement, supprimer à la
+racine les anciens `etapes.php`, `horodatage.php` et `eval-froide-*.php` (sauf
+`eval-froide-liens.php` et `eval-froide-resultats.php`), désormais dans `core/`.
+
 ## La télécommande
 
 `pilotage.php?cle=VOTRE_CLE` ouvre les sections de l'accueil au rythme du
@@ -57,7 +126,7 @@ le signale — le site ne tombe jamais à cause d'une migration oubliée.
 
 Le serveur stocke les horodatages dans son propre fuseau, souvent UTC. Rien
 n'est modifié en base : la conversion se fait à la lecture, dans
-`horodatage.php`. Les heures affichées — tableau de bord comme PDF — sont donc
+`core/horodatage.php`. Les heures affichées — tableau de bord comme PDF — sont donc
 en heure locale, et le rattachement d'un enregistrement à une journée suit lui
 aussi l'heure locale. Un quiz rempli à 00 h 30 appartient bien au jour même,
 pas à la veille, y compris au changement d'heure.
@@ -101,10 +170,11 @@ sur cette colonne.
 
 ## Ajouter ou modifier un quiz
 
-Tout passe par SQL (phpMyAdmin ou CLI), aucun code à toucher :
+Tout passe par SQL (phpMyAdmin ou CLI), aucun code à toucher. Sans colonne
+`formation`, le quiz va au niveau 1 :
 
 ```sql
-INSERT INTO quizzes (slug, titre) VALUES ('quiz-matin', 'Quiz de mi-journée');
+INSERT INTO quizzes (formation, slug, titre) VALUES ('n1', 'quiz-matin', 'Quiz de mi-journée');
 INSERT INTO questions (quiz_id, ordre, texte, bonne_reponse, explication)
 VALUES (LAST_INSERT_ID(), 1, 'Texte de la question ?', 'VRAI', 'Explication affichée après la réponse.');
 ```
@@ -248,7 +318,7 @@ mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-eval-f
 
 À jouer une seule fois avec un compte administrateur (l'utilisateur applicatif
 ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-même
-(intitulés, options) vit dans `eval-froide-questions.php`.
+(intitulés, options) vit dans `core/eval-froide-questions.php`.
 
 ## RGPD
 
@@ -269,22 +339,27 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `schema.sql` | Tables + quiz final pré-rempli (10 questions) |
 | `migration-etapes.sql` | Ajout de la table `etapes` sur une base existante |
 | `migration-eval-froide.sql` | Ajout des tables de l'évaluation à froid sur une base existante |
+| `migration-formations.sql` | Passage d'une base existante en multi-formations (colonne `formation`) |
 | `config.example.php` | Identifiants BDD + clé animateur + helpers |
-| `etapes.php` | Lecture des étapes ouvertes (aucune sortie, helpers seuls) |
-| `horodatage.php` | Conversion des horodatages serveur vers l'heure locale (helpers seuls) |
+| `formations/<slug>/formation.php` | Réglages d'une formation : titres, accroche, quiz bonus |
+| `formations/<slug>/accueil.php` | Cartes de l'accueil de cette formation, dans l'ordre de la journée |
+| `core/formation.php` | Formation courante (`?f=`), liens qui la conservent, onglets animateur — helpers seuls |
+| `core/blocs.php` | Briques de l'accueil : texte à copier, bloc quiz, bloc avis — helpers seuls |
+| `core/etapes.php` | Lecture des étapes ouvertes de la formation (aucune sortie, helpers seuls) |
+| `core/horodatage.php` | Conversion des horodatages serveur vers l'heure locale (helpers seuls) |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
-| `index.php` | Accueil : sections dévoilées au fur et à mesure |
+| `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |
 | `quiz.php` | Le quiz : prénom → questions une par une → feedback → score |
 | `save.php` | Enregistrement du résultat (POST JSON, validations serveur) |
 | `resultats.php` | Tableau de bord animateur : détail par journée + bilan global (protégé par clé) |
 | `export-satisfaction.php` | Export PDF des questionnaires d'une journée, un par page (protégé par clé) |
-| `eval-froide-questions.php` | Définitions du questionnaire à froid (intitulés, options, disposition) — helpers seuls |
+| `core/eval-froide-questions.php` | Définitions du questionnaire à froid (intitulés, options, disposition) — helpers seuls |
 | `evaluation-froide.php` | Formulaire d'évaluation à froid, accès par lien unique `?t=TOKEN` (invisible depuis l'accueil) |
 | `eval-froide-liens.php` | Génération et suivi des liens uniques (protégé par clé) |
 | `eval-froide-resultats.php` | Consultation des réponses à froid : synthèse + détail (protégé par clé) |
 | `export-eval-froide.php` | Export PDF des évaluations à froid, une par page (protégé par clé) |
-| `eval-froide-pdf.php` | Mise en page PDF des évaluations à froid, partagée par l'export et la notification — helpers seuls |
-| `eval-froide-notification.php` | Mail au formateur à chaque réponse à froid, page PDF en pièce jointe (inerte sans configuration) |
+| `core/eval-froide-pdf.php` | Mise en page PDF des évaluations à froid, partagée par l'export et la notification — helpers seuls |
+| `core/eval-froide-notification.php` | Mail au formateur à chaque réponse à froid, page PDF en pièce jointe (inerte sans configuration) |
 | `test-mail.php` | Vérification de la configuration d'envoi de mail (CLI ou `?cle=`), supprimable après |
 | `lib/smtp.php` | Client SMTP minimal (serveur authentifié, TLS, pièces jointes), sans dépendance |
 | `lib/fpdf/` | Bibliothèque FPDF (fpdf.php + font/), licence permissive, à conserver telle quelle |

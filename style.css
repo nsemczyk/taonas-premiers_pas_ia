@@ -419,3 +419,12 @@ select.listbox option { padding: 8px 6px; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* Choix de la formation, sur les pages de l'animateur (visible dès 2 formations) */
+.formations { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.formations a {
+  padding: 8px 16px; border: 2px solid var(--marque); color: var(--marque);
+  text-decoration: none; font-weight: 600; background: var(--paper);
+}
+.formations a:hover { background: var(--glacier); }
+.formations a.active { background: var(--marque); color: var(--blanc); }

@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/etapes.php';
+require __DIR__ . '/core/etapes.php';
 
 // Accès réservé à l'animateur
 $cle = $_REQUEST['cle'] ?? '';
@@ -12,32 +12,39 @@ if ($cle !== CLE_ANIMATEUR) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
+    // Chaque action ne touche que la formation pilotée
+    $f = formation_slug();
+
     if ($action === 'basculer') {
-        $st = db()->prepare('UPDATE etapes SET ouverte = 1 - ouverte WHERE cle = ?');
-        $st->execute([(string)($_POST['etape'] ?? '')]);
+        $st = db()->prepare('UPDATE etapes SET ouverte = 1 - ouverte WHERE formation = ? AND cle = ?');
+        $st->execute([$f, (string)($_POST['etape'] ?? '')]);
 
     } elseif ($action === 'suivante') {
         // Ouvre la première étape encore fermée, dans l'ordre du déroulé
-        $st = db()->query('SELECT cle FROM etapes WHERE ouverte = 0 ORDER BY ordre LIMIT 1');
+        $st = db()->prepare('SELECT cle FROM etapes WHERE formation = ? AND ouverte = 0 ORDER BY ordre LIMIT 1');
+        $st->execute([$f]);
         if ($suivante = $st->fetchColumn()) {
-            $st = db()->prepare('UPDATE etapes SET ouverte = 1 WHERE cle = ?');
-            $st->execute([$suivante]);
+            $st = db()->prepare('UPDATE etapes SET ouverte = 1 WHERE formation = ? AND cle = ?');
+            $st->execute([$f, $suivante]);
         }
 
     } elseif ($action === 'tout_fermer') {
-        db()->exec('UPDATE etapes SET ouverte = 0');
+        $st = db()->prepare('UPDATE etapes SET ouverte = 0 WHERE formation = ?');
+        $st->execute([$f]);
 
     } elseif ($action === 'quiz') {
-        $st = db()->prepare('UPDATE quizzes SET actif = 1 - actif WHERE slug = ?');
-        $st->execute([(string)($_POST['slug'] ?? '')]);
+        $st = db()->prepare('UPDATE quizzes SET actif = 1 - actif WHERE formation = ? AND slug = ?');
+        $st->execute([$f, (string)($_POST['slug'] ?? '')]);
     }
 
-    header('Location: pilotage.php?cle=' . rawurlencode(CLE_ANIMATEUR), true, 303);
+    header('Location: ' . avec_f('pilotage.php?cle=' . rawurlencode(CLE_ANIMATEUR)), true, 303);
     exit;
 }
 
 $etapes  = etapes_toutes() ?? [];
-$quizzes = db()->query('SELECT slug, titre, actif FROM quizzes ORDER BY id')->fetchAll();
+$st = db()->prepare('SELECT slug, titre, actif FROM quizzes WHERE formation = ? ORDER BY id');
+$st->execute([formation_slug()]);
+$quizzes = $st->fetchAll();
 $reste   = count(array_filter($etapes, fn($e) => !$e['ouverte']));
 ?><!DOCTYPE html>
 <html lang="fr">
@@ -57,6 +64,8 @@ $reste   = count(array_filter($etapes, fn($e) => !$e['ouverte']));
 </header>
 
 <main class="wrap">
+
+  <?= selecteur_formation('pilotage.php?cle=' . rawurlencode(CLE_ANIMATEUR)) ?>
 
   <?php if (!etapes_disponibles()): ?>
   <section class="card">
@@ -125,8 +134,8 @@ $reste   = count(array_filter($etapes, fn($e) => !$e['ouverte']));
 
   <section class="card">
     <h2>Voir la journée</h2>
-    <a class="btn btn-ghost" href="index.php" target="_blank">Ouvrir l'accueil tel que le voient les participants</a>
-    <a class="btn btn-ghost" href="resultats.php?cle=<?= rawurlencode(CLE_ANIMATEUR) ?>">Voir les résultats</a>
+    <a class="btn btn-ghost" href="<?= e(avec_f('index.php')) ?>" target="_blank">Ouvrir l'accueil tel que le voient les participants</a>
+    <a class="btn btn-ghost" href="<?= e(avec_f('resultats.php?cle=' . rawurlencode(CLE_ANIMATEUR))) ?>">Voir les résultats</a>
   </section>
 
 </main>

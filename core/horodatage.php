@@ -6,7 +6,7 @@
 // Pour un serveur ou une formation dans un autre fuseau, ajoutez dans config.php :
 //   define('FUSEAU_SERVEUR', 'UTC');
 //   define('FUSEAU_AFFICHAGE', 'Europe/Paris');
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/formation.php';
 
 if (!defined('FUSEAU_SERVEUR')) {
     define('FUSEAU_SERVEUR', 'UTC');

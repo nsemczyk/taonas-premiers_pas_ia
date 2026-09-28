@@ -6,7 +6,11 @@ $ouvertes = etapes_ouvertes();
 // Suivi léger de l'ouverture des étapes, interrogé toutes les 10 s par la page
 if (($_GET['json'] ?? '') === 'etat') {
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['ouvertes' => $ouvertes]);
+    $etat = ['ouvertes' => $ouvertes];
+    if (equipes()) {
+        $etat['equipe'] = participant_courant()['equipe'] ?? null;   // affectation par le formateur
+    }
+    echo json_encode($etat);
     exit;
 }
 
@@ -49,6 +53,9 @@ $F = formation();
 // Suivi des étapes : le formateur les ouvre depuis pilotage.php
 (function () {
   var OUVERTES = <?= json_encode($ouvertes) ?>;
+<?php if (equipes()): ?>
+  var EQUIPE = <?= json_encode(participant_courant()['equipe'] ?? null) ?>;
+<?php endif; ?>
   var bandeau = document.getElementById('bandeau');
 
   document.getElementById('btn-afficher').addEventListener('click', function () {
@@ -58,6 +65,13 @@ $F = formation();
   setInterval(function () {
     fetch(<?= json_encode(avec_f('index.php?json=etat')) ?>).then(function (r) { return r.json(); }).then(function (d) {
       var nouvelles = d.ouvertes.filter(function (c) { return OUVERTES.indexOf(c) < 0; });
+<?php if (equipes()): ?>
+      if (d.equipe !== EQUIPE) {
+        bandeau.querySelector('span').textContent = 'Votre équipe a changé.';
+        bandeau.hidden = false;
+        return;
+      }
+<?php endif; ?>
       if (nouvelles.length) {
         bandeau.hidden = false;          // on laisse le participant choisir son moment
       } else if (d.ouvertes.length < OUVERTES.length) {

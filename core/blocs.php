@@ -3,6 +3,7 @@
 // formations/<slug>/accueil.php les assemble dans l'ordre de sa journée.
 // Aucune sortie : ces fonctions rendent du HTML, à afficher avec echo / <?=.
 require_once __DIR__ . '/etapes.php';
+require_once __DIR__ . '/participants.php';
 
 // Bouton « Copier » + confirmation + texte dépliable. Le script de copie est
 // dans index.php ; $id doit être unique sur la page.
@@ -51,5 +52,47 @@ function bloc_avis(string $cle = 'avis'): string
          . '    <h2>Votre avis</h2>' . "\n"
          . '    <p class="lead">En fin de journée : 2 minutes, anonyme, pour améliorer la prochaine session.</p>' . "\n"
          . '    <a class="btn btn-ghost" href="' . e(avec_f('satisfaction.php')) . '">Donner mon avis sur la journée</a>' . "\n"
+         . '  </section>';
+}
+
+// Accueil du participant : son prénom à l'arrivée, puis son équipe dès que le
+// formateur l'a placé. Hors étapes : c'est la première chose à faire.
+function bloc_arrivee(): string
+{
+    if (!participants_table_ok()) {
+        return '';
+    }
+    $p = participant_courant();
+
+    if (!$p) {
+        return '<section class="card">' . "\n"
+             . '    <h2>Bienvenue !</h2>' . "\n"
+             . '    <p class="lead">Pour commencer, indiquez votre prénom : il servira à former les équipes.</p>' . "\n"
+             . '    <form method="post" action="' . e(avec_f('arrivee.php')) . '">' . "\n"
+             . '      <input type="hidden" name="action" value="arriver">' . "\n"
+             . '      <label class="field" for="prenom-arrivee">Votre prénom</label>' . "\n"
+             . '      <input class="field" id="prenom-arrivee" name="prenom" type="text" maxlength="40" required' . "\n"
+             . '             autocomplete="given-name" placeholder="Par exemple : Sam">' . "\n"
+             . '      <button class="btn btn-primary">C\'est moi !</button>' . "\n"
+             . '    </form>' . "\n"
+             . '  </section>';
+    }
+
+    $h = '<section class="card">' . "\n"
+       . '    <h2>Bonjour ' . e($p['prenom']) . ' !</h2>' . "\n";
+    if (equipe_existe($p['equipe'])) {
+        // Par id, pas par prénom : deux Marie peuvent être dans la même équipe
+        $autres = array_column(array_filter(participants_seance(),
+            fn($x) => $x['equipe'] === $p['equipe'] && (int)$x['id'] !== (int)$p['id']), 'prenom');
+        $h .= '    <p class="lead">Vous êtes dans l\'équipe ' . badge_equipe($p['equipe']) . '</p>' . "\n"
+            . '    <p>' . ($autres ? 'Avec : ' . e(implode(', ', $autres)) . '.' : 'Vos coéquipiers arrivent.') . '</p>' . "\n";
+    } else {
+        $h .= '    <p class="lead">Le formateur va constituer les équipes : votre équipe s\'affichera ici.</p>' . "\n";
+    }
+    return $h
+         . '    <form method="post" action="' . e(avec_f('arrivee.php')) . '">' . "\n"
+         . '      <input type="hidden" name="action" value="oublier">' . "\n"
+         . '      <button class="btn-lien">Ce n\'est pas moi</button>' . "\n"
+         . '    </form>' . "\n"
          . '  </section>';
 }

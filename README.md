@@ -69,7 +69,8 @@ leur étape `quiz`.
 
 1. Copier `formations/n1/` vers `formations/n2/`, puis adapter `formation.php`
    (titres) et `accueil.php` (cartes). Les briques disponibles sont dans
-   `core/blocs.php` : `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`. Un
+   `core/blocs.php` : `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`,
+   `bloc_arrivee()`. Un
    dossier préfixé par `_` (brouillon) est ignoré.
 2. Déclarer ses étapes et ses quiz en SQL :
 
@@ -100,6 +101,45 @@ Tout l'existant est rattaché au niveau 1. À jouer une seule fois avec un compt
 administrateur ; sans effet s'il est rejoué. Au déploiement, supprimer à la
 racine les anciens `etapes.php`, `horodatage.php` et `eval-froide-*.php` (sauf
 `eval-froide-liens.php` et `eval-froide-resultats.php`), désormais dans `core/`.
+
+## Participants et équipes
+
+Pour les formations qui en déclarent (le niveau 2), chaque participant indique
+son prénom en arrivant sur l'accueil. Son téléphone garde un cookie qui le
+relie à lui pour la journée : pas de compte, pas de mot de passe, et le lien
+tombe de lui-même le lendemain. Ce même lien servira aux exercices individuels
+et d'équipe.
+
+`equipes.php?cle=VOTRE_CLE&f=n2`, accessible aussi depuis la télécommande, liste
+les arrivées en direct. Toucher une équipe y place la personne, toucher de
+nouveau son équipe l'en retire. Une équipe complète refuse un membre de plus.
+« Au hasard en 2 (ou 3) équipes » répartit tout le monde de façon équilibrée.
+La croix retire de la séance un doublon ou une erreur de prénom. Côté
+participant, l'équipe et les coéquipiers s'affichent sur l'accueil, avec un
+bandeau quand l'affectation change. Un participant qui s'est trompé de prénom
+touche « Ce n'est pas moi » et se déclare de nouveau.
+
+Les équipes ne sont pas en base : elles sont déclarées dans
+`formations/<slug>/formation.php`.
+
+```php
+'equipes'    => [
+    'glacier' => ['nom' => 'Glacier', 'couleur' => '#47B4E8'],
+    'indigo'  => ['nom' => 'Indigo',  'couleur' => '#292F6C'],
+    'olive'   => ['nom' => 'Olive',   'couleur' => '#636E24'],
+],
+'equipe_max' => 5,
+```
+
+Le nom et la couleur se changent librement. La clé (`glacier`…) est stockée
+en base : la changer en cours de journée détache les membres de l'équipe.
+Une séance correspond à une formation et une journée en heure locale.
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-equipes.sql
+```
+
+À jouer une seule fois, avec un compte administrateur. Sans effet s'il est rejoué.
 
 ## La télécommande
 
@@ -331,6 +371,8 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 ```
 
 - Suppression à la demande : `DELETE FROM resultats WHERE DATE(created_at)='2026-07-29' AND prenom='...';`
+- Participants (prénom et équipe du jour) : purge avec le même cron,
+  `DELETE FROM participants WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
 
 ## Fichiers
 
@@ -339,14 +381,18 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `schema.sql` | Tables + quiz final pré-rempli (10 questions) |
 | `migration-etapes.sql` | Ajout de la table `etapes` sur une base existante |
 | `migration-eval-froide.sql` | Ajout des tables de l'évaluation à froid sur une base existante |
+| `migration-equipes.sql` | Table des participants de la séance (prénom, équipe) sur une base existante |
 | `migration-formations.sql` | Passage d'une base existante en multi-formations (colonne `formation`) |
 | `config.example.php` | Identifiants BDD + clé animateur + helpers |
 | `formations/<slug>/formation.php` | Réglages d'une formation : titres, accroche, quiz bonus |
 | `formations/<slug>/accueil.php` | Cartes de l'accueil de cette formation, dans l'ordre de la journée |
 | `core/formation.php` | Formation courante (`?f=`), liens qui la conservent, onglets animateur — helpers seuls |
 | `core/blocs.php` | Briques de l'accueil : texte à copier, bloc quiz, bloc avis — helpers seuls |
+| `core/participants.php` | Participant de ce téléphone, participants de la séance, équipes — helpers seuls |
 | `core/etapes.php` | Lecture des étapes ouvertes de la formation (aucune sortie, helpers seuls) |
 | `core/horodatage.php` | Conversion des horodatages serveur vers l'heure locale (helpers seuls) |
+| `arrivee.php` | Arrivée d'un participant (prénom → cookie de séance), et « Ce n'est pas moi » |
+| `equipes.php` | Constitution des équipes de la séance, en direct (protégé par clé) |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
 | `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |
 | `quiz.php` | Le quiz : prénom → questions une par une → feedback → score |

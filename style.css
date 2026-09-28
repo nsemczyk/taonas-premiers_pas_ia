@@ -428,3 +428,32 @@ select.listbox option { padding: 8px 6px; }
 }
 .formations a:hover { background: var(--glacier); }
 .formations a.active { background: var(--marque); color: var(--blanc); }
+
+/* Équipes : la couleur de chaque équipe arrive par la variable --equipe */
+.equipe-badge {
+  display: inline-block; padding: 2px 12px; font-weight: 600;
+  background: var(--equipe); color: var(--blanc);
+}
+.equipe-carte { border-left: 8px solid var(--equipe); }
+.membres { margin: 8px 0 0; padding-left: 20px; font-size: 1.05rem; }
+.placement {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 10px 0; border-bottom: 1px solid var(--gris);
+}
+.placement-prenom { flex: 1 1 120px; font-weight: 600; color: var(--nuit); }
+.placement-choix { display: flex; flex-wrap: wrap; gap: 6px; }
+.placement-choix form { margin: 0; }
+.choix-equipe, .choix-suppr {
+  font: inherit; font-size: .95rem; padding: 8px 12px; cursor: pointer;
+  border: 2px solid var(--equipe, var(--gris)); background: var(--paper); color: var(--nuit);
+}
+.choix-equipe.est-choisie { background: var(--equipe); color: var(--blanc); }
+.choix-equipe:disabled { opacity: .35; cursor: not-allowed; }
+.choix-suppr { border-color: var(--gris); color: var(--brique); }
+.btn-lien {
+  background: none; border: none; padding: 0; margin-top: 12px; font: inherit;
+  font-size: .9rem; color: var(--indigo); text-decoration: underline; cursor: pointer;
+}
+.actions-pile { display: grid; gap: 10px; }
+.actions-pile form { margin: 0; }
+.actions-pile .btn { margin: 0; }

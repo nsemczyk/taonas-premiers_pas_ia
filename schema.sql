@@ -321,3 +321,21 @@ ALTER TABLE `satisfaction`
 ALTER TABLE `eval_froide_tokens`
   ADD COLUMN IF NOT EXISTS `formation` varchar(32) NOT NULL DEFAULT 'n1',
   ADD KEY IF NOT EXISTS `idx_formation` (`formation`);
+
+--
+-- Participants de la séance et équipes : même table que migration-equipes.sql,
+-- incluse ici pour une installation neuve.
+--
+
+CREATE TABLE IF NOT EXISTS `participants` (
+  `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `formation`  VARCHAR(32)  NOT NULL,
+  `seance`     DATE         NOT NULL,                  -- journée locale
+  `prenom`     VARCHAR(40)  NOT NULL,
+  `jeton`      CHAR(32)     NOT NULL,                  -- cookie du téléphone, 16 octets aléatoires en hexadécimal
+  `equipe`     VARCHAR(16)  DEFAULT NULL,              -- clé d'équipe de formation.php, NULL = pas encore placé
+  `created_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_jeton` (`jeton`),
+  KEY `idx_seance` (`formation`, `seance`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

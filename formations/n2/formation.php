@@ -1,0 +1,17 @@
+<?php
+// Niveau 2 — titre provisoire, à remplacer.
+// Réglages lus par core/formation.php ; le contenu de l'accueil est dans accueil.php.
+return [
+    'titre'       => 'IA générative — niveau 2',
+    'titre_court' => 'Niveau 2',
+    'accroche'    => 'Les exercices de la journée, seul ou en équipe',
+    'quiz_bonus'  => null,
+    // Équipes de la séance : clé stable (stockée en base) => nom affiché et couleur.
+    // Renommer une équipe ne casse rien ; changer sa clé détache ses membres.
+    'equipes'     => [
+        'glacier' => ['nom' => 'Glacier', 'couleur' => '#47B4E8'],
+        'indigo'  => ['nom' => 'Indigo',  'couleur' => '#292F6C'],
+        'olive'   => ['nom' => 'Olive',   'couleur' => '#636E24'],
+    ],
+    'equipe_max'  => 5,
+];

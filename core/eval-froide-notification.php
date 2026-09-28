@@ -129,8 +129,9 @@ function ef_notif_corps(array $r, array $stats, bool $detail = false): string
     $url = trim((string)ef_notif_conf('SITE_URL', ''));
     if ($url !== '' && defined('CLE_ANIMATEUR')) {
         $l[] = 'Bilan  : ' . url_formation(
-            rtrim($url, '/') . '/eval-froide-resultats.php?cle=' . rawurlencode(CLE_ANIMATEUR),
-            formation($r['formation'] ?? null)['slug']
+            'eval-froide-resultats.php?cle=' . rawurlencode(CLE_ANIMATEUR),
+            formation($r['formation'] ?? null)['slug'],
+            rtrim($url, '/')
         );
     }
 

@@ -1,0 +1,37 @@
+# Adresses par formation : /n2/equipes.php sert equipes.php pour le niveau 2.
+#
+#   /n2          → redirection vers /n2/
+#   /n2/         → accueil du niveau 2 (index.php)
+#   /n2/page.php → page.php, formation n2 (variable FORMATION_URL, lue par core/formation.php)
+#   /n2/style.css, /n2/assets/… → les fichiers communs
+#
+# Les adresses d'avant restent valables : /equipes.php (niveau 1) et
+# /equipes.php?f=n2. Sans mod_rewrite (ou avec AllowOverride None), ce fichier
+# est ignoré et le site retombe de lui-même sur ?f=.
+# Fonctionne à la racine du domaine comme dans un sous-dossier, sans RewriteBase.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Adresse de base du site, quel que soit son emplacement
+    RewriteCond %{REQUEST_URI}::$1 ^(.*?/)(.*)::\2$
+    RewriteRule ^(.*)$ - [E=BASE:%1]
+
+    # Signale à PHP que les adresses /<formation>/ sont disponibles
+    RewriteRule ^ - [E=URL_PROPRES:1]
+
+    # /n2 → /n2/ : sans la barre finale, les liens relatifs sortiraient de la formation
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([a-z0-9-]+)$ %{ENV:BASE}$1/ [R=301,L]
+
+    # /n2/… → fichier commun, formation mémorisée pour PHP
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([a-z0-9-]+)/(.*)$ %{ENV:BASE}$2 [E=FORMATION_URL:$1,L]
+</IfModule>
+
+# Identifiants de la base : jamais servis, même vides à l'affichage
+<Files "config.php">
+    Require all denied
+</Files>

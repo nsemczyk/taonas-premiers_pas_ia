@@ -16,10 +16,11 @@ cp config.example.php config.php   # puis renseigner DB_* et CLE_ANIMATEUR
 # déposer le tout dans le vhost, HTTPS obligatoire (navigator.clipboard l'exige)
 ```
 
-`config.php` ne doit pas être versionné. Vérifier que Apache sert bien les
-`.php` et que `config.php` n'est pas lisible en direct (il ne produit aucune
-sortie, mais un `<FilesMatch "^config\.php$"> Require all denied </FilesMatch>`
-ne coûte rien).
+`config.php` ne doit pas être versionné. Le `.htaccess` fourni en interdit
+l'accès direct et donne les adresses par formation (`/n2/…`). Pour qu'il soit
+lu, le vhost doit autoriser `AllowOverride All` (ou au moins `FileInfo AuthConfig`)
+et `mod_rewrite` doit être actif (`a2enmod rewrite`). Sans eux, le site
+fonctionne quand même, avec des adresses en `?f=n2`.
 
 ## Jour de formation
 
@@ -46,15 +47,23 @@ Trois étages :
   `formation.php` porte ses réglages (titre, accroche, quiz bonus),
   `accueil.php` ses cartes, dans l'ordre de la journée.
 
-La formation se choisit dans l'adresse : `?f=n2`. Sans paramètre, c'est le
-niveau 1 (`n1`) : toutes les adresses d'avant, liens d'évaluation à froid déjà
-envoyés compris, fonctionnent à l'identique. Une adresse avec un `f` inconnu
-répond « Formation inconnue » plutôt que d'enregistrer au mauvais endroit.
+La formation se choisit dans l'adresse, comme un dossier : `/n2/`,
+`/n2/equipes.php`, `/n2/pilotage.php`… Ces dossiers n'existent pas sur le
+disque : le `.htaccess` sert les pages communes de la racine en leur indiquant
+la formation. À la racine, sans préfixe, c'est le niveau 1 (`n1`) : toutes les
+adresses d'avant, liens d'évaluation à froid déjà envoyés compris, fonctionnent
+à l'identique, et `/n1/…` y mène aussi. Une formation inconnue répond
+« Formation inconnue » plutôt que d'enregistrer au mauvais endroit.
+
+Sans `mod_rewrite` (serveur intégré de PHP, hébergement qui l'interdit), la même
+formation s'atteint par `?f=n2` : `/equipes.php?f=n2`. Cette forme reste
+acceptée partout, et les pages s'adaptent seules au mode disponible. Le site
+fonctionne à la racine du domaine comme dans un sous-dossier, sans réglage.
 Pour une autre formation par défaut : `define('FORMATION_DEFAUT', 'n2');` dans
 `config.php`.
 
 Côté participants, le QR code d'une journée de niveau 2 pointe donc vers
-`https://votredomaine.fr/?f=n2`. Côté animateur, dès que deux formations sont
+`https://votredomaine.fr/n2/`. Côté animateur, dès que deux formations sont
 installées, des onglets apparaissent en tête de la télécommande, du tableau de
 bord et des pages d'évaluation à froid ; chaque page ne montre et ne modifie
 que la formation choisie. Un lien d'évaluation à froid, lui, porte sa formation :
@@ -110,7 +119,7 @@ relie à lui pour la journée : pas de compte, pas de mot de passe, et le lien
 tombe de lui-même le lendemain. Ce même lien servira aux exercices individuels
 et d'équipe.
 
-`equipes.php?cle=VOTRE_CLE&f=n2`, accessible aussi depuis la télécommande, liste
+`/n2/equipes.php?cle=VOTRE_CLE`, accessible aussi depuis la télécommande, liste
 les arrivées en direct. Toucher une équipe y place la personne, toucher de
 nouveau son équipe l'en retire. Une équipe complète refuse un membre de plus.
 « Au hasard en 2 (ou 3) équipes » répartit tout le monde de façon équilibrée.
@@ -386,7 +395,8 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `config.example.php` | Identifiants BDD + clé animateur + helpers |
 | `formations/<slug>/formation.php` | Réglages d'une formation : titres, accroche, quiz bonus |
 | `formations/<slug>/accueil.php` | Cartes de l'accueil de cette formation, dans l'ordre de la journée |
-| `core/formation.php` | Formation courante (`?f=`), liens qui la conservent, onglets animateur — helpers seuls |
+| `.htaccess` | Adresses par formation (`/n2/…` → pages communes) et accès interdit à `config.php` |
+| `core/formation.php` | Formation courante (`/n2/…` ou `?f=`), liens qui la conservent, onglets animateur — helpers seuls |
 | `core/blocs.php` | Briques de l'accueil : texte à copier, bloc quiz, bloc avis — helpers seuls |
 | `core/participants.php` | Participant de ce téléphone, participants de la séance, équipes — helpers seuls |
 | `core/etapes.php` | Lecture des étapes ouvertes de la formation (aucune sortie, helpers seuls) |

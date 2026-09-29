@@ -4,6 +4,7 @@
 // Aucune sortie : ces fonctions rendent du HTML, à afficher avec echo / <?=.
 require_once __DIR__ . '/etapes.php';
 require_once __DIR__ . '/participants.php';
+require_once __DIR__ . '/objectifs.php';
 
 // Bouton « Copier » + confirmation + texte dépliable. Le script de copie est
 // dans index.php ; $id doit être unique sur la page.
@@ -95,4 +96,29 @@ function bloc_arrivee(): string
          . '      <button class="btn-lien">Ce n\'est pas moi</button>' . "\n"
          . '    </form>' . "\n"
          . '  </section>';
+}
+
+// Mur des objectifs : le bouton vers objectif.php, derrière l'étape $cle
+function bloc_objectif(string $cle = 'objectifs'): string
+{
+    if (!etape_ouverte($cle)) {
+        return carte_verrouillee($cle);
+    }
+    $p        = participant_courant();
+    $objectif = $p ? objectif_de((int)$p['id']) : null;
+
+    $h = '<section class="card">' . "\n"
+       . '    <h2>' . e(etape_titre($cle)) . '</h2>' . "\n";
+    if (!$p) {
+        return $h . '    <p class="lead">Indiquez d\'abord votre prénom ci-dessus : il signera votre post-it.</p>' . "\n"
+                  . '  </section>';
+    }
+    if ($objectif) {
+        return $h . '    <p class="lead">Votre post-it est au tableau : « ' . e($objectif['texte']) . ' »</p>' . "\n"
+                  . '    <a class="btn btn-ghost" href="' . e(avec_f('objectif.php')) . '">Modifier mon objectif</a>' . "\n"
+                  . '  </section>';
+    }
+    return $h . '    <p class="lead">« ' . e(OBJECTIF_AMORCE) . '… » Complétez la phrase : votre post-it rejoindra ceux du groupe au tableau.</p>' . "\n"
+              . '    <a class="btn btn-primary" href="' . e(avec_f('objectif.php')) . '">Écrire mon objectif du jour</a>' . "\n"
+              . '  </section>';
 }

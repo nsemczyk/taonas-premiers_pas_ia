@@ -339,3 +339,29 @@ CREATE TABLE IF NOT EXISTS `participants` (
   UNIQUE KEY `uq_jeton` (`jeton`),
   KEY `idx_seance` (`formation`, `seance`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Mur des objectifs : même contenu que migration-objectifs.sql, inclus ici
+-- pour une installation neuve.
+--
+
+CREATE TABLE IF NOT EXISTS `objectifs` (
+  `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `participant_id` INT UNSIGNED NOT NULL,
+  `texte`          VARCHAR(160) NOT NULL,
+  `couleur`        TINYINT UNSIGNED NOT NULL DEFAULT 0,   -- rang dans la palette pastel
+  `x`              DECIMAL(6,4) NOT NULL DEFAULT 0.1,     -- coin haut-gauche, fraction de la largeur du tableau
+  `y`              DECIMAL(6,4) NOT NULL DEFAULT 0.1,     -- fraction de la hauteur
+  `rotation`       DECIMAL(5,1) NOT NULL DEFAULT 0,       -- degrés
+  `z`              INT UNSIGNED NOT NULL DEFAULT 0,       -- ordre d'empilement
+  `created_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_participant` (`participant_id`),
+  CONSTRAINT `fk_objectif_participant` FOREIGN KEY (`participant_id`)
+    REFERENCES `participants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- L'étape qui ouvre l'exercice sur l'accueil du niveau 2, fermée par défaut
+INSERT IGNORE INTO `etapes` (`formation`, `cle`, `titre`, `ordre`, `ouverte`) VALUES
+('n2', 'objectifs', 'Mon objectif du jour', 1, 0);

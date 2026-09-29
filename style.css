@@ -457,3 +457,65 @@ select.listbox option { padding: 8px 6px; }
 .actions-pile { display: grid; gap: 10px; }
 .actions-pile form { margin: 0; }
 .actions-pile .btn { margin: 0; }
+
+/* ------------------------------------------------------------------ Post-its
+   Écriture manuscrite embarquée (Caveat, licence OFL : assets/fonts/Caveat-OFL.txt).
+   Tout le post-it se dimensionne sur --taille : aperçu mobile comme tableau. */
+@font-face { font-family:'Caveat'; src:url('assets/fonts/Caveat-Regular.woff2') format('woff2'); font-weight:400 500; font-style:normal; font-display:swap; }
+@font-face { font-family:'Caveat'; src:url('assets/fonts/Caveat-Bold.woff2') format('woff2'); font-weight:600 900; font-style:normal; font-display:swap; }
+
+.postit {
+  --taille: 240px;
+  --papier: #FFF3A0;
+  position: relative;
+  box-sizing: border-box;
+  width: var(--taille);
+  height: var(--taille);
+  padding: 0.09em 0.1em 0.07em;
+  font-size: calc(var(--taille) / 10);
+  font-family: 'Caveat', 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
+  color: #1f2340;
+  display: flex; flex-direction: column;
+  transform: rotate(var(--rotation, 0deg));
+  /* Bande adhésive un peu plus sombre en haut, papier légèrement ombré en bas */
+  background:
+    linear-gradient(to bottom, rgba(0,0,0,.06), rgba(0,0,0,0) 14%),
+    linear-gradient(to top, rgba(0,0,0,.05), rgba(0,0,0,0) 30%),
+    var(--papier);
+  box-shadow:
+    0 1px 1px rgba(0,0,0,.12),
+    0 0.35em 0.5em -0.2em rgba(0,0,0,.28),
+    0 0.9em 1em -0.6em rgba(0,0,0,.25);
+}
+/* Coin bas-droit qui se décolle légèrement */
+.postit::after {
+  content: ''; position: absolute; right: 0; bottom: 0;
+  width: 13%; height: 13%;
+  background: linear-gradient(135deg, var(--papier) 45%, rgba(0,0,0,.10) 50%, rgba(255,255,255,.35) 56%, rgba(0,0,0,0) 60%);
+  pointer-events: none;
+}
+.postit p { margin: 0; }
+.postit-amorce { font-size: .52em; line-height: 1.05; opacity: .72; }
+.postit-texte {
+  flex: 1; margin-top: .18em !important;
+  font-size: 1.05em; line-height: 1.02; font-weight: 600;
+  overflow-wrap: anywhere; overflow: hidden;
+}
+.postit-texte[data-longueur="court"] { font-size: 1.3em; }
+.postit-texte[data-longueur="long"]  { font-size: .86em; }
+.postit-prenom {
+  align-self: flex-end; margin-right: 1.3em !important;   /* à côté du coin décollé, pas dessous */
+  position: relative; z-index: 1;
+  font-size: .72em; font-weight: 700; transform: rotate(-4deg);
+}
+.postit-prenom::before { content: '— '; }
+
+.postit-apercu { --taille: min(72vw, 260px); --rotation: -2deg; margin: 6px auto 24px; }
+.compteur { color: var(--indigo); font-size: .85rem; margin: 4px 0 12px; text-align: right; }
+.colle { border-left: 8px solid var(--olive); }
+.err { background: #F6E3DA; border-left: 6px solid var(--brique); padding: 12px 14px; margin-bottom: 16px; font-weight: 600; }
+textarea.saisie {
+  width: 100%; box-sizing: border-box; min-height: 96px; padding: 12px 14px;
+  font: inherit; font-size: 1.05rem; border: 2px solid var(--gris); background: var(--paper);
+}
+textarea.saisie:focus { border-color: var(--marque); outline: none; }

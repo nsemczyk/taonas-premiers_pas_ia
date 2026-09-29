@@ -132,11 +132,14 @@ $reste   = count(array_filter($etapes, fn($e) => !$e['ouverte']));
     </p>
   </section>
 
-  <?php if (formation()['equipes'] ?? []): ?>
+  <?php if ($outils = formation()['outils'] ?? []): ?>
   <section class="card">
-    <h2>Les équipes</h2>
-    <p class="lead">Les participants se déclarent sur l'accueil ; vous les placez dans les équipes.</p>
-    <a class="btn btn-primary" href="<?= e(avec_f('equipes.php?cle=' . rawurlencode(CLE_ANIMATEUR))) ?>">Constituer les équipes</a>
+    <h2>Outils de la journée</h2>
+    <p class="lead">Déclarés dans la configuration de la formation ; chacun s'ouvre dans un nouvel onglet.</p>
+    <?php foreach ($outils as $page => $libelle): ?>
+    <a class="btn btn-primary" target="_blank"
+       href="<?= e(avec_f($page . '?cle=' . rawurlencode(CLE_ANIMATEUR))) ?>"><?= e($libelle) ?></a>
+    <?php endforeach; ?>
   </section>
   <?php endif; ?>
 

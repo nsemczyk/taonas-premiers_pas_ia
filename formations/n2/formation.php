@@ -14,4 +14,9 @@ return [
         'olive'   => ['nom' => 'Olive',   'couleur' => '#636E24'],
     ],
     'equipe_max'  => 5,
+    // Pages de l'animateur proposées sur la télécommande (page => libellé du bouton)
+    'outils'      => [
+        'equipes.php' => 'Constituer les équipes',
+        'mur.php'     => 'Afficher le mur des objectifs',
+    ],
 ];

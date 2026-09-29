@@ -79,7 +79,7 @@ leur étape `quiz`.
 1. Copier `formations/n1/` vers `formations/n2/`, puis adapter `formation.php`
    (titres) et `accueil.php` (cartes). Les briques disponibles sont dans
    `core/blocs.php` : `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`,
-   `bloc_arrivee()`. Un
+   `bloc_arrivee()`, `bloc_objectif()`. Un
    dossier préfixé par `_` (brouillon) est ignoré.
 2. Déclarer ses étapes et ses quiz en SQL :
 
@@ -149,6 +149,53 @@ mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-equipe
 ```
 
 À jouer une seule fois, avec un compte administrateur. Sans effet s'il est rejoué.
+
+## Le mur des objectifs (niveau 2)
+
+En début de séance, chaque stagiaire complète la phrase « Ce soir, je veux
+repartir avec une IA qui m'aide à… ». Sa réponse devient un post-it sur un
+tableau blanc projeté.
+
+**Côté stagiaire** : sur l'accueil, le bouton « Écrire mon objectif du jour »
+apparaît quand l'étape « Mon objectif du jour » est ouverte depuis la
+télécommande. Il faut s'être déclaré (prénom) juste au-dessus : le prénom signe
+le post-it. Un aperçu du post-it suit la saisie. L'objectif reste modifiable tant
+que l'étape est ouverte ; le post-it se met alors à jour au tableau sans bouger.
+
+**Côté formateur** : `/n2/mur.php?cle=VOTRE_CLE`, aussi accessible depuis la
+télécommande, bouton « Afficher le mur des objectifs ».
+
+- Les post-its arrivent en direct (toutes les 4 s), collés au hasard sur une
+  zone libre, légèrement de travers, dans des couleurs pastel variées.
+- **Glisser** un post-it le déplace et le met au premier plan.
+- La **poignée ronde** (coin haut droit, au survol) le fait tourner ; avec Maj
+  enfoncé, par crans de 15°.
+- Un **double-clic** l'affiche en grand, pour le lire à voix haute. Clic ou
+  Échap pour refermer.
+- La **croix** (coin haut gauche) le retire du tableau.
+- **Image PNG** télécharge le tableau tel quel. **PDF** ouvre l'impression, en
+  paysage : choisir « Enregistrer au format PDF ».
+
+Positions, rotations et ordre d'empilement sont enregistrés : un
+rechargement ou un autre PC retrouvent le tableau à l'identique. Les positions
+sont relatives au tableau, qui garde un format 16/9 sur tout écran.
+
+La police manuscrite (Caveat, licence OFL) et html2canvas (licence MIT, pour
+l'export PNG) sont embarqués dans le site : le mur fonctionne sans Internet en
+salle, pourvu que le serveur soit joignable.
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-objectifs.sql
+```
+
+À jouer une seule fois, après `migration-equipes.sql`. Crée la table
+`objectifs` et l'étape « Mon objectif du jour » du niveau 2, fermée. Sans effet
+s'il est rejoué. Supprimer un participant (croix de `equipes.php`) retire aussi
+son post-it.
+
+Les boutons de la carte « Outils de la journée » de la télécommande sont
+déclarés dans `formations/<slug>/formation.php`, clé `outils`
+(`'mur.php' => 'Afficher le mur des objectifs'`).
 
 ## La télécommande
 
@@ -382,6 +429,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 - Suppression à la demande : `DELETE FROM resultats WHERE DATE(created_at)='2026-07-29' AND prenom='...';`
 - Participants (prénom et équipe du jour) : purge avec le même cron,
   `DELETE FROM participants WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
+  Les post-its du mur des objectifs partent avec leur participant.
 
 ## Fichiers
 
@@ -391,6 +439,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `migration-etapes.sql` | Ajout de la table `etapes` sur une base existante |
 | `migration-eval-froide.sql` | Ajout des tables de l'évaluation à froid sur une base existante |
 | `migration-equipes.sql` | Table des participants de la séance (prénom, équipe) sur une base existante |
+| `migration-objectifs.sql` | Table du mur des objectifs et étape correspondante du niveau 2 |
 | `migration-formations.sql` | Passage d'une base existante en multi-formations (colonne `formation`) |
 | `config.example.php` | Identifiants BDD + clé animateur + helpers |
 | `formations/<slug>/formation.php` | Réglages d'une formation : titres, accroche, quiz bonus |
@@ -399,10 +448,13 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `core/formation.php` | Formation courante (`/n2/…` ou `?f=`), liens qui la conservent, onglets animateur — helpers seuls |
 | `core/blocs.php` | Briques de l'accueil : texte à copier, bloc quiz, bloc avis — helpers seuls |
 | `core/participants.php` | Participant de ce téléphone, participants de la séance, équipes — helpers seuls |
+| `core/objectifs.php` | Post-its du mur : lecture, emplacement libre, couleurs — helpers seuls |
 | `core/etapes.php` | Lecture des étapes ouvertes de la formation (aucune sortie, helpers seuls) |
 | `core/horodatage.php` | Conversion des horodatages serveur vers l'heure locale (helpers seuls) |
 | `arrivee.php` | Arrivée d'un participant (prénom → cookie de séance), et « Ce n'est pas moi » |
 | `equipes.php` | Constitution des équipes de la séance, en direct (protégé par clé) |
+| `objectif.php` | Saisie de l'objectif du jour par le stagiaire, avec aperçu du post-it |
+| `mur.php` | Tableau blanc des objectifs au vidéoprojecteur : déplacer, tourner, agrandir, exporter (protégé par clé) |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
 | `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |
 | `quiz.php` | Le quiz : prénom → questions une par une → feedback → score |
@@ -418,6 +470,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `core/eval-froide-notification.php` | Mail au formateur à chaque réponse à froid, page PDF en pièce jointe (inerte sans configuration) |
 | `test-mail.php` | Vérification de la configuration d'envoi de mail (CLI ou `?cle=`), supprimable après |
 | `lib/smtp.php` | Client SMTP minimal (serveur authentifié, TLS, pièces jointes), sans dépendance |
+| `lib/html2canvas/` | html2canvas 1.4.1 (licence MIT), export PNG du mur des objectifs |
 | `lib/fpdf/` | Bibliothèque FPDF (fpdf.php + font/), licence permissive, à conserver telle quelle |
 | `style.css` | Styles partagés — Design System TAONAS (palette bleue, Eric Machat / Effra CC, angles vifs) |
 | `assets/` | Polices TAONAS (Eric Machat, Effra CC) et logos ; référencés par `style.css` |

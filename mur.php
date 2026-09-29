@@ -1,7 +1,8 @@
 <?php
 // Le mur des objectifs, au vidéoprojecteur : un tableau blanc où arrivent les
 // post-its des participants. Glisser pour déplacer, poignée ronde pour tourner,
-// double-clic pour lire en grand, croix pour retirer. Tout est enregistré.
+// double-clic pour lire en grand, croix pour retirer, œil pour masquer le
+// prénom au tableau (le formateur le retrouve sur la télécommande). Tout est enregistré.
 require __DIR__ . '/core/objectifs.php';
 
 // Accès réservé à l'animateur
@@ -24,6 +25,15 @@ $api = $_GET['json'] ?? '';
 
 if ($api === 'liste') {
     repondre(['postits' => objectifs_seance()]);
+}
+
+if ($api === 'masquer') {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        repondre(['ok' => false], 405);
+    }
+    $in = json_decode(file_get_contents('php://input'), true);
+    objectif_masquer((int)($in['id'] ?? 0), !empty($in['anonyme']));
+    repondre(['ok' => true]);
 }
 
 if ($api === 'placer' || $api === 'retirer') {
@@ -154,6 +164,10 @@ body.mur {
 /* Texte ajusté par le script à la plus grande taille qui tient, sans couper les mots */
 .tableau .postit .postit-texte { overflow-wrap: normal; }
 .tableau.sans-amorce .postit-amorce { display: none; }
+/* Prénom masqué au tableau : pour un post-it (choix enregistré) ou pour tous (réglage d'affichage) */
+.tableau .postit.anonyme .postit-prenom,
+.tableau.sans-prenoms .postit-prenom,
+.loupe .postit.anonyme .postit-prenom { visibility: hidden; }
 .outils .reglage { display: flex; align-items: center; background: var(--paper); border: 2px solid var(--marque); }
 .outils .reglage button { border: none; min-width: 2.4em; font-weight: 700; }
 .outils .reglage span { font-size: .85rem; color: var(--indigo); min-width: 3.4em; text-align: center; }
@@ -163,18 +177,22 @@ body.mur {
   from { opacity: 0; transform: rotate(var(--rotation)) scale(1.35) translateY(-8%); }
   to   { opacity: 1; transform: rotate(var(--rotation)) scale(1); }
 }
-.poignee, .retirer {
-  position: absolute; width: 1.1em; height: 1.1em; border-radius: 50%;
+.poignee, .retirer, .masquer {
+  /* Taille fixe : facile à viser quelle que soit la taille des post-its */
+  position: absolute; z-index: 2; width: 30px; height: 30px; box-sizing: border-box; border-radius: 50%;
   display: none; align-items: center; justify-content: center;
-  font-family: var(--font-corps); font-size: .6em; line-height: 1;
+  font-family: var(--font-corps); font-size: 16px; font-weight: 700; line-height: 1;
   background: var(--paper); border: 2px solid var(--marque); color: var(--marque);
-  box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  box-shadow: 0 1px 4px rgba(0,0,0,.35);
 }
-.poignee { top: -.45em; right: -.45em; cursor: grab; }
-.retirer { top: -.45em; left: -.45em; cursor: pointer; color: var(--brique); border-color: var(--brique); }
-.tableau .postit:hover .poignee, .tableau .postit:hover .retirer,
+.poignee svg, .retirer svg, .masquer svg { width: 18px; height: 18px; pointer-events: none; }
+.poignee { top: -13px; right: -13px; cursor: grab; }
+.retirer { top: -13px; left: -13px; cursor: pointer; color: var(--brique); border-color: var(--brique); }
+.masquer { bottom: -13px; left: -13px; cursor: pointer; }
+.tableau .postit.anonyme .masquer { background: var(--marque); color: var(--paper); }
+.tableau .postit:hover .poignee, .tableau .postit:hover .retirer, .tableau .postit:hover .masquer,
 .tableau .postit.saisi .poignee { display: flex; }
-.capture .poignee, .capture .retirer { display: none !important; }
+.capture .poignee, .capture .retirer, .capture .masquer { display: none !important; }
 
 /* Lecture en grand (double-clic) */
 .loupe {
@@ -191,7 +209,7 @@ body.mur {
   body.mur { background: #fff; display: block; height: auto; }
   .outils, .loupe { display: none !important; }
   .cadre { --largeur: 277mm; box-shadow: none; margin: 0 auto; }
-  .poignee, .retirer { display: none !important; }
+  .poignee, .retirer, .masquer { display: none !important; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 </style>
@@ -206,6 +224,7 @@ body.mur {
     <button type="button" id="btn-plus" aria-label="Post-its plus grands">A+</button>
   </span>
   <button type="button" id="btn-amorce" aria-pressed="false">Masquer la phrase</button>
+  <button type="button" id="btn-prenoms" aria-pressed="false">Masquer les prénoms</button>
   <button type="button" id="btn-png">Image PNG</button>
   <button type="button" id="btn-pdf">PDF</button>
   <a href="<?= e(avec_f('pilotage.php?cle=' . rawurlencode(CLE_ANIMATEUR))) ?>">Pilotage</a>
@@ -232,6 +251,11 @@ body.mur {
 (function () {
   var API     = <?= json_encode($api_url) ?>;
   var LARGEUR = <?= POSTIT_LARGEUR ?>, HAUTEUR = <?= POSTIT_HAUTEUR ?>;
+  var ICONES  = {
+    croix:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    tourner: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>',
+    oeil:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>'
+  };
   var tableau = document.getElementById('tableau');
   var vide    = document.getElementById('vide');
   var loupe   = document.getElementById('loupe');
@@ -264,7 +288,7 @@ body.mur {
 
   // ---- réglages d'affichage, mémorisés sur ce navigateur ----
   var CLE_REGLAGES = 'mur-' + <?= json_encode(formation_slug()) ?>;
-  var reglages = { echelle: 1, sansAmorce: false };
+  var reglages = { echelle: 1, sansAmorce: false, sansPrenoms: false };
   try { Object.assign(reglages, JSON.parse(localStorage.getItem(CLE_REGLAGES)) || {}); } catch (e) {}
   function appliquerReglages(memoriser) {
     reglages.echelle = Math.round(Math.max(0.6, Math.min(2, reglages.echelle)) * 10) / 10;
@@ -274,6 +298,10 @@ body.mur {
     var b = document.getElementById('btn-amorce');
     b.textContent = reglages.sansAmorce ? 'Afficher la phrase' : 'Masquer la phrase';
     b.setAttribute('aria-pressed', reglages.sansAmorce ? 'true' : 'false');
+    tableau.classList.toggle('sans-prenoms', reglages.sansPrenoms);
+    var bp = document.getElementById('btn-prenoms');
+    bp.textContent = reglages.sansPrenoms ? 'Afficher les prénoms' : 'Masquer les prénoms';
+    bp.setAttribute('aria-pressed', reglages.sansPrenoms ? 'true' : 'false');
     Object.keys(notes).forEach(function (id) { placer(notes[id].el, notes[id].data); });
     toutAjuster();
     if (memoriser) {
@@ -283,6 +311,10 @@ body.mur {
   function zoom(pas) { reglages.echelle += pas; appliquerReglages(true); }
   document.getElementById('btn-plus').addEventListener('click', function () { zoom(0.1); });
   document.getElementById('btn-moins').addEventListener('click', function () { zoom(-0.1); });
+  document.getElementById('btn-prenoms').addEventListener('click', function () {
+    reglages.sansPrenoms = !reglages.sansPrenoms;
+    appliquerReglages(true);
+  });
   document.getElementById('btn-amorce').addEventListener('click', function () {
     reglages.sansAmorce = !reglages.sansAmorce;
     appliquerReglages(true);
@@ -296,6 +328,9 @@ body.mur {
     el.querySelector('.postit-texte').textContent = d.texte;
     el.querySelector('.postit-texte').dataset.longueur = longueur(d.texte);
     el.querySelector('.postit-prenom').textContent = d.prenom;
+    el.classList.toggle('anonyme', !!d.anonyme);
+    var oeil = el.querySelector('.masquer');
+    if (oeil) { oeil.title = d.anonyme ? 'Réafficher le prénom au tableau' : 'Masquer le prénom au tableau'; }
     el.style.setProperty('--papier', d.couleur);
   }
 
@@ -312,8 +347,9 @@ body.mur {
     var el = document.createElement('div');
     el.className = 'postit' + (anime ? ' nouveau' : '');
     el.dataset.id = d.id;
-    el.innerHTML = '<span class="retirer" title="Retirer ce post-it">✕</span>' +
-                   '<span class="poignee" title="Tourner">⟳</span>' +
+    el.innerHTML = '<span class="retirer" title="Retirer ce post-it">' + ICONES.croix + '</span>' +
+                   '<span class="poignee" title="Tourner (Maj : crans de 15°)">' + ICONES.tourner + '</span>' +
+                   '<span class="masquer">' + ICONES.oeil + '</span>' +
                    '<p class="postit-amorce"></p><p class="postit-texte"></p><p class="postit-prenom"></p>';
     el.querySelector('.postit-amorce').textContent = <?= json_encode(OBJECTIF_AMORCE . '…') ?>;
     remplir(el, d);
@@ -347,7 +383,8 @@ body.mur {
       el.classList.add('saisi');
 
       var mode = ev.target.classList.contains('poignee') ? 'tourner'
-               : ev.target.classList.contains('retirer') ? 'retirer' : 'deplacer';
+               : ev.target.classList.contains('retirer') ? 'retirer'
+               : ev.target.classList.contains('masquer') ? 'masquer' : 'deplacer';
       var bouge = false;
       var depart = { px: ev.clientX, py: ev.clientY, x: d.x, y: d.y, r: d.rotation };
       var c = el.getBoundingClientRect();
@@ -374,6 +411,10 @@ body.mur {
         el.removeEventListener('pointercancel', lacher);
         el.classList.remove('saisi');
         enMain = null;
+        if (mode === 'masquer' && !bouge) {
+          masquer(id, !notes[id].data.anonyme);
+          return;
+        }
         if (mode === 'retirer' && !bouge) {
           if (confirm('Retirer ce post-it du tableau ?')) { retirer(id); }
           return;
@@ -396,8 +437,19 @@ body.mur {
       loupe.appendChild(grand);
       loupe.classList.add('ouverte');
       if (reglages.sansAmorce) { grand.querySelector('.postit-amorce').remove(); }
+      if (reglages.sansPrenoms) { grand.classList.add('anonyme'); }
       ajuster(grand, 3);                  // visible d'abord : on ne mesure pas un élément masqué
     });
+  }
+
+  function masquer(id, anonyme) {
+    var n = notes[id];
+    n.data.anonyme = anonyme;
+    remplir(n.el, n.data);
+    fetch(API + '&json=masquer', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: +id, anonyme: anonyme })
+    }).catch(function () {});
   }
 
   function retirer(id) {
@@ -426,8 +478,8 @@ body.mur {
       var n = notes[d.id];
       if (!n) { creer(d, anime); return; }
       if (enMain === d.id) { return; }    // on ne tire pas un post-it de la main du formateur
-      if (n.data.texte !== d.texte || n.data.prenom !== d.prenom) {
-        n.data.texte = d.texte; n.data.prenom = d.prenom;
+      if (n.data.texte !== d.texte || n.data.prenom !== d.prenom || n.data.anonyme !== d.anonyme) {
+        n.data.texte = d.texte; n.data.prenom = d.prenom; n.data.anonyme = d.anonyme;
         remplir(n.el, n.data);
         ajuster(n.el);
       }

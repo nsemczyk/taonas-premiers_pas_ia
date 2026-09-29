@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/core/etapes.php';
+require __DIR__ . '/core/objectifs.php';
 
 // Accès réservé à l'animateur
 $cle = $_REQUEST['cle'] ?? '';
@@ -35,6 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'quiz') {
         $st = db()->prepare('UPDATE quizzes SET actif = 1 - actif WHERE formation = ? AND slug = ?');
         $st->execute([$f, (string)($_POST['slug'] ?? '')]);
+
+    } elseif ($action === 'masquer_objectif') {
+        objectif_masquer((int)($_POST['id'] ?? 0), !empty($_POST['anonyme']));
     }
 
     header('Location: ' . avec_f('pilotage.php?cle=' . rawurlencode(CLE_ANIMATEUR)), true, 303);
@@ -44,11 +48,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Tables attendues par les outils de la formation, et le script qui les crée
 $manquantes = [];
 if (formation()['outils'] ?? []) {
-    foreach (['participants' => 'migration-equipes.sql', 'objectifs' => 'migration-objectifs.sql'] as $table => $script) {
+    foreach (['participants' => 'migration-equipes.sql', 'objectifs.anonyme' => 'migration-objectifs.sql'] as $cible => $script) {
+        [$table, $colonne] = explode('.', $cible . '.1');   // table ou table.colonne attendue
         try {
-            db()->query("SELECT 1 FROM `$table` LIMIT 1");
+            db()->query("SELECT $colonne FROM `$table` LIMIT 1");
         } catch (PDOException $e) {
-            $manquantes[$table] = $script;
+            $manquantes[$cible] = $script;
         }
     }
 }
@@ -172,6 +177,28 @@ $reste   = count(array_filter($etapes, fn($e) => !$e['ouverte']));
     <a class="btn btn-primary" target="_blank"
        href="<?= e(avec_f($page . '?cle=' . rawurlencode(CLE_ANIMATEUR))) ?>"><?= e($libelle) ?></a>
     <?php endforeach; ?>
+  </section>
+  <?php endif; ?>
+
+  <?php if (isset($outils['mur.php']) && !$manquantes): $objectifs = objectifs_seance();
+        usort($objectifs, fn($a, $b) => strcasecmp($a['prenom'], $b['prenom'])); ?>
+  <section class="card">
+    <h2>Objectifs du jour <span class="muted">· <?= count($objectifs) ?></span></h2>
+    <p class="lead">Pour vous seul : qui a écrit quoi, même quand le prénom est masqué au tableau.</p>
+    <?php foreach ($objectifs as $o): ?>
+    <form method="post" class="pilot-row objectif-ligne">
+      <input type="hidden" name="cle" value="<?= e(CLE_ANIMATEUR) ?>">
+      <input type="hidden" name="action" value="masquer_objectif">
+      <input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
+      <input type="hidden" name="anonyme" value="<?= $o['anonyme'] ? '' : '1' ?>">
+      <span class="pilot-titre"><strong><?= e($o['prenom']) ?></strong> — <?= e($o['texte']) ?></span>
+      <button class="btn btn-etat <?= $o['anonyme'] ? 'est-fermee' : 'est-ouverte' ?>"
+              title="<?= $o['anonyme'] ? 'Réafficher le prénom au tableau' : 'Masquer le prénom au tableau' ?>">
+        <?= $o['anonyme'] ? 'Prénom masqué' : 'Prénom affiché' ?>
+      </button>
+    </form>
+    <?php endforeach; ?>
+    <?php if (!$objectifs): ?><p class="muted">Aucun objectif pour l'instant.</p><?php endif; ?>
   </section>
   <?php endif; ?>
 

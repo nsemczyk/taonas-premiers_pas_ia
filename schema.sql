@@ -349,6 +349,7 @@ CREATE TABLE IF NOT EXISTS `objectifs` (
   `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `participant_id` INT UNSIGNED NOT NULL,
   `texte`          VARCHAR(160) NOT NULL,
+  `anonyme`        TINYINT(1)   NOT NULL DEFAULT 0,       -- 1 : prénom masqué au tableau (choix du formateur)
   `couleur`        TINYINT UNSIGNED NOT NULL DEFAULT 0,   -- rang dans la palette pastel
   `x`              DECIMAL(6,4) NOT NULL DEFAULT 0.1,     -- coin haut-gauche, fraction de la largeur du tableau
   `y`              DECIMAL(6,4) NOT NULL DEFAULT 0.1,     -- fraction de la hauteur

@@ -183,6 +183,15 @@ télécommande, bouton « Afficher le mur des objectifs ».
 - Un **double-clic** l'affiche en grand, pour le lire à voix haute. Clic ou
   Échap pour refermer.
 - La **croix** (coin haut gauche) le retire du tableau.
+- L'**œil** (coin bas gauche) masque le prénom de ce post-it au tableau, par
+  exemple quand un stagiaire ne veut pas être cité ; l'œil devient bleu plein.
+  Un nouveau clic le réaffiche. Le choix est enregistré, il survit à une
+  modification de l'objectif par le stagiaire et vaut aussi pour les exports.
+  **Masquer les prénoms** les cache tous d'un coup, le temps d'une projection
+  (réglage d'affichage, rien n'est enregistré).
+- La télécommande liste les **objectifs du jour** avec leur auteur, prénoms
+  masqués compris : c'est la vue privée du formateur, sur son téléphone. Le
+  même bouton y masque ou réaffiche un prénom au tableau, qui suit en direct.
 - **Lisibilité** : chaque texte prend automatiquement la plus grande taille qui
   tient dans son post-it, sans couper les mots. **A− / A+** (ou les touches − et
   +, y compris d'une télécommande de présentation) réduisent ou agrandissent tous
@@ -205,7 +214,9 @@ salle, pourvu que le serveur soit joignable.
 mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-objectifs.sql
 ```
 
-À jouer une seule fois, après `migration-equipes.sql`. Crée la table
+À jouer après `migration-equipes.sql`, et à rejouer sur une base qui avait
+déjà la table : il n'ajoute que ce qui manque (colonne `anonyme` du masquage
+des prénoms). La télécommande signale s'il reste à le faire. Crée la table
 `objectifs` et l'étape « Mon objectif du jour » du niveau 2, fermée. Sans effet
 s'il est rejoué. Supprimer un participant (croix de `equipes.php`) retire aussi
 son post-it.

@@ -31,7 +31,7 @@ function objectif_de(int $participant_id): ?array
 function objectifs_seance(): array
 {
     $st = db()->prepare(
-        'SELECT o.id, o.texte, o.couleur, o.x, o.y, o.rotation, o.z, p.prenom
+        'SELECT o.id, o.texte, o.anonyme, o.couleur, o.x, o.y, o.rotation, o.z, p.prenom
            FROM objectifs o JOIN participants p ON p.id = o.participant_id
           WHERE p.formation = ? AND p.seance = ?
           ORDER BY o.z, o.id'
@@ -41,6 +41,7 @@ function objectifs_seance(): array
         'id'       => (int)$o['id'],
         'texte'    => $o['texte'],
         'prenom'   => $o['prenom'],
+        'anonyme'  => (bool)$o['anonyme'],   // prénom connu du formateur, masqué au tableau
         'rang'     => (int)$o['couleur'],
         'couleur'  => POSTIT_COULEURS[(int)$o['couleur'] % count(POSTIT_COULEURS)],
         'x'        => (float)$o['x'],
@@ -103,6 +104,17 @@ function objectif_enregistrer(int $participant_id, string $texte): void
         random_int(-60, 60) / 10,   // légèrement de travers, comme collé à la main
         $z,
     ]);
+}
+
+// Masque ou réaffiche au tableau le prénom d'un post-it de la séance
+function objectif_masquer(int $id, bool $anonyme): void
+{
+    $st = db()->prepare(
+        'UPDATE objectifs o JOIN participants p ON p.id = o.participant_id
+            SET o.anonyme = ?
+          WHERE o.id = ? AND p.formation = ? AND p.seance = ?'
+    );
+    $st->execute([(int)$anonyme, $id, formation_slug(), aujourdhui_local()]);
 }
 
 // Couleur de papier d'un post-it (jaune par défaut, avant le premier envoi)

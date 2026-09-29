@@ -6,6 +6,7 @@ require_once __DIR__ . '/etapes.php';
 require_once __DIR__ . '/participants.php';
 require_once __DIR__ . '/objectifs.php';
 require_once __DIR__ . '/boule.php';
+require_once __DIR__ . '/points.php';
 
 // Bouton « Copier » + confirmation + texte dépliable. Le script de copie est
 // dans index.php ; $id doit être unique sur la page.
@@ -90,6 +91,12 @@ function bloc_arrivee(): string
             . '    <p>' . ($autres ? 'Avec : ' . e(implode(', ', $autres)) . '.' : 'Vos coéquipiers arrivent.') . '</p>' . "\n";
     } else {
         $h .= '    <p class="lead">Le formateur va constituer les équipes : votre équipe s\'affichera ici.</p>' . "\n";
+    }
+    if (points_actifs() && points_table_ok()) {
+        $pts = points_de($p);
+        $h .= '    <p class="mes-points">Mes points : <strong id="points-joueur">' . $pts['joueur'] . '</strong>'
+            . ($pts['equipe'] !== null ? ' · Mon équipe : <strong id="points-equipe">' . $pts['equipe'] . '</strong>' : '')
+            . '</p>' . "\n";
     }
     return $h
          . '    <form method="post" action="' . e(avec_f('arrivee.php')) . '">' . "\n"

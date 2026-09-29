@@ -542,3 +542,50 @@ textarea.saisie:focus { border-color: var(--marque); outline: none; }
 .brique-texte { margin: 0 0 14px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 1.05rem; color: var(--nuit); }
 .brique-texte.deja { background: var(--glacier); padding: 12px 14px; }
 .reponse-ia { background: var(--glacier); padding: 12px 14px; }
+
+/* ------------------------------------------------ Points et classement */
+.mes-points { margin: 10px 0 0; padding: 8px 12px; background: var(--glacier); color: var(--nuit); }
+.mes-points strong { font-size: 1.2rem; color: var(--marque); }
+.pts-ligne { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--gris); }
+.pts-nom { flex: 1 1 140px; font-weight: 600; color: var(--nuit); }
+.pts-total { min-width: 3ch; font-size: 1.5rem; font-weight: 700; color: var(--marque); text-align: right; }
+.pts-actions { display: flex; gap: 6px; }
+.pts-actions form { margin: 0; }
+.pts-btn {
+  font: inherit; font-weight: 700; min-width: 46px; padding: 8px 10px; cursor: pointer;
+  background: var(--paper); color: var(--olive); border: 2px solid var(--olive);
+}
+.pts-btn.moins { color: var(--brique); border-color: var(--brique); }
+.pts-libre select.field { width: 100%; min-height: 54px; padding: 12px 14px; font-size: 1.1rem; border: 2px solid var(--gris); margin-bottom: 16px; background: #fff; }
+
+/* Classement au vidéoprojecteur */
+body.classement-projete { margin: 0; background: var(--nuit); color: var(--blanc); min-height: 100vh; }
+.cl-tete { display: flex; align-items: center; padding: 18px 32px; }
+.cl-tete h1 { flex: 1; margin: 0; font-family: var(--font-titre); font-weight: 400; font-size: 2.6rem; color: var(--blanc); }
+.cl-tete a { color: var(--clair); font-size: .9rem; border: 2px solid var(--clair); padding: 6px 12px; text-decoration: none; opacity: .5; }
+.cl-tete a:hover { opacity: 1; }
+.cl-grille { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; padding: 8px 32px 32px; }
+@media (max-width: 900px) { .cl-grille { grid-template-columns: 1fr; } }
+.cl-grille h2 { color: var(--clair); font-weight: 400; font-size: 1.6rem; margin: 0 0 14px; }
+.cl-equipe {
+  display: flex; align-items: center; gap: 18px; margin-bottom: 14px; padding: 18px 22px;
+  background: var(--equipe); color: var(--blanc); box-shadow: 0 6px 16px rgba(0,0,0,.35);
+}
+.cl-equipe .cl-rang { font-size: 2rem; font-weight: 700; opacity: .8; min-width: 1.4em; }
+.cl-equipe .cl-nom { flex: 1; font-size: 2.2rem; font-family: var(--font-titre); }
+.cl-equipe .cl-total { font-size: 3rem; font-weight: 700; }
+.cl-total small { font-size: .45em; font-weight: 400; opacity: .8; }
+.cl-joueurs { list-style: none; margin: 0; padding: 0; }
+.cl-joueurs li { display: flex; align-items: center; gap: 14px; padding: 9px 14px; font-size: 1.35rem; border-bottom: 1px solid rgba(175,222,244,.18); }
+.cl-joueurs .cl-rang { min-width: 1.6em; color: var(--clair); }
+.cl-joueurs .cl-nom { flex: 1; }
+.cl-joueurs .cl-total { font-weight: 700; font-size: 1.5rem; }
+.cl-joueurs .equipe-badge { font-size: .7em; vertical-align: middle; }
+.podium-1 { background: rgba(255,215,0,.18); }
+.podium-2 { background: rgba(200,200,210,.14); }
+.podium-3 { background: rgba(205,127,50,.16); }
+.podium .cl-rang::after { margin-left: 4px; }
+.podium-1 .cl-rang::after { content: '🥇'; }
+.podium-2 .cl-rang::after { content: '🥈'; }
+.podium-3 .cl-rang::after { content: '🥉'; }
+.cl-vide { color: var(--clair); font-size: 1.2rem; }

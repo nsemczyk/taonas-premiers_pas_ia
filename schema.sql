@@ -398,3 +398,24 @@ CREATE TABLE IF NOT EXISTS `boule_briques` (
   CONSTRAINT `fk_brique_participant` FOREIGN KEY (`participant_id`)
     REFERENCES `participants` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Points de la séance : même table que migration-points.sql, incluse ici
+-- pour une installation neuve.
+--
+
+CREATE TABLE IF NOT EXISTS `points` (
+  `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `formation`      VARCHAR(32)  NOT NULL,
+  `seance`         DATE         NOT NULL,
+  `equipe`         VARCHAR(16)  DEFAULT NULL,      -- points d'équipe : clé d'équipe de formation.php
+  `participant_id` INT UNSIGNED DEFAULT NULL,      -- points individuels
+  `valeur`         INT          NOT NULL,          -- négatif pour retirer
+  `motif`          VARCHAR(120) DEFAULT NULL,
+  `source`         VARCHAR(32)  DEFAULT NULL,
+  `created_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_seance` (`formation`, `seance`),
+  CONSTRAINT `fk_points_participant` FOREIGN KEY (`participant_id`)
+    REFERENCES `participants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

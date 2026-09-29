@@ -262,6 +262,31 @@ mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-boule.
 
 À jouer une seule fois après `migration-equipes.sql`. Sans effet s'il est rejoué.
 
+## Points et classement (niveau 2)
+
+Des points pour les équipes et des points pour les joueurs, **comptés
+séparément** : les uns ne s'additionnent pas aux autres. Activé par
+`'points' => true` dans `formations/<slug>/formation.php`.
+
+- **Prompt boule de neige** : sur son tableau, chaque équipe a un bouton
+  **+10 pts**. Un nouveau clic les reprend ; une équipe ne peut pas les toucher
+  deux fois pour la même partie.
+- **`/n2/scores.php?cle=VOTRE_CLE`** (télécommande → « Points et classement ») :
+  boutons −1, +1, +5, +10 pour chaque équipe et chaque joueur, et un montant
+  libre avec un motif facultatif (négatif pour retirer).
+- **Classement projetable** : bouton « Afficher le classement », plein écran,
+  équipes à gauche, joueurs à droite avec podium, ex-aequo compris. Il suit les
+  changements en direct.
+- **Côté stagiaire** : son score et celui de son équipe s'affichent sur
+  l'accueil, sous son prénom, et se mettent à jour tout seuls.
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-points.sql
+```
+
+À jouer une seule fois après `migration-equipes.sql`. Sans effet s'il est rejoué.
+Retirer un participant de la séance retire aussi ses points individuels.
+
 ## La télécommande
 
 `pilotage.php?cle=VOTRE_CLE` ouvre les sections de l'accueil au rythme du
@@ -496,6 +521,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
   `DELETE FROM participants WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
   Les post-its du mur des objectifs partent avec leur participant. Les parties
   du prompt boule de neige : `DELETE FROM boule_parties WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
+  Les points : `DELETE FROM points WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
 
 ## Fichiers
 
@@ -507,6 +533,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `migration-equipes.sql` | Table des participants de la séance (prénom, équipe) sur une base existante |
 | `migration-objectifs.sql` | Table du mur des objectifs et étape correspondante du niveau 2 |
 | `migration-boule.sql` | Tables du prompt boule de neige (parties par équipe, briques) |
+| `migration-points.sql` | Table des points de la séance (équipes et joueurs) |
 | `migration-formations.sql` | Passage d'une base existante en multi-formations (colonne `formation`) |
 | `config.example.php` | Identifiants BDD + clé animateur + helpers |
 | `formations/<slug>/formation.php` | Réglages d'une formation : titres, accroche, quiz bonus |
@@ -517,6 +544,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `core/participants.php` | Participant de ce téléphone, participants de la séance, équipes — helpers seuls |
 | `core/objectifs.php` | Post-its du mur : lecture, emplacement libre, couleurs — helpers seuls |
 | `core/boule.php` | Prompt boule de neige : étapes, ordre de passage, validation, annulation — helpers seuls |
+| `core/points.php` | Points d'équipe et individuels : attribution, totaux, rangs — helpers seuls |
 | `core/etapes.php` | Lecture des étapes ouvertes de la formation (aucune sortie, helpers seuls) |
 | `core/horodatage.php` | Conversion des horodatages serveur vers l'heure locale (helpers seuls) |
 | `arrivee.php` | Arrivée d'un participant (prénom → cookie de séance), et « Ce n'est pas moi » |
@@ -525,6 +553,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `mur.php` | Tableau blanc des objectifs au vidéoprojecteur : déplacer, tourner, agrandir, exporter (protégé par clé) |
 | `boule.php` | Prompt boule de neige côté joueur : son tour, sa brique, le prompt final |
 | `boule-tableau.php` | Tableau du prompt boule de neige, une colonne par équipe, en direct (protégé par clé) |
+| `scores.php` | Points et classement : gestion, et `?vue=projection` pour le vidéoprojecteur (protégé par clé) |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
 | `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |
 | `quiz.php` | Le quiz : prénom → questions une par une → feedback → score |

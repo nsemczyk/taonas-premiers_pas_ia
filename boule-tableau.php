@@ -4,6 +4,7 @@
 // contenu » ne montre que l'avancement pendant le jeu, puis on dévoile tout
 // au débrief. Chaque équipe peut revenir d'une étape (faute, validation par erreur).
 require __DIR__ . '/core/boule.php';
+require __DIR__ . '/core/points.php';
 
 // Accès réservé à l'animateur
 $cle = (string)($_REQUEST['cle'] ?? '');
@@ -21,6 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (equipe_existe($equipe)) {
         if (($_POST['action'] ?? '') === 'annuler') {
             boule_annuler($equipe);
+        } elseif (($_POST['action'] ?? '') === 'points' && points_actifs()) {
+            points_source_basculer('boule', $equipe, POINTS_BOULE, 'Prompt boule de neige');
         } elseif (($_POST['action'] ?? '') === 'tache') {
             boule_changer_tache($equipe, (string)($_POST['tache'] ?? ''));
         }
@@ -31,18 +34,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $table_ok = true;
 $etats    = [];
+$points   = points_actifs() && points_table_ok();
+$donnes   = [];   // équipes qui ont déjà reçu les points de la partie
 try {
     foreach ($jouent as $eq) {
         $etats[$eq] = boule_etat($eq);
+        $donnes[$eq] = $points && points_source_donnee('boule', $eq);
     }
 } catch (PDOException $e) {
     $table_ok = false;
 }
 
 // Empreinte de toutes les parties : la page se recharge quand l'une d'elles avance
-$empreinte = md5(json_encode(array_map(fn($e) => [
+$empreinte = md5(json_encode([array_map(fn($e) => [
     $e['etape'], $e['tache'], array_column($e['membres'], 'id'), array_keys($e['briques']),
-], $etats)));
+], $etats), $donnes]));
 
 if (($_GET['json'] ?? '') === 'etat') {
     header('Content-Type: application/json; charset=utf-8');
@@ -90,7 +96,13 @@ body.boule-tableau { background: var(--blanc); margin: 0; }
 .bt-cellule.en-cours { background: #FFF8D6; }
 .bt-cellule.a-venir .bt-etiquette { opacity: .55; }
 .bt-valide { font-size: 1.1rem; color: var(--olive); font-weight: 600; margin: 0; }
-.bt-annuler { margin: auto 16px 14px; }
+.bt-annuler { margin: 0 16px 14px; }
+.bt-points { margin: auto 16px 10px; }
+.bt-points button {
+  font: inherit; font-size: 1.1rem; font-weight: 700; padding: 8px 16px; cursor: pointer;
+  background: var(--paper); color: var(--olive); border: 2px solid var(--olive);
+}
+.bt-points button.donnes { background: var(--olive); color: var(--blanc); }
 .bt-annuler button { font: inherit; font-size: .85rem; padding: 6px 12px; cursor: pointer; background: var(--paper); color: var(--brique); border: 2px solid var(--brique); }
 /* Pendant le jeu : l'avancement seulement, jamais le contenu */
 .masque .bt-texte, .masque .bt-reponse { display: none; }
@@ -146,6 +158,17 @@ body.boule-tableau { background: var(--blanc); margin: 0; }
       <?php endif; ?>
     </div>
     <?php endforeach; ?>
+
+    <?php if ($points): ?>
+    <form method="post" action="<?= e($moi) ?>" class="bt-points">
+      <input type="hidden" name="action" value="points">
+      <input type="hidden" name="equipe" value="<?= e($eq) ?>">
+      <button class="<?= $donnes[$eq] ? 'donnes' : '' ?>"
+              title="<?= $donnes[$eq] ? 'Reprendre les points' : 'Donner les points de la partie à cette équipe' ?>">
+        <?= $donnes[$eq] ? '✓ ' . POINTS_BOULE . ' pts donnés' : '+' . POINTS_BOULE . ' pts' ?>
+      </button>
+    </form>
+    <?php endif; ?>
 
     <?php if ($etat['briques']): ?>
     <form method="post" action="<?= e($moi) ?>" class="bt-annuler"

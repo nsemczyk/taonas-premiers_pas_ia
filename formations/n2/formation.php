@@ -21,6 +21,8 @@ return [
         'olive'   => ['nom' => 'Olive',   'couleur' => '#636E24'],
     ],
     'equipe_max'  => 5,
+    // Points et classement (scores.php), score affiché sur l'accueil des stagiaires
+    'points'      => true,
     // Prompt boule de neige : les situations, attribuées une par équipe dans
     // l'ordre des équipes ci-dessus (modifiable dans le tableau avant le début)
     'boule_taches' => [
@@ -36,5 +38,6 @@ return [
         'equipes.php' => 'Constituer les équipes',
         'mur.php'     => 'Afficher le mur des objectifs',
         'boule-tableau.php' => 'Tableau du prompt boule de neige',
+        'scores.php'  => 'Points et classement',
     ],
 ];

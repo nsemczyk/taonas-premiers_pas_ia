@@ -9,6 +9,9 @@ if (($_GET['json'] ?? '') === 'etat') {
     $etat = ['ouvertes' => $ouvertes];
     if (equipes()) {
         $etat['equipe'] = participant_courant()['equipe'] ?? null;   // affectation par le formateur
+        if (points_actifs() && points_table_ok() && participant_courant()) {
+            $etat['points'] = points_de(participant_courant());
+        }
     }
     echo json_encode($etat);
     exit;
@@ -66,6 +69,11 @@ $F = formation();
     fetch(<?= json_encode(avec_f('index.php?json=etat')) ?>).then(function (r) { return r.json(); }).then(function (d) {
       var nouvelles = d.ouvertes.filter(function (c) { return OUVERTES.indexOf(c) < 0; });
 <?php if (equipes()): ?>
+      if (d.points) {                    // scores mis à jour sur place, sans rechargement
+        var pj = document.getElementById('points-joueur'), pe = document.getElementById('points-equipe');
+        if (pj) { pj.textContent = d.points.joueur; }
+        if (pe && d.points.equipe !== null) { pe.textContent = d.points.equipe; }
+      }
       if (d.equipe !== EQUIPE) {
         bandeau.querySelector('span').textContent = 'Votre équipe a changé.';
         bandeau.hidden = false;

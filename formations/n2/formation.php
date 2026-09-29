@@ -6,6 +6,12 @@ return [
     'titre_court' => 'Niveau 2',
     'accroche'    => 'Les exercices de la journée, seul ou en équipe',
     'quiz_bonus'  => null,
+    // Étapes de l'accueil, ouvertes une à une depuis la télécommande
+    // (clé utilisée dans accueil.php => titre affiché), dans l'ordre de la journée.
+    // La télécommande les crée en base d'elle-même.
+    'etapes'      => [
+        'objectifs' => 'Mon objectif du jour',
+    ],
     // Équipes de la séance : clé stable (stockée en base) => nom affiché et couleur.
     // Renommer une équipe ne casse rien ; changer sa clé détache ses membres.
     'equipes'     => [

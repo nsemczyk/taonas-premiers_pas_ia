@@ -41,10 +41,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+// Tables attendues par les outils de la formation, et le script qui les crée
+$manquantes = [];
+if (formation()['outils'] ?? []) {
+    foreach (['participants' => 'migration-equipes.sql', 'objectifs' => 'migration-objectifs.sql'] as $table => $script) {
+        try {
+            db()->query("SELECT 1 FROM `$table` LIMIT 1");
+        } catch (PDOException $e) {
+            $manquantes[$table] = $script;
+        }
+    }
+}
+try {
+    db()->query('SELECT formation FROM etapes LIMIT 1');
+} catch (PDOException $e) {
+    $manquantes['etapes.formation'] = 'migration-formations.sql';
+}
+
+etapes_synchroniser();
 $etapes  = etapes_toutes() ?? [];
-$st = db()->prepare('SELECT slug, titre, actif FROM quizzes WHERE formation = ? ORDER BY id');
-$st->execute([formation_slug()]);
-$quizzes = $st->fetchAll();
+$quizzes = [];
+if (!isset($manquantes['etapes.formation'])) {   // sinon la page n'affiche que la migration à jouer
+    $st = db()->prepare('SELECT slug, titre, actif FROM quizzes WHERE formation = ? ORDER BY id');
+    $st->execute([formation_slug()]);
+    $quizzes = $st->fetchAll();
+}
 $reste   = count(array_filter($etapes, fn($e) => !$e['ouverte']));
 ?><!DOCTYPE html>
 <html lang="fr">
@@ -66,6 +87,17 @@ $reste   = count(array_filter($etapes, fn($e) => !$e['ouverte']));
 <main class="wrap">
 
   <?= selecteur_formation('pilotage.php?cle=' . rawurlencode(CLE_ANIMATEUR)) ?>
+
+  <?php if ($manquantes): ?>
+  <section class="card err">
+    <h2>Migration à jouer</h2>
+    <p class="lead">Il manque en base de quoi faire fonctionner cette formation. Jouez, dans l'ordre,
+      avec un compte administrateur :</p>
+    <?php foreach (array_unique($manquantes) as $script): ?>
+    <pre>mysql --default-character-set=utf8mb4 -u root -p formation_ia &lt; <?= e($script) ?></pre>
+    <?php endforeach; ?>
+  </section>
+  <?php endif; ?>
 
   <?php if (!etapes_disponibles()): ?>
   <section class="card">

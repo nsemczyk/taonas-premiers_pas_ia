@@ -43,8 +43,9 @@ if ($api === 'placer' || $api === 'retirer') {
               WHERE o.id = ? AND p.formation = ? AND p.seance = ?'
         );
         $st->execute([
-            round($borne($in['x'] ?? 0, 0, 1 - POSTIT_LARGEUR), 4),
-            round($borne($in['y'] ?? 0, 0, 1 - POSTIT_HAUTEUR), 4),
+            // La taille affichée est réglable (A− / A+) : on borne au tableau lui-même
+            round($borne($in['x'] ?? 0, 0, 0.99), 4),
+            round($borne($in['y'] ?? 0, 0, 0.99), 4),
             round($borne($in['rotation'] ?? 0, -180, 180), 1),
             (int)$borne($in['z'] ?? 0, 0, 1000000),
             $id, ...$seance,
@@ -146,10 +147,16 @@ body.mur {
 
 /* Post-its sur le tableau : taille et position relatives au tableau */
 .tableau .postit {
-  --taille: <?= POSTIT_LARGEUR * 100 ?>cqw;
+  --taille: calc(<?= POSTIT_LARGEUR * 100 ?>cqw * var(--echelle, 1));
   position: absolute; cursor: grab; touch-action: none;
   transform-origin: 50% 50%;
 }
+/* Texte ajusté par le script à la plus grande taille qui tient, sans couper les mots */
+.tableau .postit .postit-texte { overflow-wrap: normal; }
+.tableau.sans-amorce .postit-amorce { display: none; }
+.outils .reglage { display: flex; align-items: center; background: var(--paper); border: 2px solid var(--marque); }
+.outils .reglage button { border: none; min-width: 2.4em; font-weight: 700; }
+.outils .reglage span { font-size: .85rem; color: var(--indigo); min-width: 3.4em; text-align: center; }
 .tableau .postit.saisi { cursor: grabbing; box-shadow: 0 1px 1px rgba(0,0,0,.12), 0 1.4em 1.6em -0.6em rgba(0,0,0,.4); }
 .tableau .postit.nouveau { animation: coller .5s cubic-bezier(.2,1.4,.4,1); }
 @keyframes coller {
@@ -193,6 +200,12 @@ body.mur {
 
 <div class="outils">
   <span class="compte" id="compte"></span>
+  <span class="reglage" title="Taille des post-its et de leur texte (touches + et −)">
+    <button type="button" id="btn-moins" aria-label="Post-its plus petits">A−</button>
+    <span id="echelle">100 %</span>
+    <button type="button" id="btn-plus" aria-label="Post-its plus grands">A+</button>
+  </span>
+  <button type="button" id="btn-amorce" aria-pressed="false">Masquer la phrase</button>
   <button type="button" id="btn-png">Image PNG</button>
   <button type="button" id="btn-pdf">PDF</button>
   <a href="<?= e(avec_f('pilotage.php?cle=' . rawurlencode(CLE_ANIMATEUR))) ?>">Pilotage</a>
@@ -228,6 +241,57 @@ body.mur {
 
   function longueur(t) { return t.length > 100 ? 'long' : (t.length > 50 ? 'moyen' : 'court'); }
 
+  // Plus grande taille de texte qui tient dans le post-it sans couper de mot
+  // (recherche par dichotomie, en em de la taille du post-it). Un mot trop
+  // long pour la largeur, même au minimum, est alors coupé plutôt que caché.
+  function ajuster(el, max) {
+    var t = el.querySelector('.postit-texte');
+    var bas = 0.55, haut = max || 2.2;
+    t.style.overflowWrap = 'normal';
+    function tient() { return t.scrollHeight <= t.clientHeight && t.scrollWidth <= t.clientWidth; }
+    for (var i = 0; i < 9; i++) {
+      var m = (bas + haut) / 2;
+      t.style.fontSize = m + 'em';
+      if (tient()) { bas = m; } else { haut = m; }
+    }
+    // Marge de sécurité : l'écriture manuscrite déborde un peu de ses propres métriques
+    t.style.fontSize = (bas * 0.93) + 'em';
+    if (!tient()) { t.style.overflowWrap = 'anywhere'; }
+  }
+  function toutAjuster() {
+    Object.keys(notes).forEach(function (id) { ajuster(notes[id].el); });
+  }
+
+  // ---- réglages d'affichage, mémorisés sur ce navigateur ----
+  var CLE_REGLAGES = 'mur-' + <?= json_encode(formation_slug()) ?>;
+  var reglages = { echelle: 1, sansAmorce: false };
+  try { Object.assign(reglages, JSON.parse(localStorage.getItem(CLE_REGLAGES)) || {}); } catch (e) {}
+  function appliquerReglages(memoriser) {
+    reglages.echelle = Math.round(Math.max(0.6, Math.min(2, reglages.echelle)) * 10) / 10;
+    tableau.style.setProperty('--echelle', reglages.echelle);
+    tableau.classList.toggle('sans-amorce', reglages.sansAmorce);
+    document.getElementById('echelle').textContent = Math.round(reglages.echelle * 100) + ' %';
+    var b = document.getElementById('btn-amorce');
+    b.textContent = reglages.sansAmorce ? 'Afficher la phrase' : 'Masquer la phrase';
+    b.setAttribute('aria-pressed', reglages.sansAmorce ? 'true' : 'false');
+    Object.keys(notes).forEach(function (id) { placer(notes[id].el, notes[id].data); });
+    toutAjuster();
+    if (memoriser) {
+      try { localStorage.setItem(CLE_REGLAGES, JSON.stringify(reglages)); } catch (e) {}
+    }
+  }
+  function zoom(pas) { reglages.echelle += pas; appliquerReglages(true); }
+  document.getElementById('btn-plus').addEventListener('click', function () { zoom(0.1); });
+  document.getElementById('btn-moins').addEventListener('click', function () { zoom(-0.1); });
+  document.getElementById('btn-amorce').addEventListener('click', function () {
+    reglages.sansAmorce = !reglages.sansAmorce;
+    appliquerReglages(true);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '+' || e.key === '=') { zoom(0.1); }
+    if (e.key === '-' || e.key === '_') { zoom(-0.1); }
+  });
+
   function remplir(el, d) {
     el.querySelector('.postit-texte').textContent = d.texte;
     el.querySelector('.postit-texte').dataset.longueur = longueur(d.texte);
@@ -235,9 +299,11 @@ body.mur {
     el.style.setProperty('--papier', d.couleur);
   }
 
+  // Position enregistrée, ramenée dans le tableau si le post-it agrandi (A+) en dépasserait
   function placer(el, d) {
-    el.style.left = (d.x * 100) + '%';
-    el.style.top  = (d.y * 100) + '%';
+    var k = typeof reglages === 'undefined' ? 1 : reglages.echelle;
+    el.style.left = (Math.min(d.x, Math.max(0, 1 - LARGEUR * k)) * 100) + '%';
+    el.style.top  = (Math.min(d.y, Math.max(0, 1 - HAUTEUR * k)) * 100) + '%';
     el.style.setProperty('--rotation', d.rotation + 'deg');
     el.style.zIndex = d.z;
   }
@@ -254,6 +320,7 @@ body.mur {
     placer(el, d);
     el.addEventListener('animationend', function () { el.classList.remove('nouveau'); });
     tableau.appendChild(el);
+    ajuster(el);
     notes[d.id] = { el: el, data: d };
     zMax = Math.max(zMax, d.z);
     brancher(el, d.id);
@@ -290,8 +357,9 @@ body.mur {
       function bouger(e) {
         bouge = true;
         if (mode === 'deplacer') {
-          d.x = Math.max(0, Math.min(1 - LARGEUR, depart.x + (e.clientX - depart.px) / rect.width));
-          d.y = Math.max(0, Math.min(1 - HAUTEUR, depart.y + (e.clientY - depart.py) / rect.height));
+          var k = reglages.echelle;
+          d.x = Math.max(0, Math.min(Math.max(0, 1 - LARGEUR * k), depart.x + (e.clientX - depart.px) / rect.width));
+          d.y = Math.max(0, Math.min(Math.max(0, 1 - HAUTEUR * k), depart.y + (e.clientY - depart.py) / rect.height));
         } else if (mode === 'tourner') {
           var a = Math.atan2(e.clientY - centre.y, e.clientX - centre.x);
           var r = depart.r + (a - angle0) * 180 / Math.PI;
@@ -327,6 +395,8 @@ body.mur {
       remplir(grand, d);
       loupe.appendChild(grand);
       loupe.classList.add('ouverte');
+      if (reglages.sansAmorce) { grand.querySelector('.postit-amorce').remove(); }
+      ajuster(grand, 3);                  // visible d'abord : on ne mesure pas un élément masqué
     });
   }
 
@@ -359,6 +429,7 @@ body.mur {
       if (n.data.texte !== d.texte || n.data.prenom !== d.prenom) {
         n.data.texte = d.texte; n.data.prenom = d.prenom;
         remplir(n.el, n.data);
+        ajuster(n.el);
       }
       if (n.data.x !== d.x || n.data.y !== d.y || n.data.rotation !== d.rotation || n.data.z !== d.z) {
         n.data.x = d.x; n.data.y = d.y; n.data.rotation = d.rotation; n.data.z = d.z;
@@ -375,6 +446,11 @@ body.mur {
   }
 
   synchroniser(<?= json_encode($postits, JSON_UNESCAPED_UNICODE) ?>, false);
+  appliquerReglages(false);
+  // Police manuscrite chargée ou fenêtre redimensionnée : les métriques changent
+  document.fonts.ready.then(toutAjuster);
+  var attente;
+  window.addEventListener('resize', function () { clearTimeout(attente); attente = setTimeout(toutAjuster, 150); });
   setInterval(function () {
     fetch(API + '&json=liste')
       .then(function (r) { return r.json(); })

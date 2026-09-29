@@ -81,17 +81,27 @@ leur étape `quiz`.
    `core/blocs.php` : `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`,
    `bloc_arrivee()`, `bloc_objectif()`. Un
    dossier préfixé par `_` (brouillon) est ignoré.
-2. Déclarer ses étapes et ses quiz en SQL :
+2. Déclarer ses étapes dans `formation.php`, dans l'ordre de la journée :
+
+```php
+'etapes' => [
+    'intro' => 'Pour commencer',
+    'quiz'  => 'Les quiz',
+    'avis'  => 'Votre avis',
+],
+```
+
+La télécommande les crée en base à son ouverture, fermées, et aligne ensuite
+titres et ordre sur cette déclaration sans toucher à ce qui est ouvert. Les clés
+(`intro`, `quiz`…) sont celles qu'utilise `accueil.php`. Les quiz, eux, restent
+en SQL :
 
 ```sql
-INSERT INTO etapes (formation, cle, titre, ordre) VALUES
-  ('n2', 'intro', 'Pour commencer', 1),
-  ('n2', 'quiz',  'Les quiz',       2),
-  ('n2', 'avis',  'Votre avis',     3);
 INSERT INTO quizzes (formation, slug, titre) VALUES ('n2', 'quiz-final', 'Le grand quiz du niveau 2');
 ```
 
-Les clés d'étape (`intro`, `quiz`…) sont celles qu'utilise `accueil.php`.
+Si une table manque (migration non jouée), la télécommande l'affiche en tête,
+avec la commande à lancer.
 
 Limite actuelle, assumée : le questionnaire de satisfaction et celui de
 l'évaluation à froid sont encore ceux du niveau 1. Chaque réponse est bien
@@ -173,6 +183,13 @@ télécommande, bouton « Afficher le mur des objectifs ».
 - Un **double-clic** l'affiche en grand, pour le lire à voix haute. Clic ou
   Échap pour refermer.
 - La **croix** (coin haut gauche) le retire du tableau.
+- **Lisibilité** : chaque texte prend automatiquement la plus grande taille qui
+  tient dans son post-it, sans couper les mots. **A− / A+** (ou les touches − et
+  +, y compris d'une télécommande de présentation) réduisent ou agrandissent tous
+  les post-its, de 60 à 200 %, texte compris. **Masquer la phrase** retire
+  l'amorce répétée sur chaque post-it, déjà écrite en titre du tableau, pour
+  laisser plus de place au texte. Ces réglages sont mémorisés par le navigateur
+  qui projette ; ils ne changent rien aux positions enregistrées.
 - **Image PNG** télécharge le tableau tel quel. **PDF** ouvre l'impression, en
   paysage : choisir « Enregistrer au format PDF ».
 

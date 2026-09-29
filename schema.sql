@@ -366,3 +366,35 @@ CREATE TABLE IF NOT EXISTS `objectifs` (
 -- L'étape qui ouvre l'exercice sur l'accueil du niveau 2, fermée par défaut
 INSERT IGNORE INTO `etapes` (`formation`, `cle`, `titre`, `ordre`, `ouverte`) VALUES
 ('n2', 'objectifs', 'Mon objectif du jour', 1, 0);
+
+--
+-- Prompt boule de neige : mêmes tables que migration-boule.sql, incluses ici
+-- pour une installation neuve.
+--
+
+CREATE TABLE IF NOT EXISTS `boule_parties` (
+  `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `formation`  VARCHAR(32)  NOT NULL,
+  `seance`     DATE         NOT NULL,
+  `equipe`     VARCHAR(16)  NOT NULL,                 -- clé d'équipe de formation.php
+  `tache`      VARCHAR(255) NOT NULL,                 -- la situation affichée en haut de l'écran
+  `created_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_partie` (`formation`, `seance`, `equipe`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `boule_briques` (
+  `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `partie_id`      INT UNSIGNED NOT NULL,
+  `etape`          TINYINT UNSIGNED NOT NULL,         -- 1 à 4 : briques du prompt ; 5 : réponse de l'IA
+  `participant_id` INT UNSIGNED DEFAULT NULL,         -- auteur ; NULL s'il a été retiré de la séance depuis
+  `prenom`         VARCHAR(40)  NOT NULL,             -- conservé pour le tableau, même si l'auteur est retiré
+  `texte`          TEXT         NOT NULL,
+  `created_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_etape` (`partie_id`, `etape`),       -- deux validations simultanées : une seule passe
+  CONSTRAINT `fk_brique_partie` FOREIGN KEY (`partie_id`)
+    REFERENCES `boule_parties` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_brique_participant` FOREIGN KEY (`participant_id`)
+    REFERENCES `participants` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -79,7 +79,7 @@ leur étape `quiz`.
 1. Copier `formations/n1/` vers `formations/n2/`, puis adapter `formation.php`
    (titres) et `accueil.php` (cartes). Les briques disponibles sont dans
    `core/blocs.php` : `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`,
-   `bloc_arrivee()`, `bloc_objectif()`. Un
+   `bloc_arrivee()`, `bloc_objectif()`, `bloc_boule()`. Un
    dossier préfixé par `_` (brouillon) est ignoré.
 2. Déclarer ses étapes dans `formation.php`, dans l'ordre de la journée :
 
@@ -224,6 +224,43 @@ son post-it.
 Les boutons de la carte « Outils de la journée » de la télécommande sont
 déclarés dans `formations/<slug>/formation.php`, clé `outils`
 (`'mur.php' => 'Afficher le mur des objectifs'`).
+
+## Le prompt boule de neige (niveau 2)
+
+Un prompt écrit à plusieurs mains, en équipe : la tâche, puis le contexte, le
+destinataire, les contraintes et le format ; un 5e tour passe le prompt à l'IA
+et colle sa réponse.
+
+**Côté stagiaire** : sur l'accueil, « Rejoindre la partie de mon équipe »
+quand l'étape « Le prompt boule de neige » est ouverte (il faut être placé dans
+une équipe). En haut de l'écran : la situation de l'équipe et l'ordre de
+passage. Le joueur dont c'est le tour voit tout ce qui précède, la consigne de
+son étape et une zone de saisie ; au 5e tour, un bouton **Copier le prompt**
+(les quatre briques bout à bout) et une zone pour coller la réponse de l'IA.
+Les autres ne voient que leurs propres briques. Tout se dévoile à l'équipe à la
+fin. Les pages suivent la partie toutes seules (toutes les 3 s).
+
+**Ordre de passage** : les membres de l'équipe dans l'ordre d'arrivée, rebouclé
+quand l'équipe compte moins de 5 personnes (à 4, le 5e tour revient au joueur
+1 ; à 3, les tours 4 et 5 reviennent aux joueurs 1 et 2). Un absent ? Le
+retirer de l'équipe dans `equipes.php` : la main passe au suivant.
+
+**Côté formateur** : `/n2/boule-tableau.php?cle=VOTRE_CLE`, aussi sur la
+télécommande. Une colonne par équipe, une ligne par étape, remplie en direct,
+lisible au vidéoprojecteur. **Masquer le contenu** n'affiche que l'avancement
+(« ✅ Validé ») pendant le jeu ; on dévoile tout au débrief. **Annuler la
+dernière étape** rend la main au même joueur (faute de frappe, validation par
+erreur).
+
+**Situations** : déclarées dans `formations/n2/formation.php`, clé
+`boule_taches`, attribuées une par équipe dans l'ordre des équipes. Tant que
+l'équipe n'a pas commencé, la liste déroulante du tableau permet d'en changer.
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-boule.sql
+```
+
+À jouer une seule fois après `migration-equipes.sql`. Sans effet s'il est rejoué.
 
 ## La télécommande
 
@@ -457,7 +494,8 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 - Suppression à la demande : `DELETE FROM resultats WHERE DATE(created_at)='2026-07-29' AND prenom='...';`
 - Participants (prénom et équipe du jour) : purge avec le même cron,
   `DELETE FROM participants WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
-  Les post-its du mur des objectifs partent avec leur participant.
+  Les post-its du mur des objectifs partent avec leur participant. Les parties
+  du prompt boule de neige : `DELETE FROM boule_parties WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
 
 ## Fichiers
 
@@ -468,6 +506,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `migration-eval-froide.sql` | Ajout des tables de l'évaluation à froid sur une base existante |
 | `migration-equipes.sql` | Table des participants de la séance (prénom, équipe) sur une base existante |
 | `migration-objectifs.sql` | Table du mur des objectifs et étape correspondante du niveau 2 |
+| `migration-boule.sql` | Tables du prompt boule de neige (parties par équipe, briques) |
 | `migration-formations.sql` | Passage d'une base existante en multi-formations (colonne `formation`) |
 | `config.example.php` | Identifiants BDD + clé animateur + helpers |
 | `formations/<slug>/formation.php` | Réglages d'une formation : titres, accroche, quiz bonus |
@@ -477,12 +516,15 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `core/blocs.php` | Briques de l'accueil : texte à copier, bloc quiz, bloc avis — helpers seuls |
 | `core/participants.php` | Participant de ce téléphone, participants de la séance, équipes — helpers seuls |
 | `core/objectifs.php` | Post-its du mur : lecture, emplacement libre, couleurs — helpers seuls |
+| `core/boule.php` | Prompt boule de neige : étapes, ordre de passage, validation, annulation — helpers seuls |
 | `core/etapes.php` | Lecture des étapes ouvertes de la formation (aucune sortie, helpers seuls) |
 | `core/horodatage.php` | Conversion des horodatages serveur vers l'heure locale (helpers seuls) |
 | `arrivee.php` | Arrivée d'un participant (prénom → cookie de séance), et « Ce n'est pas moi » |
 | `equipes.php` | Constitution des équipes de la séance, en direct (protégé par clé) |
 | `objectif.php` | Saisie de l'objectif du jour par le stagiaire, avec aperçu du post-it |
 | `mur.php` | Tableau blanc des objectifs au vidéoprojecteur : déplacer, tourner, agrandir, exporter (protégé par clé) |
+| `boule.php` | Prompt boule de neige côté joueur : son tour, sa brique, le prompt final |
+| `boule-tableau.php` | Tableau du prompt boule de neige, une colonne par équipe, en direct (protégé par clé) |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
 | `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |
 | `quiz.php` | Le quiz : prénom → questions une par une → feedback → score |

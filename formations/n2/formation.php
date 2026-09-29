@@ -11,6 +11,7 @@ return [
     // La télécommande les crée en base d'elle-même.
     'etapes'      => [
         'objectifs' => 'Mon objectif du jour',
+        'boule'     => 'Le prompt boule de neige',
     ],
     // Équipes de la séance : clé stable (stockée en base) => nom affiché et couleur.
     // Renommer une équipe ne casse rien ; changer sa clé détache ses membres.
@@ -20,9 +21,20 @@ return [
         'olive'   => ['nom' => 'Olive',   'couleur' => '#636E24'],
     ],
     'equipe_max'  => 5,
+    // Prompt boule de neige : les situations, attribuées une par équipe dans
+    // l'ordre des équipes ci-dessus (modifiable dans le tableau avant le début)
+    'boule_taches' => [
+        'Annoncer mon pot de départ',
+        'Relancer un client pour une facture impayée',
+        'Prévenir un client d\'un retard de livraison',
+        'Demander une journée de télétravail par semaine',
+        'Inviter les voisins à une réunion de copropriété',
+        'Répondre à un avis client négatif',
+    ],
     // Pages de l'animateur proposées sur la télécommande (page => libellé du bouton)
     'outils'      => [
         'equipes.php' => 'Constituer les équipes',
         'mur.php'     => 'Afficher le mur des objectifs',
+        'boule-tableau.php' => 'Tableau du prompt boule de neige',
     ],
 ];

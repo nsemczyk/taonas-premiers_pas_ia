@@ -519,3 +519,26 @@ textarea.saisie {
   font: inherit; font-size: 1.05rem; border: 2px solid var(--gris); background: var(--paper);
 }
 textarea.saisie:focus { border-color: var(--marque); outline: none; }
+
+/* ------------------------------------------------ Prompt boule de neige */
+.boule-tete { border-top: 8px solid var(--equipe); }
+.boule-equipe { margin: 0 0 10px; }
+.boule-tache-label { margin: 0; font-size: .85rem; color: var(--indigo); text-transform: uppercase; letter-spacing: .05em; }
+.boule-tache { margin: 2px 0 14px; font-size: 1.3rem; font-weight: 600; color: var(--nuit); }
+.boule-ordre { margin: 0; padding: 0; list-style: none; counter-reset: etape; }
+.boule-ordre li {
+  counter-increment: etape; display: flex; justify-content: space-between; gap: 8px;
+  padding: 6px 8px; border-left: 4px solid var(--gris); margin-bottom: 4px; color: var(--indigo);
+}
+.boule-ordre li::before { content: counter(etape) '.'; width: 1.4em; }
+.boule-ordre li span { flex: 1; }
+.boule-ordre li.faite { border-color: var(--olive); }
+.boule-ordre li.faite strong::after { content: ' ✓'; color: var(--olive); }
+.boule-ordre li.en-cours { border-color: var(--vif); background: var(--glacier); color: var(--nuit); font-weight: 600; }
+.a-toi { border-left: 8px solid var(--vif); }
+.consigne { margin: -2px 0 10px; color: var(--indigo); }
+.brique { margin-bottom: 14px; }
+.brique-titre { margin: 0 0 4px; font-size: .9rem; color: var(--indigo); }
+.brique-texte { margin: 0 0 14px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 1.05rem; color: var(--nuit); }
+.brique-texte.deja { background: var(--glacier); padding: 12px 14px; }
+.reponse-ia { background: var(--glacier); padding: 12px 14px; }

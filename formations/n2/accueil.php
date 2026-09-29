@@ -6,3 +6,5 @@
   <?= bloc_arrivee() ?>
 
   <?= bloc_objectif('objectifs') ?>
+
+  <?= bloc_boule('boule') ?>

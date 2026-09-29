@@ -48,7 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Tables attendues par les outils de la formation, et le script qui les crée
 $manquantes = [];
 if (formation()['outils'] ?? []) {
-    foreach (['participants' => 'migration-equipes.sql', 'objectifs.anonyme' => 'migration-objectifs.sql'] as $cible => $script) {
+    foreach (['participants' => 'migration-equipes.sql', 'objectifs.anonyme' => 'migration-objectifs.sql',
+              'boule_briques' => 'migration-boule.sql'] as $cible => $script) {
         [$table, $colonne] = explode('.', $cible . '.1');   // table ou table.colonne attendue
         try {
             db()->query("SELECT $colonne FROM `$table` LIMIT 1");

@@ -79,7 +79,7 @@ leur étape `quiz`.
 1. Copier `formations/n1/` vers `formations/n2/`, puis adapter `formation.php`
    (titres) et `accueil.php` (cartes). Les briques disponibles sont dans
    `core/blocs.php` : `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`,
-   `bloc_arrivee()`, `bloc_objectif()`, `bloc_boule()`. Un
+   `bloc_arrivee()`, `bloc_objectif()`, `bloc_boule()`, `bloc_battle()`. Un
    dossier préfixé par `_` (brouillon) est ignoré.
 2. Déclarer ses étapes dans `formation.php`, dans l'ordre de la journée :
 
@@ -286,6 +286,46 @@ mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-points
 
 À jouer une seule fois après `migration-equipes.sql`. Sans effet s'il est rejoué.
 Retirer un participant de la séance retire aussi ses points individuels.
+
+## Prompt Battle (niveau 2)
+
+Par manche, deux équipes s'affrontent : un volontaire chacune, une tâche tirée
+au sort, 5 minutes chrono ; le reste du groupe vote pour la meilleure réponse
+de l'IA, et l'équipe gagnante prend **20 points**.
+
+**Côté formateur** : `/n2/battle-tableau.php?cle=VOTRE_CLE`, aussi sur la
+télécommande. Déroulé d'une manche :
+
+1. **Préparer une nouvelle manche**, puis **Tirer une tâche surprise** (une
+   tâche déjà jouée dans la séance ne ressort pas ; on peut en retirer une autre) ;
+2. choisir les deux équipes et leur volontaire (un membre de l'équipe) ;
+3. **Top départ !** : la tâche s'affiche sur le téléphone des volontaires, le
+   chrono démarre. **+1 minute** et **Terminer maintenant et ouvrir le vote** au besoin ;
+4. à la fin du chrono, le vote s'ouvre tout seul : les copies sont projetées
+   anonymement (A, B, ordre tiré au hasard). Le décompte des voix en direct au
+   vidéoprojecteur est facultatif ;
+5. **Clore le vote et révéler** : copie gagnante, équipes, prompts, et les
+   points attribués. Un bouton par équipe les reprend (ou les donne) en cas d'erreur.
+
+Le bouton **Ouvrir l'écran de projection** ouvre `?vue=projection` : tirage au
+sort animé, chrono géant, duel, copies, puis podium. Il suit la manche en
+direct.
+
+**Côté stagiaire** : « Suivre la battle » sur l'accueil. Le volontaire écrit
+son prompt et colle la réponse de son IA : tout est enregistré au fil de la
+frappe, figé à la fin du chrono (3 s de grâce). Les autres votent, sauf les
+deux volontaires, et peuvent changer d'avis tant que le vote est ouvert.
+
+**Règles** : une équipe sans copie à la fin du chrono déclare forfait ; sans
+aucun vote, pas de vainqueur ; ex-aequo, les deux équipes prennent 20 points.
+Une manche en cours peut être abandonnée (aucun point). Les tâches sont
+déclarées dans `formations/n2/formation.php`, clé `battle_taches`.
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-battle.sql
+```
+
+À jouer une seule fois après `migration-equipes.sql`. Sans effet s'il est rejoué.
 
 ## La télécommande
 
@@ -522,6 +562,8 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
   Les post-its du mur des objectifs partent avec leur participant. Les parties
   du prompt boule de neige : `DELETE FROM boule_parties WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
   Les points : `DELETE FROM points WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
+  Les manches de la Prompt Battle (copies et votes compris) :
+  `DELETE FROM battle_manches WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
 
 ## Fichiers
 
@@ -534,6 +576,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `migration-objectifs.sql` | Table du mur des objectifs et étape correspondante du niveau 2 |
 | `migration-boule.sql` | Tables du prompt boule de neige (parties par équipe, briques) |
 | `migration-points.sql` | Table des points de la séance (équipes et joueurs) |
+| `migration-battle.sql` | Tables de la Prompt Battle (manches, copies, votes) |
 | `migration-formations.sql` | Passage d'une base existante en multi-formations (colonne `formation`) |
 | `config.example.php` | Identifiants BDD + clé animateur + helpers |
 | `formations/<slug>/formation.php` | Réglages d'une formation : titres, accroche, quiz bonus |
@@ -545,6 +588,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `core/objectifs.php` | Post-its du mur : lecture, emplacement libre, couleurs — helpers seuls |
 | `core/boule.php` | Prompt boule de neige : étapes, ordre de passage, validation, annulation — helpers seuls |
 | `core/points.php` | Points d'équipe et individuels : attribution, totaux, rangs — helpers seuls |
+| `core/battle.php` | Prompt Battle : manches, tirage, chrono, copies, votes, vainqueurs — helpers seuls |
 | `core/etapes.php` | Lecture des étapes ouvertes de la formation (aucune sortie, helpers seuls) |
 | `core/horodatage.php` | Conversion des horodatages serveur vers l'heure locale (helpers seuls) |
 | `arrivee.php` | Arrivée d'un participant (prénom → cookie de séance), et « Ce n'est pas moi » |
@@ -553,6 +597,8 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `mur.php` | Tableau blanc des objectifs au vidéoprojecteur : déplacer, tourner, agrandir, exporter (protégé par clé) |
 | `boule.php` | Prompt boule de neige côté joueur : son tour, sa brique, le prompt final |
 | `boule-tableau.php` | Tableau du prompt boule de neige, une colonne par équipe, en direct (protégé par clé) |
+| `battle.php` | Prompt Battle côté stagiaire : copie du volontaire, vote, résultat |
+| `battle-tableau.php` | Prompt Battle côté formateur, et `?vue=projection` pour le vidéoprojecteur (protégé par clé) |
 | `scores.php` | Points et classement : gestion, et `?vue=projection` pour le vidéoprojecteur (protégé par clé) |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
 | `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |

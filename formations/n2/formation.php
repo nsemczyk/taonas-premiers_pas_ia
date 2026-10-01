@@ -12,6 +12,7 @@ return [
     'etapes'      => [
         'objectifs' => 'Mon objectif du jour',
         'boule'     => 'Le prompt boule de neige',
+        'battle'    => 'Prompt Battle',
     ],
     // Équipes de la séance : clé stable (stockée en base) => nom affiché et couleur.
     // Renommer une équipe ne casse rien ; changer sa clé détache ses membres.
@@ -21,6 +22,16 @@ return [
         'olive'   => ['nom' => 'Olive',   'couleur' => '#636E24'],
     ],
     'equipe_max'  => 5,
+    // Prompt Battle : les tâches surprises, tirées au sort une par manche
+    // (celles déjà jouées dans la séance restent de côté)
+    'battle_taches' => [
+        'Expliquer à un enfant de 8 ans pourquoi il faut relire ce que l\'IA écrit.',
+        'Rédiger le message d\'accueil d\'une boîte vocale professionnelle qui donne envie de laisser un message.',
+        'Convaincre un collègue réticent d\'essayer l\'IA, en 5 lignes, sans le prendre de haut.',
+        'Résumer le principe d\'une pause déjeuner obligatoire pour un stagiaire qui saute toujours la sienne.',
+        'Écrire l\'annonce interne d\'un changement d\'horaires d\'ouverture, sans que personne ne râle.',
+        'Rédiger la description d\'un objet perdu (un parapluie rouge) pour le panneau d\'affichage de l\'entreprise, avec humour.',
+    ],
     // Points et classement (scores.php), score affiché sur l'accueil des stagiaires
     'points'      => true,
     // Prompt boule de neige : les situations, attribuées une par équipe dans
@@ -38,6 +49,7 @@ return [
         'equipes.php' => 'Constituer les équipes',
         'mur.php'     => 'Afficher le mur des objectifs',
         'boule-tableau.php' => 'Tableau du prompt boule de neige',
+        'battle-tableau.php' => 'Prompt Battle',
         'scores.php'  => 'Points et classement',
     ],
 ];

@@ -7,6 +7,7 @@ require_once __DIR__ . '/participants.php';
 require_once __DIR__ . '/objectifs.php';
 require_once __DIR__ . '/boule.php';
 require_once __DIR__ . '/points.php';
+require_once __DIR__ . '/battle.php';
 
 // Bouton « Copier » + confirmation + texte dépliable. Le script de copie est
 // dans index.php ; $id doit être unique sur la page.
@@ -148,5 +149,21 @@ function bloc_boule(string $cle = 'boule'): string
     }
     return $h . '    <p class="lead">Un prompt à plusieurs mains : chacun ajoute sa brique, à son tour, sans voir la suite.</p>' . "\n"
               . '    <a class="btn btn-primary" href="' . e(avec_f('boule.php')) . '">Rejoindre la partie de mon équipe</a>' . "\n"
+              . '  </section>';
+}
+
+// Prompt Battle : le bouton vers battle.php, derrière l'étape $cle
+function bloc_battle(string $cle = 'battle'): string
+{
+    if (!etape_ouverte($cle)) {
+        return carte_verrouillee($cle);
+    }
+    $h = '<section class="card">' . "\n"
+       . '    <h2>' . e(etape_titre($cle)) . '</h2>' . "\n";
+    if (!participant_courant()) {
+        return $h . '    <p class="lead">Indiquez d\'abord votre prénom ci-dessus.</p>' . "\n" . '  </section>';
+    }
+    return $h . '    <p class="lead">Deux volontaires, une tâche surprise, 5 minutes : le groupe vote pour la meilleure réponse.</p>' . "\n"
+              . '    <a class="btn btn-primary" href="' . e(avec_f('battle.php')) . '">Suivre la battle</a>' . "\n"
               . '  </section>';
 }

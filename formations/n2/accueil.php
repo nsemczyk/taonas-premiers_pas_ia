@@ -8,3 +8,5 @@
   <?= bloc_objectif('objectifs') ?>
 
   <?= bloc_boule('boule') ?>
+
+  <?= bloc_battle('battle') ?>

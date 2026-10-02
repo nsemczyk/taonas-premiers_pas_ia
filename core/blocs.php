@@ -8,6 +8,7 @@ require_once __DIR__ . '/objectifs.php';
 require_once __DIR__ . '/boule.php';
 require_once __DIR__ . '/points.php';
 require_once __DIR__ . '/battle.php';
+require_once __DIR__ . '/bocal.php';
 
 // Bouton « Copier » + confirmation + texte dépliable. Le script de copie est
 // dans index.php ; $id doit être unique sur la page.
@@ -165,5 +166,28 @@ function bloc_battle(string $cle = 'battle'): string
     }
     return $h . '    <p class="lead">Deux volontaires, une tâche surprise, 5 minutes : le groupe vote pour la meilleure réponse.</p>' . "\n"
               . '    <a class="btn btn-primary" href="' . e(avec_f('battle.php')) . '">Suivre la battle</a>' . "\n"
+              . '  </section>';
+}
+
+// Le bocal à secrets : le bouton vers bocal.php, derrière l'étape $cle
+function bloc_bocal(string $cle = 'bocal'): string
+{
+    if (!etape_ouverte($cle)) {
+        return carte_verrouillee($cle);
+    }
+    $p = participant_courant();
+    $h = '<section class="card">' . "\n"
+       . '    <h2>' . e(etape_titre($cle)) . '</h2>' . "\n";
+    if (!$p) {
+        return $h . '    <p class="lead">Indiquez d\'abord votre prénom ci-dessus.</p>' . "\n" . '  </section>';
+    }
+    $copie = bocal_table_ok() ? bocal_copie((int)$p['id']) : null;
+    if ($copie && $copie['rendu']) {
+        return $h . '    <p class="lead">Copie rendue. Le formateur la teste et la note.</p>' . "\n"
+                  . '    <a class="btn btn-ghost" href="' . e(avec_f('bocal.php')) . '">Revoir ma copie</a>' . "\n"
+                  . '  </section>';
+    }
+    return $h . '    <p class="lead">Un mail plein de secrets : repérez ce qui ne doit pas partir chez une IA, puis réécrivez la demande.</p>' . "\n"
+              . '    <a class="btn btn-primary" href="' . e(avec_f('bocal.php')) . '">' . ($copie ? 'Reprendre ma copie' : 'Ouvrir le bocal') . '</a>' . "\n"
               . '  </section>';
 }

@@ -59,6 +59,29 @@ function points_source_basculer(string $source, string $equipe, int $valeur, str
     }
 }
 
+// Points d'un exercice déjà attribués à un joueur (null : rien d'attribué)
+function points_joueur_source(int $participant_id, string $source): ?int
+{
+    $st = db()->prepare('SELECT SUM(valeur) FROM points WHERE formation = ? AND seance = ? AND source = ? AND participant_id = ?');
+    $st->execute([formation_slug(), aujourdhui_local(), $source, $participant_id]);
+    $v = $st->fetchColumn();
+    return $v === null ? null : (int)$v;
+}
+
+// Fixe les points d'un exercice pour un joueur : remplace ce qui était attribué
+// (0 compte comme « noté, sans point » ; null efface la note)
+function points_joueur_fixer(int $participant_id, string $source, ?int $valeur, string $motif): void
+{
+    $st = db()->prepare('DELETE FROM points WHERE formation = ? AND seance = ? AND source = ? AND participant_id = ?');
+    $st->execute([formation_slug(), aujourdhui_local(), $source, $participant_id]);
+    if ($valeur === null || !in_array($participant_id, array_map('intval', array_column(participants_seance(), 'id')), true)) {
+        return;
+    }
+    $st = db()->prepare('INSERT INTO points (formation, seance, equipe, participant_id, valeur, motif, source)
+                         VALUES (?, ?, NULL, ?, ?, ?, ?)');
+    $st->execute([formation_slug(), aujourdhui_local(), $participant_id, $valeur, mb_substr($motif, 0, 120), $source]);
+}
+
 // Total de chaque équipe déclarée (0 si rien), du meilleur au moins bon
 function points_equipes(): array
 {

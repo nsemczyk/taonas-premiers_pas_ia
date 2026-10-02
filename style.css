@@ -631,3 +631,35 @@ body.battle-projete { margin: 0; min-height: 100vh; background: radial-gradient(
 .bp-prompt { max-height: 18vh; background: var(--glacier); padding: 8px 12px; font-size: 1.05rem; }
 .bp-sous { margin: 10px 0 4px; font-size: .95rem; color: var(--indigo); text-transform: uppercase; letter-spacing: .05em; }
 .bp-victoire { font-size: clamp(2rem, 4vw, 3.4rem); color: #f2c94c; font-family: var(--font-titre); margin: 10px 0; }
+
+/* ------------------------------------------------ Le bocal à secrets */
+.bocal-grille { display: grid; gap: 0 18px; }
+@media (min-width: 900px) {
+  .bocal-grille { grid-template-columns: 3fr 2fr; align-items: start; }
+  .bocal-grille > .card:last-child { position: sticky; top: 12px; }
+}
+.bocal-compte { font-size: .95rem; color: var(--indigo); font-family: var(--font-corps); }
+.bocal-mail {
+  white-space: pre-line; overflow-wrap: anywhere; line-height: 1.75; font-size: 1.02rem;
+  background: var(--glacier); padding: 14px 16px; color: var(--nuit);
+}
+@media (max-width: 899px) {
+  .bocal-mail.actif { max-height: 55vh; overflow-y: auto; }   /* le mail et la saisie restent proches */
+}
+.bocal-mail .mot { padding: 1px 0; }
+.bocal-mail.actif .mot { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mot.surligne { background: #FFE66B; box-shadow: 0 0 0 2px #FFE66B; }
+.mot.trouve { background: #CFE3A6; box-shadow: 0 0 0 2px #CFE3A6; }
+.mot.oublie { text-decoration: underline wavy var(--brique); text-underline-offset: 3px; }
+.mot.faux { background: var(--error-soft); box-shadow: 0 0 0 2px var(--error-soft); text-decoration: line-through; }
+.bocal-legende { font-size: .9rem; display: flex; gap: 14px; flex-wrap: wrap; }
+.bocal-oubli { color: var(--brique); font-weight: 600; }
+.bocal-copie.brouillon { border-left: 8px solid var(--gris); }
+.bocal-notes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
+.bocal-notes form { margin: 0; }
+.bocal-notes .btn { width: auto; min-height: 0; margin: 0; padding: 8px 14px; }
+.bocal-notes span { font-weight: 600; margin-left: 6px; }
+.bocal-notes .btn.suggere:not(.btn-gold) { border-style: dashed; border-color: var(--marque); }
+.bocal-corrige { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: .95rem; }
+.bocal-corrige th, .bocal-corrige td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--gris); vertical-align: top; }
+.bocal-corrige th { background: var(--nuit); color: var(--blanc); font-weight: 400; }

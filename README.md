@@ -79,7 +79,7 @@ leur étape `quiz`.
 1. Copier `formations/n1/` vers `formations/n2/`, puis adapter `formation.php`
    (titres) et `accueil.php` (cartes). Les briques disponibles sont dans
    `core/blocs.php` : `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`,
-   `bloc_arrivee()`, `bloc_objectif()`, `bloc_boule()`, `bloc_battle()`. Un
+   `bloc_arrivee()`, `bloc_objectif()`, `bloc_boule()`, `bloc_battle()`, `bloc_bocal()`. Un
    dossier préfixé par `_` (brouillon) est ignoré.
 2. Déclarer ses étapes dans `formation.php`, dans l'ordre de la journée :
 
@@ -327,6 +327,48 @@ mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-battle
 
 À jouer une seule fois après `migration-equipes.sql`. Sans effet s'il est rejoué.
 
+## Le bocal à secrets (niveau 2)
+
+Un faux mail plein de données personnelles, sensibles ou confidentielles.
+Chaque stagiaire surligne ce qui ne doit pas partir chez une IA, puis réécrit
+la demande sous une forme anonymisée qui garde le sens. Exercice individuel,
+points individuels.
+
+**Côté stagiaire** : « Ouvrir le bocal » sur l'accueil quand l'étape est
+ouverte. Le mail à gauche (au-dessus sur téléphone) : on touche un mot pour le
+surligner, à nouveau pour l'effacer. La version anonymisée à droite. Tout est
+enregistré au fil de l'eau ; **Rendre ma copie** la transmet au formateur. On
+peut encore la modifier tant qu'elle n'est pas notée.
+
+**Côté formateur** : `/n2/bocal-tableau.php?cle=VOTRE_CLE`, aussi sur la
+télécommande. Pour chaque copie (rendue ou en cours) : les données trouvées
+sur le total, les oubliées, les mots surlignés à tort, le mail corrigé en
+couleurs, et le prompt avec un bouton **Copier** pour le tester dans son IA.
+Puis les points :
+
+- **Surlignage** : 20 pts si toutes les données sont trouvées, 10 pts pour plus
+  de la moitié, 0 sinon. La page suggère la note (bouton en pointillés) ;
+  **Appliquer les notes de surlignage suggérées** la donne à toutes les copies
+  rendues pas encore notées. Une donnée est trouvée quand au moins la moitié de
+  ses mots est surlignée ; chaque occurrence compte (« Kevin Boulanger » dans
+  l'objet et dans le corps). Les mots surlignés à tort sont signalés, sans
+  pénalité.
+- **Prompt** : 10 pts s'il est anonymisé et garde le sens, à juger.
+
+Un clic sur la note déjà donnée l'efface. Le corrigé (tableau et version
+anonymisée de référence) est dépliable en haut de la page.
+
+**Le texte** est dans `formations/n2/formation.php`, clé `bocal` : chaque
+donnée à surligner y est balisée `[[texte|catégorie]]`, les catégories
+reprennent le tableau du corrigé. Le barème est dans `core/bocal.php`
+(constantes `BOCAL_POINTS_*`).
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-bocal.sql
+```
+
+À jouer une seule fois après `migration-equipes.sql`. Sans effet s'il est rejoué.
+
 ## La télécommande
 
 `pilotage.php?cle=VOTRE_CLE` ouvre les sections de l'accueil au rythme du
@@ -564,6 +606,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
   Les points : `DELETE FROM points WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
   Les manches de la Prompt Battle (copies et votes compris) :
   `DELETE FROM battle_manches WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
+  Les copies du bocal à secrets partent avec leur participant.
 
 ## Fichiers
 
@@ -577,6 +620,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `migration-boule.sql` | Tables du prompt boule de neige (parties par équipe, briques) |
 | `migration-points.sql` | Table des points de la séance (équipes et joueurs) |
 | `migration-battle.sql` | Tables de la Prompt Battle (manches, copies, votes) |
+| `migration-bocal.sql` | Table des copies du bocal à secrets |
 | `migration-formations.sql` | Passage d'une base existante en multi-formations (colonne `formation`) |
 | `config.example.php` | Identifiants BDD + clé animateur + helpers |
 | `formations/<slug>/formation.php` | Réglages d'une formation : titres, accroche, quiz bonus |
@@ -588,6 +632,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `core/objectifs.php` | Post-its du mur : lecture, emplacement libre, couleurs — helpers seuls |
 | `core/boule.php` | Prompt boule de neige : étapes, ordre de passage, validation, annulation — helpers seuls |
 | `core/points.php` | Points d'équipe et individuels : attribution, totaux, rangs — helpers seuls |
+| `core/bocal.php` | Bocal à secrets : découpage du mail, correction automatique, copies — helpers seuls |
 | `core/battle.php` | Prompt Battle : manches, tirage, chrono, copies, votes, vainqueurs — helpers seuls |
 | `core/etapes.php` | Lecture des étapes ouvertes de la formation (aucune sortie, helpers seuls) |
 | `core/horodatage.php` | Conversion des horodatages serveur vers l'heure locale (helpers seuls) |
@@ -599,6 +644,8 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `boule-tableau.php` | Tableau du prompt boule de neige, une colonne par équipe, en direct (protégé par clé) |
 | `battle.php` | Prompt Battle côté stagiaire : copie du volontaire, vote, résultat |
 | `battle-tableau.php` | Prompt Battle côté formateur, et `?vue=projection` pour le vidéoprojecteur (protégé par clé) |
+| `bocal.php` | Bocal à secrets côté stagiaire : surligner le mail, réécrire la demande, rendre sa copie |
+| `bocal-tableau.php` | Bocal à secrets côté formateur : correction, test des prompts, points (protégé par clé) |
 | `scores.php` | Points et classement : gestion, et `?vue=projection` pour le vidéoprojecteur (protégé par clé) |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
 | `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |

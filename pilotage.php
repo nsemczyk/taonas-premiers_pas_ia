@@ -50,7 +50,8 @@ $manquantes = [];
 if (formation()['outils'] ?? []) {
     foreach (['participants' => 'migration-equipes.sql', 'objectifs.anonyme' => 'migration-objectifs.sql',
               'boule_briques' => 'migration-boule.sql', 'points' => 'migration-points.sql',
-              'battle_votes' => 'migration-battle.sql'] as $cible => $script) {
+              'battle_votes' => 'migration-battle.sql',
+              'bocal_copies' => 'migration-bocal.sql'] as $cible => $script) {
         [$table, $colonne] = explode('.', $cible . '.1');   // table ou table.colonne attendue
         try {
             db()->query("SELECT $colonne FROM `$table` LIMIT 1");

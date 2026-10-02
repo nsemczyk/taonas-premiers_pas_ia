@@ -473,3 +473,23 @@ CREATE TABLE IF NOT EXISTS `battle_votes` (
   CONSTRAINT `fk_vote_participant` FOREIGN KEY (`participant_id`) REFERENCES `participants` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_vote_copie` FOREIGN KEY (`copie_id`) REFERENCES `battle_copies` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Le bocal à secrets : même table que migration-bocal.sql, incluse ici pour
+-- une installation neuve.
+--
+
+CREATE TABLE IF NOT EXISTS `bocal_copies` (
+  `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `formation`      VARCHAR(32)  NOT NULL,
+  `seance`         DATE         NOT NULL,
+  `participant_id` INT UNSIGNED NOT NULL,
+  `surlignes`      TEXT         NOT NULL,              -- JSON : numéros des mots surlignés
+  `prompt`         TEXT         NOT NULL,              -- la demande réécrite, anonymisée
+  `rendu`          TINYINT(1)   NOT NULL DEFAULT 0,    -- 1 : copie rendue, plus modifiable
+  `updated_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_copie` (`formation`, `seance`, `participant_id`),
+  CONSTRAINT `fk_bocal_participant` FOREIGN KEY (`participant_id`)
+    REFERENCES `participants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

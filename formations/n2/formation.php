@@ -79,7 +79,7 @@ MAIL,
             'acces'     => ['Identifiants et mot de passe', 'Critique', 'Ne doit JAMAIS sortir, IA ou pas'],
             'indice'    => ['« Merci de ne pas faire suivre »', 'Indice', 'Le rédacteur lui-même a marqué la confidentialité'],
         ],
-        'reference'  => 'Point RH sur un technicien d\'atelier en CDI depuis environ 5 ans, absent deux jours cette semaine (arrêt maladie), avec des tensions récentes avec un collègue et une situation personnelle difficile. Il est le seul à connaître un dossier client important, livraison prévue dans deux mois, et le client s\'impatiente. La RH propose un entretien cette semaine. Résume les enjeux et propose un ordre du jour pour cet entretien.',
+        'reference'  => 'Point RH sur un technicien d\'atelier en CDI depuis environ 5 ans, absent 2 jours cette semaine, avec des tensions récentes avec un collègue et une situation personnelle difficile. Il est le seul à connaître un dossier client important, livraison prévue dans deux mois, et le client s\'impatiente. La RH propose un entretien cette semaine. Résume les enjeux et propose un ordre du jour pour cet entretien.',
     ],
     // Pages de l'animateur proposées sur la télécommande (page => libellé du bouton)
     'outils'      => [

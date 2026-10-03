@@ -1,0 +1,5 @@
+# Contenus des formations : les .php sont inclus par les pages, jamais servis
+# directement. Les autres fichiers (documents à télécharger…) restent accessibles.
+<FilesMatch "\.php$">
+    Require all denied
+</FilesMatch>

@@ -1,7 +1,7 @@
 <?php
-require __DIR__ . '/config.php';
-require __DIR__ . '/eval-froide-questions.php';
-require __DIR__ . '/eval-froide-notification.php';
+require __DIR__ . '/core/formation.php';
+require __DIR__ . '/core/eval-froide-questions.php';
+require __DIR__ . '/core/eval-froide-notification.php';
 
 // ---------------------------------------------------------------------------
 // Accès par lien unique : ?t=TOKEN. Aucune entrée depuis l'accueil.
@@ -17,7 +17,7 @@ if ($token === '') {
     $etat = 'invalide';
 } else {
     try {
-        $st = db()->prepare('SELECT id, used_at FROM eval_froide_tokens WHERE token = ?');
+        $st = db()->prepare('SELECT id, used_at, formation FROM eval_froide_tokens WHERE token = ?');
         $st->execute([$token]);
         $ligne = $st->fetch();
     } catch (PDOException $e) {
@@ -32,6 +32,9 @@ if ($token === '') {
         }
     }
 }
+
+// Le lien porte sa formation : le participant n'a pas de ?f= à fournir
+$F = formation($ligne['formation'] ?? null);
 
 // ---------------------------------------------------------------------------
 // Enregistrement
@@ -130,7 +133,7 @@ function ef_checks(string $name, array $options): string
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="assets/favicon-couleur.png">
 <meta name="robots" content="noindex">
-<title>Évaluation à froid — Premiers pas avec l'IA générative</title>
+<title>Évaluation à froid — <?= e($F['titre']) ?></title>
 <link rel="stylesheet" href="style.css">
 <style>
 fieldset { border:none; margin:0 0 22px; padding:0; }
@@ -166,7 +169,7 @@ select.field { background:#fff; cursor:pointer; -webkit-appearance:none; -moz-ap
 
 <header class="site-head">
   <h1>Évaluation à froid</h1>
-  <p>Premiers pas avec l'IA générative · suivi après formation</p>
+  <p><?= e($F['titre']) ?> · suivi après formation</p>
 </header>
 
 <main class="wrap">

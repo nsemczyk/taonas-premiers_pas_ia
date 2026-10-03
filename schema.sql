@@ -296,3 +296,200 @@ CREATE TABLE IF NOT EXISTS `eval_froide` (
   PRIMARY KEY (`id`),
   KEY `idx_token` (`token_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Plusieurs formations (dossiers formations/<slug>/) : mêmes modifications que
+-- migration-formations.sql, incluses ici pour une installation neuve. Tout ce
+-- qui précède appartient au niveau 1 ('n1', valeur par défaut).
+--
+
+ALTER TABLE `etapes`
+  ADD COLUMN IF NOT EXISTS `formation` varchar(32) NOT NULL DEFAULT 'n1',
+  DROP INDEX IF EXISTS `cle`,
+  ADD UNIQUE KEY IF NOT EXISTS `uq_formation_cle` (`formation`, `cle`);
+
+-- Deux formations peuvent chacune avoir leur « quiz-final »
+ALTER TABLE `quizzes`
+  ADD COLUMN IF NOT EXISTS `formation` varchar(32) NOT NULL DEFAULT 'n1',
+  DROP INDEX IF EXISTS `slug`,
+  ADD UNIQUE KEY IF NOT EXISTS `uq_formation_slug` (`formation`, `slug`);
+
+ALTER TABLE `satisfaction`
+  ADD COLUMN IF NOT EXISTS `formation` varchar(32) NOT NULL DEFAULT 'n1',
+  ADD KEY IF NOT EXISTS `idx_formation` (`formation`, `created_at`);
+
+ALTER TABLE `eval_froide_tokens`
+  ADD COLUMN IF NOT EXISTS `formation` varchar(32) NOT NULL DEFAULT 'n1',
+  ADD KEY IF NOT EXISTS `idx_formation` (`formation`);
+
+--
+-- Participants de la séance et équipes : même table que exercices/equipes/migration.sql,
+-- incluse ici pour une installation neuve.
+--
+
+CREATE TABLE IF NOT EXISTS `participants` (
+  `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `formation`  VARCHAR(32)  NOT NULL,
+  `seance`     DATE         NOT NULL,                  -- journée locale
+  `prenom`     VARCHAR(40)  NOT NULL,
+  `jeton`      CHAR(32)     NOT NULL,                  -- cookie du téléphone, 16 octets aléatoires en hexadécimal
+  `equipe`     VARCHAR(16)  DEFAULT NULL,              -- clé d'équipe de formation.php, NULL = pas encore placé
+  `created_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_jeton` (`jeton`),
+  KEY `idx_seance` (`formation`, `seance`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Mur des objectifs : même contenu que exercices/mur/migration.sql, inclus ici
+-- pour une installation neuve.
+--
+
+CREATE TABLE IF NOT EXISTS `objectifs` (
+  `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `participant_id` INT UNSIGNED NOT NULL,
+  `texte`          VARCHAR(160) NOT NULL,
+  `anonyme`        TINYINT(1)   NOT NULL DEFAULT 0,       -- 1 : prénom masqué au tableau (choix du formateur)
+  `couleur`        TINYINT UNSIGNED NOT NULL DEFAULT 0,   -- rang dans la palette pastel
+  `x`              DECIMAL(6,4) NOT NULL DEFAULT 0.1,     -- coin haut-gauche, fraction de la largeur du tableau
+  `y`              DECIMAL(6,4) NOT NULL DEFAULT 0.1,     -- fraction de la hauteur
+  `rotation`       DECIMAL(5,1) NOT NULL DEFAULT 0,       -- degrés
+  `z`              INT UNSIGNED NOT NULL DEFAULT 0,       -- ordre d'empilement
+  `created_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_participant` (`participant_id`),
+  CONSTRAINT `fk_objectif_participant` FOREIGN KEY (`participant_id`)
+    REFERENCES `participants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- L'étape qui ouvre l'exercice sur l'accueil du niveau 2, fermée par défaut
+INSERT IGNORE INTO `etapes` (`formation`, `cle`, `titre`, `ordre`, `ouverte`) VALUES
+('n2', 'objectifs', 'Mon objectif du jour', 1, 0);
+
+--
+-- Prompt boule de neige : mêmes tables que exercices/boule/migration.sql, incluses ici
+-- pour une installation neuve.
+--
+
+CREATE TABLE IF NOT EXISTS `boule_parties` (
+  `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `formation`  VARCHAR(32)  NOT NULL,
+  `seance`     DATE         NOT NULL,
+  `equipe`     VARCHAR(16)  NOT NULL,                 -- clé d'équipe de formation.php
+  `tache`      VARCHAR(255) NOT NULL,                 -- la situation affichée en haut de l'écran
+  `created_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_partie` (`formation`, `seance`, `equipe`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `boule_briques` (
+  `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `partie_id`      INT UNSIGNED NOT NULL,
+  `etape`          TINYINT UNSIGNED NOT NULL,         -- 1 à 4 : briques du prompt ; 5 : réponse de l'IA
+  `participant_id` INT UNSIGNED DEFAULT NULL,         -- auteur ; NULL s'il a été retiré de la séance depuis
+  `prenom`         VARCHAR(40)  NOT NULL,             -- conservé pour le tableau, même si l'auteur est retiré
+  `texte`          TEXT         NOT NULL,
+  `created_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_etape` (`partie_id`, `etape`),       -- deux validations simultanées : une seule passe
+  CONSTRAINT `fk_brique_partie` FOREIGN KEY (`partie_id`)
+    REFERENCES `boule_parties` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_brique_participant` FOREIGN KEY (`participant_id`)
+    REFERENCES `participants` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Points de la séance : même table que exercices/scores/migration.sql, incluse ici
+-- pour une installation neuve.
+--
+
+CREATE TABLE IF NOT EXISTS `points` (
+  `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `formation`      VARCHAR(32)  NOT NULL,
+  `seance`         DATE         NOT NULL,
+  `equipe`         VARCHAR(16)  DEFAULT NULL,      -- points d'équipe : clé d'équipe de formation.php
+  `participant_id` INT UNSIGNED DEFAULT NULL,      -- points individuels
+  `valeur`         INT          NOT NULL,          -- négatif pour retirer
+  `motif`          VARCHAR(120) DEFAULT NULL,
+  `source`         VARCHAR(32)  DEFAULT NULL,
+  `created_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_seance` (`formation`, `seance`),
+  CONSTRAINT `fk_points_participant` FOREIGN KEY (`participant_id`)
+    REFERENCES `participants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Prompt Battle : mêmes tables que exercices/battle/migration.sql, incluses ici pour
+-- une installation neuve.
+--
+
+CREATE TABLE IF NOT EXISTS `battle_manches` (
+  `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `formation`  VARCHAR(32)  NOT NULL,
+  `seance`     DATE         NOT NULL,
+  `numero`     SMALLINT UNSIGNED NOT NULL,           -- 1, 2, 3… dans la séance
+  `tache`      VARCHAR(255) DEFAULT NULL,            -- tirée au sort
+  `tirage_at`  INT UNSIGNED DEFAULT NULL,            -- horodatage Unix du tirage (animation au vidéoprojecteur)
+  `equipe_a`   VARCHAR(16)  DEFAULT NULL,
+  `equipe_b`   VARCHAR(16)  DEFAULT NULL,
+  `joueur_a`   INT UNSIGNED DEFAULT NULL,            -- volontaire de l'équipe A
+  `joueur_b`   INT UNSIGNED DEFAULT NULL,
+  `etat`       VARCHAR(12)  NOT NULL DEFAULT 'preparation',  -- preparation | jeu | vote | revele
+  `fin_jeu`    INT UNSIGNED DEFAULT NULL,            -- horodatage Unix de la fin du chrono
+  `decompte`   TINYINT(1)   NOT NULL DEFAULT 0,      -- 1 : votes affichés en direct au vidéoprojecteur
+  `created_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_manche` (`formation`, `seance`, `numero`),
+  CONSTRAINT `fk_battle_joueur_a` FOREIGN KEY (`joueur_a`) REFERENCES `participants` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_battle_joueur_b` FOREIGN KEY (`joueur_b`) REFERENCES `participants` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- La copie de chaque équipe : enregistrée au fil de la saisie, figée à la fin du chrono
+CREATE TABLE IF NOT EXISTS `battle_copies` (
+  `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `manche_id`      INT UNSIGNED NOT NULL,
+  `equipe`         VARCHAR(16)  NOT NULL,
+  `participant_id` INT UNSIGNED DEFAULT NULL,
+  `prenom`         VARCHAR(40)  NOT NULL,
+  `prompt`         TEXT         NOT NULL,
+  `resultat`       TEXT         NOT NULL,
+  `lettre`         CHAR(1)      DEFAULT NULL,        -- A, B… attribuée au hasard à l'ouverture du vote
+  `updated_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_copie` (`manche_id`, `equipe`),
+  CONSTRAINT `fk_copie_manche` FOREIGN KEY (`manche_id`) REFERENCES `battle_manches` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_copie_participant` FOREIGN KEY (`participant_id`) REFERENCES `participants` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Un bulletin par votant et par manche ; il peut changer d'avis tant que le vote est ouvert
+CREATE TABLE IF NOT EXISTS `battle_votes` (
+  `manche_id`      INT UNSIGNED NOT NULL,
+  `participant_id` INT UNSIGNED NOT NULL,
+  `copie_id`       INT UNSIGNED NOT NULL,
+  PRIMARY KEY (`manche_id`, `participant_id`),
+  CONSTRAINT `fk_vote_manche` FOREIGN KEY (`manche_id`) REFERENCES `battle_manches` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_vote_participant` FOREIGN KEY (`participant_id`) REFERENCES `participants` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_vote_copie` FOREIGN KEY (`copie_id`) REFERENCES `battle_copies` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Le bocal à secrets : même table que exercices/bocal/migration.sql, incluse ici pour
+-- une installation neuve.
+--
+
+CREATE TABLE IF NOT EXISTS `bocal_copies` (
+  `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `formation`      VARCHAR(32)  NOT NULL,
+  `seance`         DATE         NOT NULL,
+  `participant_id` INT UNSIGNED NOT NULL,
+  `surlignes`      TEXT         NOT NULL,              -- JSON : numéros des mots surlignés
+  `prompt`         TEXT         NOT NULL,              -- la demande réécrite, anonymisée
+  `rendu`          TINYINT(1)   NOT NULL DEFAULT 0,    -- 1 : copie rendue, plus modifiable
+  `updated_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_copie` (`formation`, `seance`, `participant_id`),
+  CONSTRAINT `fk_bocal_participant` FOREIGN KEY (`participant_id`)
+    REFERENCES `participants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

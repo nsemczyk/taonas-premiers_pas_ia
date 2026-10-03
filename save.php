@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/horodatage.php';
+require __DIR__ . '/core/horodatage.php';
 
 header('Content-Type: application/json; charset=utf-8');
 

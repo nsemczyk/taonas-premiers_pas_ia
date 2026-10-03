@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/horodatage.php';
+require __DIR__ . '/core/horodatage.php';
 
 // Accès réservé à l'animateur
 if (($_GET['cle'] ?? '') !== CLE_ANIMATEUR) {
@@ -58,7 +58,9 @@ $jour = jour_valide($_GET['d'] ?? '');
 if ($jour === '') {
     // Regroupement en PHP : la journée est celle de l'heure locale
     $compte = [];
-    foreach (db()->query('SELECT created_at FROM satisfaction') as $r) {
+    $st = db()->prepare('SELECT created_at FROM satisfaction WHERE formation = ?');
+    $st->execute([formation_slug()]);
+    foreach ($st as $r) {
         $d = jour_local($r['created_at']);
         $compte[$d] = ($compte[$d] ?? 0) + 1;
     }
@@ -88,7 +90,7 @@ if ($jour === '') {
     <?php if ($jours): ?>
       <?php foreach ($jours as $j): ?>
         <a class="btn btn-primary"
-           href="export-satisfaction.php?cle=<?= rawurlencode(CLE_ANIMATEUR) ?>&amp;d=<?= e($j['d']) ?>">
+           href="<?= e(avec_f('export-satisfaction.php?cle=' . rawurlencode(CLE_ANIMATEUR) . '&d=' . $j['d'])) ?>">
           <?= e(jour_en_toutes_lettres($j['d'])) ?> — <?= (int)$j['n'] ?> avis
         </a>
       <?php endforeach; ?>
@@ -97,7 +99,7 @@ if ($jour === '') {
     <?php endif; ?>
   </section>
   <section class="card">
-    <a class="btn btn-ghost" href="resultats.php?cle=<?= rawurlencode(CLE_ANIMATEUR) ?>">Retour aux résultats</a>
+    <a class="btn btn-ghost" href="<?= e(avec_f('resultats.php?cle=' . rawurlencode(CLE_ANIMATEUR))) ?>">Retour aux résultats</a>
   </section>
 </main>
 </body>
@@ -116,8 +118,8 @@ require_once $chemin_fpdf;
 // Bornes de la journée locale traduites dans le fuseau du serveur
 [$debut, $fin] = bornes_journee($jour);
 $st = db()->prepare('SELECT * FROM satisfaction
-                     WHERE created_at >= ? AND created_at < ? ORDER BY created_at');
-$st->execute([$debut, $fin]);
+                     WHERE formation = ? AND created_at >= ? AND created_at < ? ORDER BY created_at');
+$st->execute([formation_slug(), $debut, $fin]);
 $avis = $st->fetchAll();
 
 if (!$avis) {
@@ -132,6 +134,7 @@ if (!$avis) {
 class QuestionnairePdf extends FPDF
 {
     public string $journee = '';
+    public string $formation = '';
     public int $numero = 0;
     public int $total = 0;
 
@@ -155,7 +158,7 @@ class QuestionnairePdf extends FPDF
         $this->Cell(0, 7, $this->txt('Questionnaire de satisfaction'), 0, 1);
 
         $this->SetFont('Helvetica', '', 9);
-        $this->Cell(120, 5, $this->txt('Premiers pas avec l\'IA générative — ' . $this->journee), 0, 0);
+        $this->Cell(120, 5, $this->txt($this->formation . ' — ' . $this->journee), 0, 0);
         $this->Cell(0, 5, $this->txt('Avis ' . $this->numero . ' / ' . $this->total), 0, 1, 'R');
 
         $this->SetLineWidth(0.4);
@@ -342,6 +345,7 @@ $pdf->SetAuthor('Formation IA générative');
 $pdf->SetMargins(15, 15, 15);
 $pdf->SetAutoPageBreak(true, 18);
 $pdf->journee = jour_en_toutes_lettres($jour);
+$pdf->formation = formation()['titre'];
 $pdf->total   = count($avis);
 
 foreach ($avis as $i => $a) {

@@ -1,5 +1,6 @@
 <?php
-require __DIR__ . '/etapes.php';
+require __DIR__ . '/core/etapes.php';
+require __DIR__ . '/exercices/mur/fonctions.php';
 
 // Accès réservé à l'animateur
 $cle = $_REQUEST['cle'] ?? '';
@@ -12,32 +13,67 @@ if ($cle !== CLE_ANIMATEUR) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
+    // Chaque action ne touche que la formation pilotée
+    $f = formation_slug();
+
     if ($action === 'basculer') {
-        $st = db()->prepare('UPDATE etapes SET ouverte = 1 - ouverte WHERE cle = ?');
-        $st->execute([(string)($_POST['etape'] ?? '')]);
+        $st = db()->prepare('UPDATE etapes SET ouverte = 1 - ouverte WHERE formation = ? AND cle = ?');
+        $st->execute([$f, (string)($_POST['etape'] ?? '')]);
 
     } elseif ($action === 'suivante') {
         // Ouvre la première étape encore fermée, dans l'ordre du déroulé
-        $st = db()->query('SELECT cle FROM etapes WHERE ouverte = 0 ORDER BY ordre LIMIT 1');
+        $st = db()->prepare('SELECT cle FROM etapes WHERE formation = ? AND ouverte = 0 ORDER BY ordre LIMIT 1');
+        $st->execute([$f]);
         if ($suivante = $st->fetchColumn()) {
-            $st = db()->prepare('UPDATE etapes SET ouverte = 1 WHERE cle = ?');
-            $st->execute([$suivante]);
+            $st = db()->prepare('UPDATE etapes SET ouverte = 1 WHERE formation = ? AND cle = ?');
+            $st->execute([$f, $suivante]);
         }
 
     } elseif ($action === 'tout_fermer') {
-        db()->exec('UPDATE etapes SET ouverte = 0');
+        $st = db()->prepare('UPDATE etapes SET ouverte = 0 WHERE formation = ?');
+        $st->execute([$f]);
 
     } elseif ($action === 'quiz') {
-        $st = db()->prepare('UPDATE quizzes SET actif = 1 - actif WHERE slug = ?');
-        $st->execute([(string)($_POST['slug'] ?? '')]);
+        $st = db()->prepare('UPDATE quizzes SET actif = 1 - actif WHERE formation = ? AND slug = ?');
+        $st->execute([$f, (string)($_POST['slug'] ?? '')]);
+
+    } elseif ($action === 'masquer_objectif') {
+        objectif_masquer((int)($_POST['id'] ?? 0), !empty($_POST['anonyme']));
     }
 
-    header('Location: pilotage.php?cle=' . rawurlencode(CLE_ANIMATEUR), true, 303);
+    header('Location: ' . avec_f('pilotage.php?cle=' . rawurlencode(CLE_ANIMATEUR)), true, 303);
     exit;
 }
 
+// Tables attendues par les outils de la formation, et le script qui les crée
+$manquantes = [];
+if (formation()['outils'] ?? []) {
+    foreach (['participants' => 'exercices/equipes/migration.sql', 'objectifs.anonyme' => 'exercices/mur/migration.sql',
+              'boule_briques' => 'exercices/boule/migration.sql', 'points' => 'exercices/scores/migration.sql',
+              'battle_votes' => 'exercices/battle/migration.sql',
+              'bocal_copies' => 'exercices/bocal/migration.sql'] as $cible => $script) {
+        [$table, $colonne] = explode('.', $cible . '.1');   // table ou table.colonne attendue
+        try {
+            db()->query("SELECT $colonne FROM `$table` LIMIT 1");
+        } catch (PDOException $e) {
+            $manquantes[$cible] = $script;
+        }
+    }
+}
+try {
+    db()->query('SELECT formation FROM etapes LIMIT 1');
+} catch (PDOException $e) {
+    $manquantes['etapes.formation'] = 'migration-formations.sql';
+}
+
+etapes_synchroniser();
 $etapes  = etapes_toutes() ?? [];
-$quizzes = db()->query('SELECT slug, titre, actif FROM quizzes ORDER BY id')->fetchAll();
+$quizzes = [];
+if (!isset($manquantes['etapes.formation'])) {   // sinon la page n'affiche que la migration à jouer
+    $st = db()->prepare('SELECT slug, titre, actif FROM quizzes WHERE formation = ? ORDER BY id');
+    $st->execute([formation_slug()]);
+    $quizzes = $st->fetchAll();
+}
 $reste   = count(array_filter($etapes, fn($e) => !$e['ouverte']));
 ?><!DOCTYPE html>
 <html lang="fr">
@@ -57,6 +93,19 @@ $reste   = count(array_filter($etapes, fn($e) => !$e['ouverte']));
 </header>
 
 <main class="wrap">
+
+  <?= selecteur_formation('pilotage.php?cle=' . rawurlencode(CLE_ANIMATEUR)) ?>
+
+  <?php if ($manquantes): ?>
+  <section class="card err">
+    <h2>Migration à jouer</h2>
+    <p class="lead">Il manque en base de quoi faire fonctionner cette formation. Jouez, dans l'ordre,
+      avec un compte administrateur :</p>
+    <?php foreach (array_unique($manquantes) as $script): ?>
+    <pre>mysql --default-character-set=utf8mb4 -u root -p formation_ia &lt; <?= e($script) ?></pre>
+    <?php endforeach; ?>
+  </section>
+  <?php endif; ?>
 
   <?php if (!etapes_disponibles()): ?>
   <section class="card">
@@ -123,10 +172,43 @@ $reste   = count(array_filter($etapes, fn($e) => !$e['ouverte']));
     </p>
   </section>
 
+  <?php if ($outils = formation()['outils'] ?? []): ?>
+  <section class="card">
+    <h2>Outils de la journée</h2>
+    <p class="lead">Déclarés dans la configuration de la formation ; chacun s'ouvre dans un nouvel onglet.</p>
+    <?php foreach ($outils as $page => $libelle): ?>
+    <a class="btn btn-primary" target="_blank"
+       href="<?= e(avec_f($page . '?cle=' . rawurlencode(CLE_ANIMATEUR))) ?>"><?= e($libelle) ?></a>
+    <?php endforeach; ?>
+  </section>
+  <?php endif; ?>
+
+  <?php if (isset($outils['mur.php']) && !$manquantes): $objectifs = objectifs_seance();
+        usort($objectifs, fn($a, $b) => strcasecmp($a['prenom'], $b['prenom'])); ?>
+  <section class="card">
+    <h2>Objectifs du jour <span class="muted">· <?= count($objectifs) ?></span></h2>
+    <p class="lead">Pour vous seul : qui a écrit quoi, même quand le prénom est masqué au tableau.</p>
+    <?php foreach ($objectifs as $o): ?>
+    <form method="post" class="pilot-row objectif-ligne">
+      <input type="hidden" name="cle" value="<?= e(CLE_ANIMATEUR) ?>">
+      <input type="hidden" name="action" value="masquer_objectif">
+      <input type="hidden" name="id" value="<?= (int)$o['id'] ?>">
+      <input type="hidden" name="anonyme" value="<?= $o['anonyme'] ? '' : '1' ?>">
+      <span class="pilot-titre"><strong><?= e($o['prenom']) ?></strong> — <?= e($o['texte']) ?></span>
+      <button class="btn btn-etat <?= $o['anonyme'] ? 'est-fermee' : 'est-ouverte' ?>"
+              title="<?= $o['anonyme'] ? 'Réafficher le prénom au tableau' : 'Masquer le prénom au tableau' ?>">
+        <?= $o['anonyme'] ? 'Prénom masqué' : 'Prénom affiché' ?>
+      </button>
+    </form>
+    <?php endforeach; ?>
+    <?php if (!$objectifs): ?><p class="muted">Aucun objectif pour l'instant.</p><?php endif; ?>
+  </section>
+  <?php endif; ?>
+
   <section class="card">
     <h2>Voir la journée</h2>
-    <a class="btn btn-ghost" href="index.php" target="_blank">Ouvrir l'accueil tel que le voient les participants</a>
-    <a class="btn btn-ghost" href="resultats.php?cle=<?= rawurlencode(CLE_ANIMATEUR) ?>">Voir les résultats</a>
+    <a class="btn btn-ghost" href="<?= e(avec_f('index.php')) ?>" target="_blank">Ouvrir l'accueil tel que le voient les participants</a>
+    <a class="btn btn-ghost" href="<?= e(avec_f('resultats.php?cle=' . rawurlencode(CLE_ANIMATEUR))) ?>">Voir les résultats</a>
   </section>
 
 </main>

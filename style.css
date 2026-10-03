@@ -419,3 +419,247 @@ select.listbox option { padding: 8px 6px; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* Choix de la formation, sur les pages de l'animateur (visible dès 2 formations) */
+.formations { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.formations a {
+  padding: 8px 16px; border: 2px solid var(--marque); color: var(--marque);
+  text-decoration: none; font-weight: 600; background: var(--paper);
+}
+.formations a:hover { background: var(--glacier); }
+.formations a.active { background: var(--marque); color: var(--blanc); }
+
+/* Équipes : la couleur de chaque équipe arrive par la variable --equipe */
+.equipe-badge {
+  display: inline-block; padding: 2px 12px; font-weight: 600;
+  background: var(--equipe); color: var(--blanc);
+}
+.equipe-carte { border-left: 8px solid var(--equipe); }
+.membres { margin: 8px 0 0; padding-left: 20px; font-size: 1.05rem; }
+.placement {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 10px 0; border-bottom: 1px solid var(--gris);
+}
+.placement-prenom { flex: 1 1 120px; font-weight: 600; color: var(--nuit); }
+.placement-choix { display: flex; flex-wrap: wrap; gap: 6px; }
+.placement-choix form { margin: 0; }
+.choix-equipe, .choix-suppr {
+  font: inherit; font-size: .95rem; padding: 8px 12px; cursor: pointer;
+  border: 2px solid var(--equipe, var(--gris)); background: var(--paper); color: var(--nuit);
+}
+.choix-equipe.est-choisie { background: var(--equipe); color: var(--blanc); }
+.choix-equipe:disabled { opacity: .35; cursor: not-allowed; }
+.choix-suppr { border-color: var(--gris); color: var(--brique); }
+.btn-lien {
+  background: none; border: none; padding: 0; margin-top: 12px; font: inherit;
+  font-size: .9rem; color: var(--indigo); text-decoration: underline; cursor: pointer;
+}
+.actions-pile { display: grid; gap: 10px; }
+.actions-pile form { margin: 0; }
+.actions-pile .btn { margin: 0; }
+
+/* ------------------------------------------------------------------ Post-its
+   Écriture manuscrite embarquée (Caveat, licence OFL : assets/fonts/Caveat-OFL.txt).
+   Tout le post-it se dimensionne sur --taille : aperçu mobile comme tableau. */
+@font-face { font-family:'Caveat'; src:url('assets/fonts/Caveat-Regular.woff2') format('woff2'); font-weight:400 500; font-style:normal; font-display:swap; }
+@font-face { font-family:'Caveat'; src:url('assets/fonts/Caveat-Bold.woff2') format('woff2'); font-weight:600 900; font-style:normal; font-display:swap; }
+
+.postit {
+  --taille: 240px;
+  --papier: #FFF3A0;
+  position: relative;
+  box-sizing: border-box;
+  width: var(--taille);
+  height: var(--taille);
+  padding: 0.09em 0.1em 0.07em;
+  font-size: calc(var(--taille) / 10);
+  font-family: 'Caveat', 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
+  color: #1f2340;
+  display: flex; flex-direction: column;
+  transform: rotate(var(--rotation, 0deg));
+  /* Bande adhésive un peu plus sombre en haut, papier légèrement ombré en bas */
+  background:
+    linear-gradient(to bottom, rgba(0,0,0,.06), rgba(0,0,0,0) 14%),
+    linear-gradient(to top, rgba(0,0,0,.05), rgba(0,0,0,0) 30%),
+    var(--papier);
+  box-shadow:
+    0 1px 1px rgba(0,0,0,.12),
+    0 0.35em 0.5em -0.2em rgba(0,0,0,.28),
+    0 0.9em 1em -0.6em rgba(0,0,0,.25);
+}
+/* Coin bas-droit qui se décolle légèrement */
+.postit::after {
+  content: ''; position: absolute; right: 0; bottom: 0;
+  width: 13%; height: 13%;
+  background: linear-gradient(135deg, var(--papier) 45%, rgba(0,0,0,.10) 50%, rgba(255,255,255,.35) 56%, rgba(0,0,0,0) 60%);
+  pointer-events: none;
+}
+.postit p { margin: 0; }
+.postit-amorce { font-size: .52em; line-height: 1.05; opacity: .72; }
+.postit-texte {
+  flex: 1; margin-top: .18em !important;
+  font-size: 1.05em; line-height: 1.02; font-weight: 600;
+  overflow-wrap: anywhere; overflow: hidden;
+}
+.postit-texte[data-longueur="court"] { font-size: 1.3em; }
+.postit-texte[data-longueur="long"]  { font-size: .86em; }
+.postit-prenom {
+  align-self: flex-end; margin-right: 1.3em !important;   /* à côté du coin décollé, pas dessous */
+  position: relative; z-index: 1;
+  font-size: .72em; font-weight: 700; transform: rotate(-4deg);
+}
+.postit-prenom::before { content: '— '; }
+
+.postit-apercu { --taille: min(72vw, 260px); --rotation: -2deg; margin: 6px auto 24px; }
+.compteur { color: var(--indigo); font-size: .85rem; margin: 4px 0 12px; text-align: right; }
+.colle { border-left: 8px solid var(--olive); }
+.err { background: #F6E3DA; border-left: 6px solid var(--brique); padding: 12px 14px; margin-bottom: 16px; font-weight: 600; }
+textarea.saisie {
+  width: 100%; box-sizing: border-box; min-height: 96px; padding: 12px 14px;
+  font: inherit; font-size: 1.05rem; border: 2px solid var(--gris); background: var(--paper);
+}
+textarea.saisie:focus { border-color: var(--marque); outline: none; }
+
+/* ------------------------------------------------ Prompt boule de neige */
+.boule-tete { border-top: 8px solid var(--equipe); }
+.boule-equipe { margin: 0 0 10px; }
+.boule-tache-label { margin: 0; font-size: .85rem; color: var(--indigo); text-transform: uppercase; letter-spacing: .05em; }
+.boule-tache { margin: 2px 0 14px; font-size: 1.3rem; font-weight: 600; color: var(--nuit); }
+.boule-ordre { margin: 0; padding: 0; list-style: none; counter-reset: etape; }
+.boule-ordre li {
+  counter-increment: etape; display: flex; justify-content: space-between; gap: 8px;
+  padding: 6px 8px; border-left: 4px solid var(--gris); margin-bottom: 4px; color: var(--indigo);
+}
+.boule-ordre li::before { content: counter(etape) '.'; width: 1.4em; }
+.boule-ordre li span { flex: 1; }
+.boule-ordre li.faite { border-color: var(--olive); }
+.boule-ordre li.faite strong::after { content: ' ✓'; color: var(--olive); }
+.boule-ordre li.en-cours { border-color: var(--vif); background: var(--glacier); color: var(--nuit); font-weight: 600; }
+.a-toi { border-left: 8px solid var(--vif); }
+.consigne { margin: -2px 0 10px; color: var(--indigo); }
+.brique { margin-bottom: 14px; }
+.brique-titre { margin: 0 0 4px; font-size: .9rem; color: var(--indigo); }
+.brique-texte { margin: 0 0 14px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 1.05rem; color: var(--nuit); }
+.brique-texte.deja { background: var(--glacier); padding: 12px 14px; }
+.reponse-ia { background: var(--glacier); padding: 12px 14px; }
+
+/* ------------------------------------------------ Points et classement */
+.mes-points { margin: 10px 0 0; padding: 8px 12px; background: var(--glacier); color: var(--nuit); }
+.mes-points strong { font-size: 1.2rem; color: var(--marque); }
+.pts-ligne { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--gris); }
+.pts-nom { flex: 1 1 140px; font-weight: 600; color: var(--nuit); }
+.pts-total { min-width: 3ch; font-size: 1.5rem; font-weight: 700; color: var(--marque); text-align: right; }
+.pts-actions { display: flex; gap: 6px; }
+.pts-actions form { margin: 0; }
+.pts-btn {
+  font: inherit; font-weight: 700; min-width: 46px; padding: 8px 10px; cursor: pointer;
+  background: var(--paper); color: var(--olive); border: 2px solid var(--olive);
+}
+.pts-btn.moins { color: var(--brique); border-color: var(--brique); }
+.pts-libre select.field { width: 100%; min-height: 54px; padding: 12px 14px; font-size: 1.1rem; border: 2px solid var(--gris); margin-bottom: 16px; background: #fff; }
+
+/* Classement au vidéoprojecteur */
+body.classement-projete { margin: 0; background: var(--nuit); color: var(--blanc); min-height: 100vh; }
+.cl-tete { display: flex; align-items: center; padding: 18px 32px; }
+.cl-tete h1 { flex: 1; margin: 0; font-family: var(--font-titre); font-weight: 400; font-size: 2.6rem; color: var(--blanc); }
+.cl-tete a { color: var(--clair); font-size: .9rem; border: 2px solid var(--clair); padding: 6px 12px; text-decoration: none; opacity: .5; }
+.cl-tete a:hover { opacity: 1; }
+.cl-grille { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; padding: 8px 32px 32px; }
+@media (max-width: 900px) { .cl-grille { grid-template-columns: 1fr; } }
+.cl-grille h2 { color: var(--clair); font-weight: 400; font-size: 1.6rem; margin: 0 0 14px; }
+.cl-equipe {
+  display: flex; align-items: center; gap: 18px; margin-bottom: 14px; padding: 18px 22px;
+  background: var(--equipe); color: var(--blanc); box-shadow: 0 6px 16px rgba(0,0,0,.35);
+}
+.cl-equipe .cl-rang { font-size: 2rem; font-weight: 700; opacity: .8; min-width: 1.4em; }
+.cl-equipe .cl-nom { flex: 1; font-size: 2.2rem; font-family: var(--font-titre); }
+.cl-equipe .cl-total { font-size: 3rem; font-weight: 700; }
+.cl-total small { font-size: .45em; font-weight: 400; opacity: .8; }
+.cl-joueurs { list-style: none; margin: 0; padding: 0; }
+.cl-joueurs li { display: flex; align-items: center; gap: 14px; padding: 9px 14px; font-size: 1.35rem; border-bottom: 1px solid rgba(175,222,244,.18); }
+.cl-joueurs .cl-rang { min-width: 1.6em; color: var(--clair); }
+.cl-joueurs .cl-nom { flex: 1; }
+.cl-joueurs .cl-total { font-weight: 700; font-size: 1.5rem; }
+.cl-joueurs .equipe-badge { font-size: .7em; vertical-align: middle; }
+.podium-1 { background: rgba(255,215,0,.18); }
+.podium-2 { background: rgba(200,200,210,.14); }
+.podium-3 { background: rgba(205,127,50,.16); }
+.podium .cl-rang::after { margin-left: 4px; }
+.podium-1 .cl-rang::after { content: '🥇'; }
+.podium-2 .cl-rang::after { content: '🥈'; }
+.podium-3 .cl-rang::after { content: '🥉'; }
+.cl-vide { color: var(--clair); font-size: 1.2rem; }
+
+/* ------------------------------------------------ Prompt Battle */
+.chrono { margin: 6px 0 0; font-size: 2.6rem; font-weight: 700; color: var(--marque); font-variant-numeric: tabular-nums; }
+.chrono.urgent { color: var(--brique); }
+.sauvegarde { color: var(--indigo); font-size: .9rem; margin: -6px 0 0; }
+.copie-lettre { margin: 0 0 8px; font-weight: 700; font-size: 1.15rem; color: var(--nuit); }
+.copie.choisie { border-left: 8px solid var(--vif); }
+.copie.gagnante { border-left: 8px solid var(--olive); }
+.duel select.field { width: 100%; min-height: 54px; padding: 12px 14px; font-size: 1.1rem; border: 2px solid var(--gris); margin-bottom: 14px; background: #fff; }
+
+/* Écran de projection */
+body.battle-projete { margin: 0; min-height: 100vh; background: radial-gradient(ellipse at 50% 0%, #2a2f6c 0%, var(--nuit) 65%); color: var(--blanc); }
+.bp-tete { display: flex; align-items: center; padding: 16px 32px; }
+.bp-tete h1 { flex: 1; margin: 0; font-family: var(--font-titre); font-weight: 400; font-size: 2.2rem; color: var(--blanc); }
+.bp-tete h1 span { color: var(--clair); font-size: .7em; }
+.bp-tete a { color: var(--clair); font-size: .9rem; border: 2px solid var(--clair); padding: 6px 12px; text-decoration: none; opacity: .4; }
+.bp-tete a:hover { opacity: 1; }
+.bp-scene { padding: 8px 40px 40px; text-align: center; }
+.bp-label { color: var(--clair); font-size: 1.4rem; margin: 18px 0 10px; }
+.bp-attente { color: var(--clair); font-size: 2rem; margin-top: 18vh; }
+.bp-tache { font-family: var(--font-titre); font-size: clamp(2rem, 4vw, 3.6rem); line-height: 1.2; margin: 3vh auto 0; max-width: 22em; }
+.bp-tache-petite { font-size: clamp(1.3rem, 2.2vw, 2rem); margin-top: 0; }
+.bp-tache.roulette { opacity: .75; filter: blur(.6px); }
+.bp-tache.tombe { animation: tombe .5s cubic-bezier(.2,1.5,.4,1); }
+@keyframes tombe { from { transform: scale(1.25); color: var(--vif); } to { transform: scale(1); } }
+.bp-chrono { font-size: clamp(5rem, 16vw, 13rem); font-weight: 700; margin: 2vh 0; font-variant-numeric: tabular-nums; color: var(--vif); }
+.bp-chrono.urgent { color: #ff6b5b; animation: pouls 1s infinite; }
+@keyframes pouls { 50% { opacity: .55; } }
+.bp-duel { display: flex; justify-content: center; align-items: center; gap: 32px; margin-top: 4vh; }
+.bp-camp { padding: 16px 30px; background: var(--equipe); font-size: 2rem; font-family: var(--font-titre); box-shadow: 0 8px 20px rgba(0,0,0,.4); }
+.bp-camp small { display: block; font-family: var(--font-corps); font-size: .55em; opacity: .9; }
+.bp-vs { font-size: 2.6rem; font-weight: 700; color: var(--vif); }
+.bp-copies { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 28px; margin-top: 18px; text-align: left; }
+.bp-copie { background: var(--blanc); color: var(--nuit); padding: 18px 22px; border-top: 10px solid var(--equipe, var(--vif)); box-shadow: 0 10px 28px rgba(0,0,0,.45); }
+.bp-copie.gagnante { outline: 6px solid #f2c94c; }
+.bp-copie h2 { margin: 0 0 10px; font-size: 1.8rem; display: flex; align-items: baseline; gap: 10px; }
+.bp-copie h2 small { font-size: .6em; color: var(--indigo); }
+.bp-voix { margin-left: auto; background: var(--marque); color: var(--blanc); padding: 2px 14px; font-size: .9em; }
+.bp-texte { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 1.25rem; line-height: 1.4; max-height: 52vh; overflow: auto; }
+.bp-prompt { max-height: 18vh; background: var(--glacier); padding: 8px 12px; font-size: 1.05rem; }
+.bp-sous { margin: 10px 0 4px; font-size: .95rem; color: var(--indigo); text-transform: uppercase; letter-spacing: .05em; }
+.bp-victoire { font-size: clamp(2rem, 4vw, 3.4rem); color: #f2c94c; font-family: var(--font-titre); margin: 10px 0; }
+
+/* ------------------------------------------------ Le bocal à secrets */
+.bocal-grille { display: grid; gap: 0 18px; }
+@media (min-width: 900px) {
+  .bocal-grille { grid-template-columns: 3fr 2fr; align-items: start; }
+  .bocal-grille > .card:last-child { position: sticky; top: 12px; }
+}
+.bocal-compte { font-size: .95rem; color: var(--indigo); font-family: var(--font-corps); }
+.bocal-mail {
+  white-space: pre-line; overflow-wrap: anywhere; line-height: 1.75; font-size: 1.02rem;
+  background: var(--glacier); padding: 14px 16px; color: var(--nuit);
+}
+@media (max-width: 899px) {
+  .bocal-mail.actif { max-height: 55vh; overflow-y: auto; }   /* le mail et la saisie restent proches */
+}
+.bocal-mail .mot { padding: 1px 0; }
+.bocal-mail.actif .mot { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mot.surligne { background: #FFE66B; box-shadow: 0 0 0 2px #FFE66B; }
+.mot.trouve { background: #CFE3A6; box-shadow: 0 0 0 2px #CFE3A6; }
+.mot.oublie { text-decoration: underline wavy var(--brique); text-underline-offset: 3px; }
+.mot.faux { background: var(--error-soft); box-shadow: 0 0 0 2px var(--error-soft); text-decoration: line-through; }
+.bocal-legende { font-size: .9rem; display: flex; gap: 14px; flex-wrap: wrap; }
+.bocal-oubli { color: var(--brique); font-weight: 600; }
+.bocal-copie.brouillon { border-left: 8px solid var(--gris); }
+.bocal-notes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
+.bocal-notes form { margin: 0; }
+.bocal-notes .btn { width: auto; min-height: 0; margin: 0; padding: 8px 14px; }
+.bocal-notes span { font-weight: 600; margin-left: 6px; }
+.bocal-notes .btn.suggere:not(.btn-gold) { border-style: dashed; border-color: var(--marque); }
+.bocal-corrige { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: .95rem; }
+.bocal-corrige th, .bocal-corrige td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--gris); vertical-align: top; }
+.bocal-corrige th { background: var(--nuit); color: var(--blanc); font-weight: 400; }

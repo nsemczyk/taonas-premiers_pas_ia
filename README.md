@@ -16,10 +16,11 @@ cp config.example.php config.php   # puis renseigner DB_* et CLE_ANIMATEUR
 # déposer le tout dans le vhost, HTTPS obligatoire (navigator.clipboard l'exige)
 ```
 
-`config.php` ne doit pas être versionné. Vérifier que Apache sert bien les
-`.php` et que `config.php` n'est pas lisible en direct (il ne produit aucune
-sortie, mais un `<FilesMatch "^config\.php$"> Require all denied </FilesMatch>`
-ne coûte rien).
+`config.php` ne doit pas être versionné. Le `.htaccess` fourni en interdit
+l'accès direct et donne les adresses par formation (`/n2/…`). Pour qu'il soit
+lu, le vhost doit autoriser `AllowOverride All` (ou au moins `FileInfo AuthConfig`)
+et `mod_rewrite` doit être actif (`a2enmod rewrite`). Sans eux, le site
+fonctionne quand même, avec des adresses en `?f=n2`.
 
 ## Jour de formation
 
@@ -31,6 +32,373 @@ ne coûte rien).
    `https://votredomaine.fr/pilotage.php?cle=VOTRE_CLE`
 3. Ouvrir le tableau de bord (pour vous, pas au projecteur pendant le quiz) :
    `https://votredomaine.fr/resultats.php?cle=VOTRE_CLE`
+
+## Plusieurs formations
+
+Le site sert plusieurs formations — niveau 1, niveau 2… — avec un socle commun.
+Quatre étages :
+
+- **À la racine** : uniquement des pages (accueil, quiz, pilotage, tableau de
+  bord, exports…). Elles sont communes à toutes les formations.
+- **`exercices/<nom>/`** : un dossier par exercice (équipes, scores, mur,
+  boule, battle, bocal) avec ses pages, ses helpers (`fonctions.php`, carte
+  d'accueil comprise) et sa migration. Un exercice n'appartient à aucune
+  formation : il ne s'anime que là où une formation déclare son étape et son
+  contenu. Ses pages restent servies à la racine (`/n2/bocal.php`), jamais par
+  leur chemin réel.
+- **`core/`** : le socle PHP inclus par les pages (formation courante, étapes,
+  heures locales, briques de l'accueil, évaluation à froid). Jamais servi
+  directement.
+- **`formations/<slug>/`** : ce qui est propre à une formation.
+  `formation.php` porte ses réglages (titre, accroche, quiz bonus) et le
+  contenu de ses exercices (tâches, mail du bocal…), `accueil.php` ses cartes,
+  dans l'ordre de la journée.
+
+La formation se choisit dans l'adresse, comme un dossier : `/n2/`,
+`/n2/equipes.php`, `/n2/pilotage.php`… Ces dossiers n'existent pas sur le
+disque : le `.htaccess` sert les pages communes de la racine en leur indiquant
+la formation. À la racine, sans préfixe, c'est le niveau 1 (`n1`) : toutes les
+adresses d'avant, liens d'évaluation à froid déjà envoyés compris, fonctionnent
+à l'identique, et `/n1/…` y mène aussi. Une formation inconnue répond
+« Formation inconnue » plutôt que d'enregistrer au mauvais endroit.
+
+Sans `mod_rewrite` (serveur intégré de PHP, hébergement qui l'interdit), la même
+formation s'atteint par `?f=n2` : `/equipes.php?f=n2`. Cette forme reste
+acceptée partout, et les pages s'adaptent seules au mode disponible — sauf
+celles des exercices, qui ont besoin de `mod_rewrite`. Le site
+fonctionne à la racine du domaine comme dans un sous-dossier, sans réglage.
+Pour une autre formation par défaut : `define('FORMATION_DEFAUT', 'n2');` dans
+`config.php`.
+
+Côté participants, le QR code d'une journée de niveau 2 pointe donc vers
+`https://votredomaine.fr/n2/`. Côté animateur, dès que deux formations sont
+installées, des onglets apparaissent en tête de la télécommande, du tableau de
+bord et des pages d'évaluation à froid ; chaque page ne montre et ne modifie
+que la formation choisie. Un lien d'évaluation à froid, lui, porte sa formation :
+le participant n'a rien à ajouter.
+
+En base, `etapes`, `quizzes`, `satisfaction` et `eval_froide_tokens` ont une
+colonne `formation` ; les résultats de quiz suivent leur quiz, les évaluations à
+froid leur lien. Deux formations peuvent chacune avoir leur `quiz-final` et
+leur étape `quiz`.
+
+### Ajouter une formation
+
+1. Copier `formations/n1/` vers `formations/n2/`, puis adapter `formation.php`
+   (titres) et `accueil.php` (cartes). Les briques disponibles : dans
+   `core/blocs.php`, `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`,
+   `bloc_arrivee()` ; dans chaque `exercices/<nom>/fonctions.php`,
+   `bloc_objectif()`, `bloc_boule()`, `bloc_battle()`, `bloc_bocal()`. Un
+   dossier préfixé par `_` (brouillon) est ignoré.
+2. Déclarer ses étapes dans `formation.php`, dans l'ordre de la journée :
+
+```php
+'etapes' => [
+    'intro' => 'Pour commencer',
+    'quiz'  => 'Les quiz',
+    'avis'  => 'Votre avis',
+],
+```
+
+La télécommande les crée en base à son ouverture, fermées, et aligne ensuite
+titres et ordre sur cette déclaration sans toucher à ce qui est ouvert. Les clés
+(`intro`, `quiz`…) sont celles qu'utilise `accueil.php`. Les quiz, eux, restent
+en SQL :
+
+```sql
+INSERT INTO quizzes (formation, slug, titre) VALUES ('n2', 'quiz-final', 'Le grand quiz du niveau 2');
+```
+
+Si une table manque (migration non jouée), la télécommande l'affiche en tête,
+avec la commande à lancer.
+
+Limite actuelle, assumée : le questionnaire de satisfaction et celui de
+l'évaluation à froid sont encore ceux du niveau 1. Chaque réponse est bien
+rattachée à sa formation, mais les questions sont communes ; elles deviendront
+propres à chaque formation quand celles du niveau 2 seront arrêtées.
+
+### Ajouter un exercice
+
+1. Créer `exercices/<nom>/` : ses pages (`<nom>.php` côté stagiaire,
+   `<nom>-tableau.php` côté formateur, par convention), `fonctions.php` (helpers
+   et carte d'accueil `bloc_<nom>()`, chargé tout seul par l'accueil) et
+   `migration.sql`.
+2. Ajouter sa ligne dans `.htaccess`, à côté des autres exercices, avec la
+   liste de ses pages.
+3. Dans les pages, les inclusions partent du dossier
+   (`require __DIR__ . '/../../core/points.php'`) mais les liens restent ceux
+   de la racine (`style.css`, `avec_f('index.php')`) : la page est servie à la
+   racine.
+4. Pour une formation : son étape et son contenu dans `formation.php`, sa carte
+   dans `accueil.php`, sa page formateur dans `'outils'`, sa table dans la liste
+   des migrations attendues de `pilotage.php`.
+
+Déploiement d'une version antérieure à ce rangement : supprimer à la racine
+les anciens `arrivee.php`, `equipes.php`, `objectif.php`, `mur.php`,
+`scores.php`, `boule*.php`, `battle*.php`, `bocal*.php` et `migration-*.sql` des
+exercices, ainsi que `core/objectifs.php`, `core/boule.php`, `core/battle.php` et
+`core/bocal.php`.
+
+### Passer une base existante en multi-formations
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-formations.sql
+```
+
+**D'abord la migration, ensuite le code** : l'ancien code fonctionne encore
+une fois la migration jouée, le nouveau a besoin de la colonne `formation`.
+Tout l'existant est rattaché au niveau 1. À jouer une seule fois avec un compte
+administrateur ; sans effet s'il est rejoué. Au déploiement, supprimer à la
+racine les anciens `etapes.php`, `horodatage.php` et `eval-froide-*.php` (sauf
+`eval-froide-liens.php` et `eval-froide-resultats.php`), désormais dans `core/`.
+
+## Participants et équipes
+
+Pour les formations qui en déclarent (le niveau 2), chaque participant indique
+son prénom en arrivant sur l'accueil. Son téléphone garde un cookie qui le
+relie à lui pour la journée : pas de compte, pas de mot de passe, et le lien
+tombe de lui-même le lendemain. Ce même lien servira aux exercices individuels
+et d'équipe.
+
+`/n2/equipes.php?cle=VOTRE_CLE`, accessible aussi depuis la télécommande, liste
+les arrivées en direct. Toucher une équipe y place la personne, toucher de
+nouveau son équipe l'en retire. Une équipe complète refuse un membre de plus.
+« Au hasard en 2 (ou 3) équipes » répartit tout le monde de façon équilibrée.
+La croix retire de la séance un doublon ou une erreur de prénom. Côté
+participant, l'équipe et les coéquipiers s'affichent sur l'accueil, avec un
+bandeau quand l'affectation change. Un participant qui s'est trompé de prénom
+touche « Ce n'est pas moi » et se déclare de nouveau.
+
+Les équipes ne sont pas en base : elles sont déclarées dans
+`formations/<slug>/formation.php`.
+
+```php
+'equipes'    => [
+    'glacier' => ['nom' => 'Glacier', 'couleur' => '#47B4E8'],
+    'indigo'  => ['nom' => 'Indigo',  'couleur' => '#292F6C'],
+    'olive'   => ['nom' => 'Olive',   'couleur' => '#636E24'],
+],
+'equipe_max' => 5,
+```
+
+Le nom et la couleur se changent librement. La clé (`glacier`…) est stockée
+en base : la changer en cours de journée détache les membres de l'équipe.
+Une séance correspond à une formation et une journée en heure locale.
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/equipes/migration.sql
+```
+
+À jouer une seule fois, avec un compte administrateur. Sans effet s'il est rejoué.
+
+## Le mur des objectifs (niveau 2)
+
+En début de séance, chaque stagiaire complète la phrase « Ce soir, je veux
+repartir avec une IA qui m'aide à… ». Sa réponse devient un post-it sur un
+tableau blanc projeté.
+
+**Côté stagiaire** : sur l'accueil, le bouton « Écrire mon objectif du jour »
+apparaît quand l'étape « Mon objectif du jour » est ouverte depuis la
+télécommande. Il faut s'être déclaré (prénom) juste au-dessus : le prénom signe
+le post-it. Un aperçu du post-it suit la saisie. L'objectif reste modifiable tant
+que l'étape est ouverte ; le post-it se met alors à jour au tableau sans bouger.
+
+**Côté formateur** : `/n2/mur.php?cle=VOTRE_CLE`, aussi accessible depuis la
+télécommande, bouton « Afficher le mur des objectifs ».
+
+- Les post-its arrivent en direct (toutes les 4 s), collés au hasard sur une
+  zone libre, légèrement de travers, dans des couleurs pastel variées.
+- **Glisser** un post-it le déplace et le met au premier plan.
+- La **poignée ronde** (coin haut droit, au survol) le fait tourner ; avec Maj
+  enfoncé, par crans de 15°.
+- Un **double-clic** l'affiche en grand, pour le lire à voix haute. Clic ou
+  Échap pour refermer.
+- La **croix** (coin haut gauche) le retire du tableau.
+- L'**œil** (coin bas gauche) masque le prénom de ce post-it au tableau, par
+  exemple quand un stagiaire ne veut pas être cité ; l'œil devient bleu plein.
+  Un nouveau clic le réaffiche. Le choix est enregistré, il survit à une
+  modification de l'objectif par le stagiaire et vaut aussi pour les exports.
+  **Masquer les prénoms** les cache tous d'un coup, le temps d'une projection
+  (réglage d'affichage, rien n'est enregistré).
+- La télécommande liste les **objectifs du jour** avec leur auteur, prénoms
+  masqués compris : c'est la vue privée du formateur, sur son téléphone. Le
+  même bouton y masque ou réaffiche un prénom au tableau, qui suit en direct.
+- **Lisibilité** : chaque texte prend automatiquement la plus grande taille qui
+  tient dans son post-it, sans couper les mots. **A− / A+** (ou les touches − et
+  +, y compris d'une télécommande de présentation) réduisent ou agrandissent tous
+  les post-its, de 60 à 200 %, texte compris. **Masquer la phrase** retire
+  l'amorce répétée sur chaque post-it, déjà écrite en titre du tableau, pour
+  laisser plus de place au texte. Ces réglages sont mémorisés par le navigateur
+  qui projette ; ils ne changent rien aux positions enregistrées.
+- **Image PNG** télécharge le tableau tel quel. **PDF** ouvre l'impression, en
+  paysage : choisir « Enregistrer au format PDF ».
+
+Positions, rotations et ordre d'empilement sont enregistrés : un
+rechargement ou un autre PC retrouvent le tableau à l'identique. Les positions
+sont relatives au tableau, qui garde un format 16/9 sur tout écran.
+
+La police manuscrite (Caveat, licence OFL) et html2canvas (licence MIT, pour
+l'export PNG) sont embarqués dans le site : le mur fonctionne sans Internet en
+salle, pourvu que le serveur soit joignable.
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/mur/migration.sql
+```
+
+À jouer après `exercices/equipes/migration.sql`, et à rejouer sur une base qui avait
+déjà la table : il n'ajoute que ce qui manque (colonne `anonyme` du masquage
+des prénoms). La télécommande signale s'il reste à le faire. Crée la table
+`objectifs` et l'étape « Mon objectif du jour » du niveau 2, fermée. Sans effet
+s'il est rejoué. Supprimer un participant (croix de `equipes.php`) retire aussi
+son post-it.
+
+Les boutons de la carte « Outils de la journée » de la télécommande sont
+déclarés dans `formations/<slug>/formation.php`, clé `outils`
+(`'mur.php' => 'Afficher le mur des objectifs'`).
+
+## Le prompt boule de neige (niveau 2)
+
+Un prompt écrit à plusieurs mains, en équipe : la tâche, puis le contexte, le
+destinataire, les contraintes et le format ; un 5e tour passe le prompt à l'IA
+et colle sa réponse.
+
+**Côté stagiaire** : sur l'accueil, « Rejoindre la partie de mon équipe »
+quand l'étape « Le prompt boule de neige » est ouverte (il faut être placé dans
+une équipe). En haut de l'écran : la situation de l'équipe et l'ordre de
+passage. Le joueur dont c'est le tour voit tout ce qui précède, la consigne de
+son étape et une zone de saisie ; au 5e tour, un bouton **Copier le prompt**
+(les quatre briques bout à bout) et une zone pour coller la réponse de l'IA.
+Les autres ne voient que leurs propres briques. Tout se dévoile à l'équipe à la
+fin. Les pages suivent la partie toutes seules (toutes les 3 s).
+
+**Ordre de passage** : les membres de l'équipe dans l'ordre d'arrivée, rebouclé
+quand l'équipe compte moins de 5 personnes (à 4, le 5e tour revient au joueur
+1 ; à 3, les tours 4 et 5 reviennent aux joueurs 1 et 2). Un absent ? Le
+retirer de l'équipe dans `equipes.php` : la main passe au suivant.
+
+**Côté formateur** : `/n2/boule-tableau.php?cle=VOTRE_CLE`, aussi sur la
+télécommande. Une colonne par équipe, une ligne par étape, remplie en direct,
+lisible au vidéoprojecteur. **Masquer le contenu** n'affiche que l'avancement
+(« ✅ Validé ») pendant le jeu ; on dévoile tout au débrief. **Annuler la
+dernière étape** rend la main au même joueur (faute de frappe, validation par
+erreur).
+
+**Situations** : déclarées dans `formations/n2/formation.php`, clé
+`boule_taches`, attribuées une par équipe dans l'ordre des équipes. Tant que
+l'équipe n'a pas commencé, la liste déroulante du tableau permet d'en changer.
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/boule/migration.sql
+```
+
+À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
+
+## Points et classement (niveau 2)
+
+Des points pour les équipes et des points pour les joueurs, **comptés
+séparément** : les uns ne s'additionnent pas aux autres. Activé par
+`'points' => true` dans `formations/<slug>/formation.php`.
+
+- **Prompt boule de neige** : sur son tableau, chaque équipe a un bouton
+  **+10 pts**. Un nouveau clic les reprend ; une équipe ne peut pas les toucher
+  deux fois pour la même partie.
+- **`/n2/scores.php?cle=VOTRE_CLE`** (télécommande → « Points et classement ») :
+  boutons −1, +1, +5, +10 pour chaque équipe et chaque joueur, et un montant
+  libre avec un motif facultatif (négatif pour retirer).
+- **Classement projetable** : bouton « Afficher le classement », plein écran,
+  équipes à gauche, joueurs à droite avec podium, ex-aequo compris. Il suit les
+  changements en direct.
+- **Côté stagiaire** : son score et celui de son équipe s'affichent sur
+  l'accueil, sous son prénom, et se mettent à jour tout seuls.
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/scores/migration.sql
+```
+
+À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
+Retirer un participant de la séance retire aussi ses points individuels.
+
+## Prompt Battle (niveau 2)
+
+Par manche, deux équipes s'affrontent : un volontaire chacune, une tâche tirée
+au sort, 5 minutes chrono ; le reste du groupe vote pour la meilleure réponse
+de l'IA, et l'équipe gagnante prend **20 points**.
+
+**Côté formateur** : `/n2/battle-tableau.php?cle=VOTRE_CLE`, aussi sur la
+télécommande. Déroulé d'une manche :
+
+1. **Préparer une nouvelle manche**, puis **Tirer une tâche surprise** (une
+   tâche déjà jouée dans la séance ne ressort pas ; on peut en retirer une autre) ;
+2. choisir les deux équipes et leur volontaire (un membre de l'équipe) ;
+3. **Top départ !** : la tâche s'affiche sur le téléphone des volontaires, le
+   chrono démarre. **+1 minute** et **Terminer maintenant et ouvrir le vote** au besoin ;
+4. à la fin du chrono, le vote s'ouvre tout seul : les copies sont projetées
+   anonymement (A, B, ordre tiré au hasard). Le décompte des voix en direct au
+   vidéoprojecteur est facultatif ;
+5. **Clore le vote et révéler** : copie gagnante, équipes, prompts, et les
+   points attribués. Un bouton par équipe les reprend (ou les donne) en cas d'erreur.
+
+Le bouton **Ouvrir l'écran de projection** ouvre `?vue=projection` : tirage au
+sort animé, chrono géant, duel, copies, puis podium. Il suit la manche en
+direct.
+
+**Côté stagiaire** : « Suivre la battle » sur l'accueil. Le volontaire écrit
+son prompt et colle la réponse de son IA : tout est enregistré au fil de la
+frappe, figé à la fin du chrono (3 s de grâce). Les autres votent, sauf les
+deux volontaires, et peuvent changer d'avis tant que le vote est ouvert.
+
+**Règles** : une équipe sans copie à la fin du chrono déclare forfait ; sans
+aucun vote, pas de vainqueur ; ex-aequo, les deux équipes prennent 20 points.
+Une manche en cours peut être abandonnée (aucun point). Les tâches sont
+déclarées dans `formations/n2/formation.php`, clé `battle_taches`.
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/battle/migration.sql
+```
+
+À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
+
+## Le bocal à secrets (niveau 2)
+
+Un faux mail plein de données personnelles, sensibles ou confidentielles.
+Chaque stagiaire surligne ce qui ne doit pas partir chez une IA, puis réécrit
+la demande sous une forme anonymisée qui garde le sens. Exercice individuel,
+points individuels.
+
+**Côté stagiaire** : « Ouvrir le bocal » sur l'accueil quand l'étape est
+ouverte. Le mail à gauche (au-dessus sur téléphone) : on touche un mot pour le
+surligner, à nouveau pour l'effacer. La version anonymisée à droite. Tout est
+enregistré au fil de l'eau ; **Rendre ma copie** la transmet au formateur. On
+peut encore la modifier tant qu'elle n'est pas notée.
+
+**Côté formateur** : `/n2/bocal-tableau.php?cle=VOTRE_CLE`, aussi sur la
+télécommande. Pour chaque copie (rendue ou en cours) : les données trouvées
+sur le total, les oubliées, les mots surlignés à tort, le mail corrigé en
+couleurs, et le prompt avec un bouton **Copier** pour le tester dans son IA.
+Puis les points :
+
+- **Surlignage** : 20 pts si toutes les données sont trouvées, 10 pts pour plus
+  de la moitié, 0 sinon. La page suggère la note (bouton en pointillés) ;
+  **Appliquer les notes de surlignage suggérées** la donne à toutes les copies
+  rendues pas encore notées. Une donnée est trouvée quand au moins la moitié de
+  ses mots est surlignée ; chaque occurrence compte (« Kevin Boulanger » dans
+  l'objet et dans le corps). Les mots surlignés à tort sont signalés, sans
+  pénalité.
+- **Prompt** : 10 pts s'il est anonymisé et garde le sens, à juger.
+
+Un clic sur la note déjà donnée l'efface. Le corrigé (tableau et version
+anonymisée de référence) est dépliable en haut de la page.
+
+**Le texte** est dans `formations/n2/formation.php`, clé `bocal` : chaque
+donnée à surligner y est balisée `[[texte|catégorie]]`, les catégories
+reprennent le tableau du corrigé. Le barème est dans `exercices/bocal/fonctions.php`
+(constantes `BOCAL_POINTS_*`).
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/bocal/migration.sql
+```
+
+À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
 
 ## La télécommande
 
@@ -57,7 +425,7 @@ le signale — le site ne tombe jamais à cause d'une migration oubliée.
 
 Le serveur stocke les horodatages dans son propre fuseau, souvent UTC. Rien
 n'est modifié en base : la conversion se fait à la lecture, dans
-`horodatage.php`. Les heures affichées — tableau de bord comme PDF — sont donc
+`core/horodatage.php`. Les heures affichées — tableau de bord comme PDF — sont donc
 en heure locale, et le rattachement d'un enregistrement à une journée suit lui
 aussi l'heure locale. Un quiz rempli à 00 h 30 appartient bien au jour même,
 pas à la veille, y compris au changement d'heure.
@@ -101,10 +469,11 @@ sur cette colonne.
 
 ## Ajouter ou modifier un quiz
 
-Tout passe par SQL (phpMyAdmin ou CLI), aucun code à toucher :
+Tout passe par SQL (phpMyAdmin ou CLI), aucun code à toucher. Sans colonne
+`formation`, le quiz va au niveau 1 :
 
 ```sql
-INSERT INTO quizzes (slug, titre) VALUES ('quiz-matin', 'Quiz de mi-journée');
+INSERT INTO quizzes (formation, slug, titre) VALUES ('n1', 'quiz-matin', 'Quiz de mi-journée');
 INSERT INTO questions (quiz_id, ordre, texte, bonne_reponse, explication)
 VALUES (LAST_INSERT_ID(), 1, 'Texte de la question ?', 'VRAI', 'Explication affichée après la réponse.');
 ```
@@ -248,7 +617,7 @@ mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-eval-f
 
 À jouer une seule fois avec un compte administrateur (l'utilisateur applicatif
 ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-même
-(intitulés, options) vit dans `eval-froide-questions.php`.
+(intitulés, options) vit dans `core/eval-froide-questions.php`.
 
 ## RGPD
 
@@ -261,6 +630,14 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 ```
 
 - Suppression à la demande : `DELETE FROM resultats WHERE DATE(created_at)='2026-07-29' AND prenom='...';`
+- Participants (prénom et équipe du jour) : purge avec le même cron,
+  `DELETE FROM participants WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
+  Les post-its du mur des objectifs partent avec leur participant. Les parties
+  du prompt boule de neige : `DELETE FROM boule_parties WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
+  Les points : `DELETE FROM points WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
+  Les manches de la Prompt Battle (copies et votes compris) :
+  `DELETE FROM battle_manches WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
+  Les copies du bocal à secrets partent avec leur participant.
 
 ## Fichiers
 
@@ -269,24 +646,39 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `schema.sql` | Tables + quiz final pré-rempli (10 questions) |
 | `migration-etapes.sql` | Ajout de la table `etapes` sur une base existante |
 | `migration-eval-froide.sql` | Ajout des tables de l'évaluation à froid sur une base existante |
+| `migration-formations.sql` | Passage d'une base existante en multi-formations (colonne `formation`) |
 | `config.example.php` | Identifiants BDD + clé animateur + helpers |
-| `etapes.php` | Lecture des étapes ouvertes (aucune sortie, helpers seuls) |
-| `horodatage.php` | Conversion des horodatages serveur vers l'heure locale (helpers seuls) |
+| `formations/<slug>/formation.php` | Réglages d'une formation : titres, accroche, quiz bonus |
+| `formations/<slug>/accueil.php` | Cartes de l'accueil de cette formation, dans l'ordre de la journée |
+| `.htaccess` | Adresses par formation (`/n2/…` → pages communes), pages des exercices, accès interdit à `config.php` |
+| `core/formation.php` | Formation courante (`/n2/…` ou `?f=`), liens qui la conservent, onglets animateur — helpers seuls |
+| `core/blocs.php` | Briques de l'accueil : texte à copier, bloc quiz, bloc avis, arrivée ; charge les exercices — helpers seuls |
+| `core/participants.php` | Participant de ce téléphone, participants de la séance, équipes — helpers seuls |
+| `core/points.php` | Points d'équipe et individuels : attribution, totaux, rangs — helpers seuls |
+| `core/etapes.php` | Lecture des étapes ouvertes de la formation (aucune sortie, helpers seuls) |
+| `core/horodatage.php` | Conversion des horodatages serveur vers l'heure locale (helpers seuls) |
+| `exercices/equipes/` | `arrivee.php` (prénom → cookie de séance, « Ce n'est pas moi »), `equipes.php` (constitution des équipes en direct, protégé par clé), `migration.sql` |
+| `exercices/scores/` | `scores.php` : points et classement, `?vue=projection` pour le vidéoprojecteur (protégé par clé) ; `migration.sql` |
+| `exercices/mur/` | Mur des objectifs : `objectif.php` (saisie du stagiaire), `mur.php` (tableau blanc au vidéoprojecteur, protégé par clé), `fonctions.php`, `migration.sql` |
+| `exercices/boule/` | Prompt boule de neige : `boule.php` (joueur), `boule-tableau.php` (une colonne par équipe, protégé par clé), `fonctions.php`, `migration.sql` |
+| `exercices/battle/` | Prompt Battle : `battle.php` (stagiaire), `battle-tableau.php` (pilotage et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
+| `exercices/bocal/` | Bocal à secrets : `bocal.php` (surligner, réécrire, rendre), `bocal-tableau.php` (correction, test des prompts, points, protégé par clé), `fonctions.php`, `migration.sql` |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
-| `index.php` | Accueil : sections dévoilées au fur et à mesure |
+| `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |
 | `quiz.php` | Le quiz : prénom → questions une par une → feedback → score |
 | `save.php` | Enregistrement du résultat (POST JSON, validations serveur) |
 | `resultats.php` | Tableau de bord animateur : détail par journée + bilan global (protégé par clé) |
 | `export-satisfaction.php` | Export PDF des questionnaires d'une journée, un par page (protégé par clé) |
-| `eval-froide-questions.php` | Définitions du questionnaire à froid (intitulés, options, disposition) — helpers seuls |
+| `core/eval-froide-questions.php` | Définitions du questionnaire à froid (intitulés, options, disposition) — helpers seuls |
 | `evaluation-froide.php` | Formulaire d'évaluation à froid, accès par lien unique `?t=TOKEN` (invisible depuis l'accueil) |
 | `eval-froide-liens.php` | Génération et suivi des liens uniques (protégé par clé) |
 | `eval-froide-resultats.php` | Consultation des réponses à froid : synthèse + détail (protégé par clé) |
 | `export-eval-froide.php` | Export PDF des évaluations à froid, une par page (protégé par clé) |
-| `eval-froide-pdf.php` | Mise en page PDF des évaluations à froid, partagée par l'export et la notification — helpers seuls |
-| `eval-froide-notification.php` | Mail au formateur à chaque réponse à froid, page PDF en pièce jointe (inerte sans configuration) |
+| `core/eval-froide-pdf.php` | Mise en page PDF des évaluations à froid, partagée par l'export et la notification — helpers seuls |
+| `core/eval-froide-notification.php` | Mail au formateur à chaque réponse à froid, page PDF en pièce jointe (inerte sans configuration) |
 | `test-mail.php` | Vérification de la configuration d'envoi de mail (CLI ou `?cle=`), supprimable après |
 | `lib/smtp.php` | Client SMTP minimal (serveur authentifié, TLS, pièces jointes), sans dépendance |
+| `lib/html2canvas/` | html2canvas 1.4.1 (licence MIT), export PNG du mur des objectifs |
 | `lib/fpdf/` | Bibliothèque FPDF (fpdf.php + font/), licence permissive, à conserver telle quelle |
 | `style.css` | Styles partagés — Design System TAONAS (palette bleue, Eric Machat / Effra CC, angles vifs) |
 | `assets/` | Polices TAONAS (Eric Machat, Effra CC) et logos ; référencés par `style.css` |

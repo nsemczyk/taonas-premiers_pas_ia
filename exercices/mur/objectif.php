@@ -2,8 +2,7 @@
 // Mon objectif du jour : le participant complète la phrase du mur des
 // objectifs. Son post-it apparaît sur le tableau du formateur (mur.php) et
 // reste modifiable tant que l'étape « objectifs » est ouverte.
-require __DIR__ . '/core/objectifs.php';
-require __DIR__ . '/core/etapes.php';
+require __DIR__ . '/fonctions.php';
 
 const ETAPE_OBJECTIFS = 'objectifs';
 

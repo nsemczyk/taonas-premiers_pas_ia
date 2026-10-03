@@ -74,7 +74,9 @@ function formation_url(): string
 // Chemin du site, sans barre finale ('' à la racine du domaine, '/formation' dans un sous-dossier)
 function base_url(): string
 {
-    return rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+    // Une page d'exercice tourne dans exercices/<nom>/, mais elle est servie à la racine
+    $dossier = preg_replace('#/exercices/[^/]+$#', '', str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')));
+    return rtrim($dossier, '/');
 }
 
 // Formation de la requête. Une formation inconnue s'arrête net plutôt que de

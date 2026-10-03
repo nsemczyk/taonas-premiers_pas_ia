@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/core/participants.php';
+require __DIR__ . '/../../core/participants.php';
 
 // Accès réservé à l'animateur
 $cle = $_REQUEST['cle'] ?? '';
@@ -108,7 +108,7 @@ foreach ($participants as $p) {
   <section class="card">
     <h2>Migration à jouer</h2>
     <p>La table des participants n'existe pas encore. Jouez une fois, avec un compte administrateur&nbsp;:</p>
-    <pre>mysql --default-character-set=utf8mb4 -u root -p formation_ia &lt; migration-equipes.sql</pre>
+    <pre>mysql --default-character-set=utf8mb4 -u root -p formation_ia &lt; exercices/equipes/migration.sql</pre>
   </section>
 
 <?php elseif (!$equipes): ?>

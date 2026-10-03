@@ -5,7 +5,7 @@
 //   - ?vue=projection : le classement plein écran, pour le vidéoprojecteur,
 //     qui suit les changements en direct.
 // Points d'équipe et points individuels sont indépendants.
-require __DIR__ . '/core/points.php';
+require __DIR__ . '/../../core/points.php';
 
 // Accès réservé à l'animateur
 $cle = (string)($_REQUEST['cle'] ?? '');
@@ -113,7 +113,7 @@ function bouton_points(string $moi, string $cible, int $valeur): string
   <section class="card">
     <h2>Migration à jouer</h2>
     <p>La table des points n'existe pas encore. Jouez une fois, avec un compte administrateur&nbsp;:</p>
-    <pre>mysql --default-character-set=utf8mb4 -u root -p formation_ia &lt; migration-points.sql</pre>
+    <pre>mysql --default-character-set=utf8mb4 -u root -p formation_ia &lt; exercices/scores/migration.sql</pre>
   </section>
 <?php else: ?>
 

@@ -3,8 +3,7 @@
 // les mots à surligner ; la demande réécrite, anonymisée, à droite (en dessous
 // sur téléphone). Brouillon enregistré au fil de l'eau, puis copie rendue au
 // formateur, qui la teste et la note.
-require __DIR__ . '/core/bocal.php';
-require __DIR__ . '/core/etapes.php';
+require __DIR__ . '/fonctions.php';
 
 const ETAPE_BOCAL = 'bocal';
 

@@ -3,7 +3,7 @@
 // post-its des participants. Glisser pour déplacer, poignée ronde pour tourner,
 // double-clic pour lire en grand, croix pour retirer, œil pour masquer le
 // prénom au tableau (le formateur le retrouve sur la télécommande). Tout est enregistré.
-require __DIR__ . '/core/objectifs.php';
+require __DIR__ . '/fonctions.php';
 
 // Accès réservé à l'animateur
 $cle = (string)($_GET['cle'] ?? '');
@@ -235,7 +235,7 @@ body.mur {
     <p class="titre-mur"><?= e(OBJECTIF_AMORCE) ?>…</p>
     <p class="vide" id="vide"><?= $table_ok
         ? 'Les objectifs du groupe vont apparaître ici.'
-        : 'Table absente : jouez migration-objectifs.sql' ?></p>
+        : 'Table absente : jouez exercices/mur/migration.sql' ?></p>
   </div>
   <div class="rebord">
     <span class="feutre" style="left:12%;background:#1d4a9a"></span>

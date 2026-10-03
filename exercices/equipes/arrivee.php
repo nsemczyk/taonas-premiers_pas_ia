@@ -2,7 +2,7 @@
 // Arrivée d'un participant : son prénom, une fois, depuis l'accueil.
 // Le téléphone reçoit un cookie qui le relie à sa ligne pour la journée.
 // « Ce n'est pas moi » oublie ce lien ; la ligne reste, le formateur la supprime.
-require __DIR__ . '/core/participants.php';
+require __DIR__ . '/../../core/participants.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);

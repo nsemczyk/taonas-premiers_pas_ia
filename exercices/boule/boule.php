@@ -2,8 +2,7 @@
 // Le prompt boule de neige, côté joueur. Au moment de jouer, on voit tout ce
 // qui précède ; le reste du temps, seulement ses propres briques. Tout se
 // dévoile à l'équipe à la fin. La page suit la partie toute seule.
-require __DIR__ . '/core/boule.php';
-require __DIR__ . '/core/etapes.php';
+require __DIR__ . '/fonctions.php';
 
 const ETAPE_BOULE = 'boule';
 

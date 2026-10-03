@@ -8,8 +8,9 @@
 // numéros des mots surlignés.
 //
 // Aucune sortie : ce fichier ne définit que des helpers.
-require_once __DIR__ . '/participants.php';
-require_once __DIR__ . '/points.php';
+require_once __DIR__ . '/../../core/etapes.php';
+require_once __DIR__ . '/../../core/participants.php';
+require_once __DIR__ . '/../../core/points.php';
 
 const BOCAL_POINTS_TOUT   = 20;     // toutes les données surlignées
 const BOCAL_POINTS_MOITIE = 10;     // plus de la moitié
@@ -190,3 +191,27 @@ function bocal_points(int $participant_id): array
     return ['surlignage' => points_joueur_source($participant_id, 'bocal-surlignage'),
             'prompt'     => points_joueur_source($participant_id, 'bocal-prompt')];
 }
+
+// Le bocal à secrets : le bouton vers bocal.php, derrière l'étape $cle
+function bloc_bocal(string $cle = 'bocal'): string
+{
+    if (!etape_ouverte($cle)) {
+        return carte_verrouillee($cle);
+    }
+    $p = participant_courant();
+    $h = '<section class="card">' . "\n"
+       . '    <h2>' . e(etape_titre($cle)) . '</h2>' . "\n";
+    if (!$p) {
+        return $h . '    <p class="lead">Indiquez d\'abord votre prénom ci-dessus.</p>' . "\n" . '  </section>';
+    }
+    $copie = bocal_table_ok() ? bocal_copie((int)$p['id']) : null;
+    if ($copie && $copie['rendu']) {
+        return $h . '    <p class="lead">Copie rendue. Le formateur la teste et la note.</p>' . "\n"
+                  . '    <a class="btn btn-ghost" href="' . e(avec_f('bocal.php')) . '">Revoir ma copie</a>' . "\n"
+                  . '  </section>';
+    }
+    return $h . '    <p class="lead">Un mail plein de secrets : repérez ce qui ne doit pas partir chez une IA, puis réécrivez la demande.</p>' . "\n"
+              . '    <a class="btn btn-primary" href="' . e(avec_f('bocal.php')) . '">' . ($copie ? 'Reprendre ma copie' : 'Ouvrir le bocal') . '</a>' . "\n"
+              . '  </section>';
+}
+

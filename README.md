@@ -36,16 +36,23 @@ fonctionne quand même, avec des adresses en `?f=n2`.
 ## Plusieurs formations
 
 Le site sert plusieurs formations — niveau 1, niveau 2… — avec un socle commun.
-Trois étages :
+Quatre étages :
 
 - **À la racine** : uniquement des pages (accueil, quiz, pilotage, tableau de
   bord, exports…). Elles sont communes à toutes les formations.
+- **`exercices/<nom>/`** : un dossier par exercice (équipes, scores, mur,
+  boule, battle, bocal) avec ses pages, ses helpers (`fonctions.php`, carte
+  d'accueil comprise) et sa migration. Un exercice n'appartient à aucune
+  formation : il ne s'anime que là où une formation déclare son étape et son
+  contenu. Ses pages restent servies à la racine (`/n2/bocal.php`), jamais par
+  leur chemin réel.
 - **`core/`** : le socle PHP inclus par les pages (formation courante, étapes,
   heures locales, briques de l'accueil, évaluation à froid). Jamais servi
   directement.
 - **`formations/<slug>/`** : ce qui est propre à une formation.
-  `formation.php` porte ses réglages (titre, accroche, quiz bonus),
-  `accueil.php` ses cartes, dans l'ordre de la journée.
+  `formation.php` porte ses réglages (titre, accroche, quiz bonus) et le
+  contenu de ses exercices (tâches, mail du bocal…), `accueil.php` ses cartes,
+  dans l'ordre de la journée.
 
 La formation se choisit dans l'adresse, comme un dossier : `/n2/`,
 `/n2/equipes.php`, `/n2/pilotage.php`… Ces dossiers n'existent pas sur le
@@ -57,7 +64,8 @@ adresses d'avant, liens d'évaluation à froid déjà envoyés compris, fonction
 
 Sans `mod_rewrite` (serveur intégré de PHP, hébergement qui l'interdit), la même
 formation s'atteint par `?f=n2` : `/equipes.php?f=n2`. Cette forme reste
-acceptée partout, et les pages s'adaptent seules au mode disponible. Le site
+acceptée partout, et les pages s'adaptent seules au mode disponible — sauf
+celles des exercices, qui ont besoin de `mod_rewrite`. Le site
 fonctionne à la racine du domaine comme dans un sous-dossier, sans réglage.
 Pour une autre formation par défaut : `define('FORMATION_DEFAUT', 'n2');` dans
 `config.php`.
@@ -77,9 +85,10 @@ leur étape `quiz`.
 ### Ajouter une formation
 
 1. Copier `formations/n1/` vers `formations/n2/`, puis adapter `formation.php`
-   (titres) et `accueil.php` (cartes). Les briques disponibles sont dans
-   `core/blocs.php` : `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`,
-   `bloc_arrivee()`, `bloc_objectif()`, `bloc_boule()`, `bloc_battle()`, `bloc_bocal()`. Un
+   (titres) et `accueil.php` (cartes). Les briques disponibles : dans
+   `core/blocs.php`, `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`,
+   `bloc_arrivee()` ; dans chaque `exercices/<nom>/fonctions.php`,
+   `bloc_objectif()`, `bloc_boule()`, `bloc_battle()`, `bloc_bocal()`. Un
    dossier préfixé par `_` (brouillon) est ignoré.
 2. Déclarer ses étapes dans `formation.php`, dans l'ordre de la journée :
 
@@ -107,6 +116,28 @@ Limite actuelle, assumée : le questionnaire de satisfaction et celui de
 l'évaluation à froid sont encore ceux du niveau 1. Chaque réponse est bien
 rattachée à sa formation, mais les questions sont communes ; elles deviendront
 propres à chaque formation quand celles du niveau 2 seront arrêtées.
+
+### Ajouter un exercice
+
+1. Créer `exercices/<nom>/` : ses pages (`<nom>.php` côté stagiaire,
+   `<nom>-tableau.php` côté formateur, par convention), `fonctions.php` (helpers
+   et carte d'accueil `bloc_<nom>()`, chargé tout seul par l'accueil) et
+   `migration.sql`.
+2. Ajouter sa ligne dans `.htaccess`, à côté des autres exercices, avec la
+   liste de ses pages.
+3. Dans les pages, les inclusions partent du dossier
+   (`require __DIR__ . '/../../core/points.php'`) mais les liens restent ceux
+   de la racine (`style.css`, `avec_f('index.php')`) : la page est servie à la
+   racine.
+4. Pour une formation : son étape et son contenu dans `formation.php`, sa carte
+   dans `accueil.php`, sa page formateur dans `'outils'`, sa table dans la liste
+   des migrations attendues de `pilotage.php`.
+
+Déploiement d'une version antérieure à ce rangement : supprimer à la racine
+les anciens `arrivee.php`, `equipes.php`, `objectif.php`, `mur.php`,
+`scores.php`, `boule*.php`, `battle*.php`, `bocal*.php` et `migration-*.sql` des
+exercices, ainsi que `core/objectifs.php`, `core/boule.php`, `core/battle.php` et
+`core/bocal.php`.
 
 ### Passer une base existante en multi-formations
 
@@ -155,7 +186,7 @@ en base : la changer en cours de journée détache les membres de l'équipe.
 Une séance correspond à une formation et une journée en heure locale.
 
 ```bash
-mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-equipes.sql
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/equipes/migration.sql
 ```
 
 À jouer une seule fois, avec un compte administrateur. Sans effet s'il est rejoué.
@@ -211,10 +242,10 @@ l'export PNG) sont embarqués dans le site : le mur fonctionne sans Internet en
 salle, pourvu que le serveur soit joignable.
 
 ```bash
-mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-objectifs.sql
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/mur/migration.sql
 ```
 
-À jouer après `migration-equipes.sql`, et à rejouer sur une base qui avait
+À jouer après `exercices/equipes/migration.sql`, et à rejouer sur une base qui avait
 déjà la table : il n'ajoute que ce qui manque (colonne `anonyme` du masquage
 des prénoms). La télécommande signale s'il reste à le faire. Crée la table
 `objectifs` et l'étape « Mon objectif du jour » du niveau 2, fermée. Sans effet
@@ -257,10 +288,10 @@ erreur).
 l'équipe n'a pas commencé, la liste déroulante du tableau permet d'en changer.
 
 ```bash
-mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-boule.sql
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/boule/migration.sql
 ```
 
-À jouer une seule fois après `migration-equipes.sql`. Sans effet s'il est rejoué.
+À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
 
 ## Points et classement (niveau 2)
 
@@ -281,10 +312,10 @@ séparément** : les uns ne s'additionnent pas aux autres. Activé par
   l'accueil, sous son prénom, et se mettent à jour tout seuls.
 
 ```bash
-mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-points.sql
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/scores/migration.sql
 ```
 
-À jouer une seule fois après `migration-equipes.sql`. Sans effet s'il est rejoué.
+À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
 Retirer un participant de la séance retire aussi ses points individuels.
 
 ## Prompt Battle (niveau 2)
@@ -322,10 +353,10 @@ Une manche en cours peut être abandonnée (aucun point). Les tâches sont
 déclarées dans `formations/n2/formation.php`, clé `battle_taches`.
 
 ```bash
-mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-battle.sql
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/battle/migration.sql
 ```
 
-À jouer une seule fois après `migration-equipes.sql`. Sans effet s'il est rejoué.
+À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
 
 ## Le bocal à secrets (niveau 2)
 
@@ -360,14 +391,14 @@ anonymisée de référence) est dépliable en haut de la page.
 
 **Le texte** est dans `formations/n2/formation.php`, clé `bocal` : chaque
 donnée à surligner y est balisée `[[texte|catégorie]]`, les catégories
-reprennent le tableau du corrigé. Le barème est dans `core/bocal.php`
+reprennent le tableau du corrigé. Le barème est dans `exercices/bocal/fonctions.php`
 (constantes `BOCAL_POINTS_*`).
 
 ```bash
-mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-bocal.sql
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/bocal/migration.sql
 ```
 
-À jouer une seule fois après `migration-equipes.sql`. Sans effet s'il est rejoué.
+À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
 
 ## La télécommande
 
@@ -615,38 +646,23 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `schema.sql` | Tables + quiz final pré-rempli (10 questions) |
 | `migration-etapes.sql` | Ajout de la table `etapes` sur une base existante |
 | `migration-eval-froide.sql` | Ajout des tables de l'évaluation à froid sur une base existante |
-| `migration-equipes.sql` | Table des participants de la séance (prénom, équipe) sur une base existante |
-| `migration-objectifs.sql` | Table du mur des objectifs et étape correspondante du niveau 2 |
-| `migration-boule.sql` | Tables du prompt boule de neige (parties par équipe, briques) |
-| `migration-points.sql` | Table des points de la séance (équipes et joueurs) |
-| `migration-battle.sql` | Tables de la Prompt Battle (manches, copies, votes) |
-| `migration-bocal.sql` | Table des copies du bocal à secrets |
 | `migration-formations.sql` | Passage d'une base existante en multi-formations (colonne `formation`) |
 | `config.example.php` | Identifiants BDD + clé animateur + helpers |
 | `formations/<slug>/formation.php` | Réglages d'une formation : titres, accroche, quiz bonus |
 | `formations/<slug>/accueil.php` | Cartes de l'accueil de cette formation, dans l'ordre de la journée |
-| `.htaccess` | Adresses par formation (`/n2/…` → pages communes) et accès interdit à `config.php` |
+| `.htaccess` | Adresses par formation (`/n2/…` → pages communes), pages des exercices, accès interdit à `config.php` |
 | `core/formation.php` | Formation courante (`/n2/…` ou `?f=`), liens qui la conservent, onglets animateur — helpers seuls |
-| `core/blocs.php` | Briques de l'accueil : texte à copier, bloc quiz, bloc avis — helpers seuls |
+| `core/blocs.php` | Briques de l'accueil : texte à copier, bloc quiz, bloc avis, arrivée ; charge les exercices — helpers seuls |
 | `core/participants.php` | Participant de ce téléphone, participants de la séance, équipes — helpers seuls |
-| `core/objectifs.php` | Post-its du mur : lecture, emplacement libre, couleurs — helpers seuls |
-| `core/boule.php` | Prompt boule de neige : étapes, ordre de passage, validation, annulation — helpers seuls |
 | `core/points.php` | Points d'équipe et individuels : attribution, totaux, rangs — helpers seuls |
-| `core/bocal.php` | Bocal à secrets : découpage du mail, correction automatique, copies — helpers seuls |
-| `core/battle.php` | Prompt Battle : manches, tirage, chrono, copies, votes, vainqueurs — helpers seuls |
 | `core/etapes.php` | Lecture des étapes ouvertes de la formation (aucune sortie, helpers seuls) |
 | `core/horodatage.php` | Conversion des horodatages serveur vers l'heure locale (helpers seuls) |
-| `arrivee.php` | Arrivée d'un participant (prénom → cookie de séance), et « Ce n'est pas moi » |
-| `equipes.php` | Constitution des équipes de la séance, en direct (protégé par clé) |
-| `objectif.php` | Saisie de l'objectif du jour par le stagiaire, avec aperçu du post-it |
-| `mur.php` | Tableau blanc des objectifs au vidéoprojecteur : déplacer, tourner, agrandir, exporter (protégé par clé) |
-| `boule.php` | Prompt boule de neige côté joueur : son tour, sa brique, le prompt final |
-| `boule-tableau.php` | Tableau du prompt boule de neige, une colonne par équipe, en direct (protégé par clé) |
-| `battle.php` | Prompt Battle côté stagiaire : copie du volontaire, vote, résultat |
-| `battle-tableau.php` | Prompt Battle côté formateur, et `?vue=projection` pour le vidéoprojecteur (protégé par clé) |
-| `bocal.php` | Bocal à secrets côté stagiaire : surligner le mail, réécrire la demande, rendre sa copie |
-| `bocal-tableau.php` | Bocal à secrets côté formateur : correction, test des prompts, points (protégé par clé) |
-| `scores.php` | Points et classement : gestion, et `?vue=projection` pour le vidéoprojecteur (protégé par clé) |
+| `exercices/equipes/` | `arrivee.php` (prénom → cookie de séance, « Ce n'est pas moi »), `equipes.php` (constitution des équipes en direct, protégé par clé), `migration.sql` |
+| `exercices/scores/` | `scores.php` : points et classement, `?vue=projection` pour le vidéoprojecteur (protégé par clé) ; `migration.sql` |
+| `exercices/mur/` | Mur des objectifs : `objectif.php` (saisie du stagiaire), `mur.php` (tableau blanc au vidéoprojecteur, protégé par clé), `fonctions.php`, `migration.sql` |
+| `exercices/boule/` | Prompt boule de neige : `boule.php` (joueur), `boule-tableau.php` (une colonne par équipe, protégé par clé), `fonctions.php`, `migration.sql` |
+| `exercices/battle/` | Prompt Battle : `battle.php` (stagiaire), `battle-tableau.php` (pilotage et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
+| `exercices/bocal/` | Bocal à secrets : `bocal.php` (surligner, réécrire, rendre), `bocal-tableau.php` (correction, test des prompts, points, protégé par clé), `fonctions.php`, `migration.sql` |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
 | `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |
 | `quiz.php` | Le quiz : prénom → questions une par une → feedback → score |

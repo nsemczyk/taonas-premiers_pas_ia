@@ -11,7 +11,8 @@
 // clé 'boule_taches' ; chaque équipe reçoit la sienne, dans l'ordre des équipes.
 //
 // Aucune sortie : ce fichier ne définit que des helpers.
-require_once __DIR__ . '/participants.php';
+require_once __DIR__ . '/../../core/etapes.php';
+require_once __DIR__ . '/../../core/participants.php';
 
 const BOULE_ETAPES = [
     1 => ['titre' => 'La tâche',
@@ -149,3 +150,24 @@ function boule_texte_clean(?string $texte, int $max): string
     $texte = str_replace("\r\n", "\n", trim((string)$texte));
     return mb_substr($texte, 0, $max);
 }
+
+// Prompt boule de neige : le bouton vers boule.php, derrière l'étape $cle
+function bloc_boule(string $cle = 'boule'): string
+{
+    if (!etape_ouverte($cle)) {
+        return carte_verrouillee($cle);
+    }
+    $p = participant_courant();
+    $h = '<section class="card">' . "\n"
+       . '    <h2>' . e(etape_titre($cle)) . '</h2>' . "\n";
+    if (!$p) {
+        return $h . '    <p class="lead">Indiquez d\'abord votre prénom ci-dessus.</p>' . "\n" . '  </section>';
+    }
+    if (!equipe_existe($p['equipe'])) {
+        return $h . '    <p class="lead">Un jeu en équipe : attendez d\'être placé dans la vôtre.</p>' . "\n" . '  </section>';
+    }
+    return $h . '    <p class="lead">Un prompt à plusieurs mains : chacun ajoute sa brique, à son tour, sans voir la suite.</p>' . "\n"
+              . '    <a class="btn btn-primary" href="' . e(avec_f('boule.php')) . '">Rejoindre la partie de mon équipe</a>' . "\n"
+              . '  </section>';
+}
+

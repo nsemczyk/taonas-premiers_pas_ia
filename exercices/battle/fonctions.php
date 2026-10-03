@@ -12,7 +12,8 @@
 // 'battle_taches' ; celles déjà jouées dans la séance ne sont plus tirées.
 //
 // Aucune sortie : ce fichier ne définit que des helpers.
-require_once __DIR__ . '/points.php';
+require_once __DIR__ . '/../../core/etapes.php';
+require_once __DIR__ . '/../../core/points.php';
 
 const BATTLE_DUREE      = 300;    // secondes de jeu
 const BATTLE_GRACE      = 3;      // tolérance réseau pour le dernier enregistrement
@@ -327,3 +328,20 @@ function battle_texte_clean(?string $texte, int $max): string
 {
     return mb_substr(str_replace("\r\n", "\n", trim((string)$texte)), 0, $max);
 }
+
+// Prompt Battle : le bouton vers battle.php, derrière l'étape $cle
+function bloc_battle(string $cle = 'battle'): string
+{
+    if (!etape_ouverte($cle)) {
+        return carte_verrouillee($cle);
+    }
+    $h = '<section class="card">' . "\n"
+       . '    <h2>' . e(etape_titre($cle)) . '</h2>' . "\n";
+    if (!participant_courant()) {
+        return $h . '    <p class="lead">Indiquez d\'abord votre prénom ci-dessus.</p>' . "\n" . '  </section>';
+    }
+    return $h . '    <p class="lead">Deux volontaires, une tâche surprise, 5 minutes : le groupe vote pour la meilleure réponse.</p>' . "\n"
+              . '    <a class="btn btn-primary" href="' . e(avec_f('battle.php')) . '">Suivre la battle</a>' . "\n"
+              . '  </section>';
+}
+

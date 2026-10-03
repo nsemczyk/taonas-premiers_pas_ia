@@ -31,7 +31,7 @@ function equipe_existe(?string $cle): bool
 }
 
 // Tous les participants de la séance, par ordre d'arrivée.
-// [] si la table n'existe pas encore (migration-equipes.sql pas jouée).
+// [] si la table n'existe pas encore (exercices/equipes/migration.sql pas jouée).
 function participants_seance(): array
 {
     try {

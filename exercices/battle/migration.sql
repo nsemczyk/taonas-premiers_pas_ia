@@ -2,10 +2,10 @@
 -- volontaire chacune, sur une tâche tirée au sort ; 5 minutes chrono, copies
 -- projetées anonymement (A, B), vote du groupe, 20 points à l'équipe gagnante.
 --
--- Nécessite migration-equipes.sql (table participants). À jouer avec un compte
+-- Nécessite exercices/equipes/migration.sql (table participants). À jouer avec un compte
 -- administrateur. Sans effet s'il est rejoué.
 --
---   mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-battle.sql
+--   mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/battle/migration.sql
 
 CREATE TABLE IF NOT EXISTS `battle_manches` (
   `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,

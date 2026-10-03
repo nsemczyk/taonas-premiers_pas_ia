@@ -3,10 +3,10 @@
 -- anonymisée. Une copie par participant et par séance ; les points vont dans
 -- la table `points` (sources bocal-surlignage et bocal-prompt).
 --
--- Nécessite migration-equipes.sql (table participants). À jouer avec un compte
+-- Nécessite exercices/equipes/migration.sql (table participants). À jouer avec un compte
 -- administrateur. Sans effet s'il est rejoué.
 --
---   mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-bocal.sql
+--   mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/bocal/migration.sql
 
 CREATE TABLE IF NOT EXISTS `bocal_copies` (
   `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,

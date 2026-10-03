@@ -6,10 +6,10 @@
 -- du prompt boule de neige), pour ne pas les donner deux fois et pouvoir les
 -- reprendre ; NULL pour les points donnés à la main.
 --
--- Nécessite migration-equipes.sql (table participants). À jouer avec un compte
+-- Nécessite exercices/equipes/migration.sql (table participants). À jouer avec un compte
 -- administrateur. Sans effet s'il est rejoué.
 --
---   mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-points.sql
+--   mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/scores/migration.sql
 
 CREATE TABLE IF NOT EXISTS `points` (
   `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,

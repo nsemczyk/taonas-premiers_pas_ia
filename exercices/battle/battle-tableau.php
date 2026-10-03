@@ -4,7 +4,7 @@
 //     duel et volontaires, top départ, chrono, clôture du vote, points ;
 //   - ?vue=projection : l'écran du vidéoprojecteur (roulette du tirage, chrono,
 //     copies anonymes, révélation), qui suit la manche en direct.
-require __DIR__ . '/core/battle.php';
+require __DIR__ . '/fonctions.php';
 
 // Accès réservé à l'animateur
 $cle = (string)($_REQUEST['cle'] ?? '');
@@ -104,7 +104,7 @@ function action(string $moi, array $m, string $action, string $libelle, string $
 <main class="bp-scene">
 
 <?php if (!$table_ok): ?>
-  <p class="bp-attente">Tables absentes : jouez migration-battle.sql.</p>
+  <p class="bp-attente">Tables absentes : jouez exercices/battle/migration.sql.</p>
 
 <?php elseif (!$m): ?>
   <p class="bp-attente">La première manche se prépare…</p>
@@ -177,7 +177,7 @@ function action(string $moi, array $m, string $action, string $libelle, string $
 <?php if (!$table_ok): ?>
   <section class="card">
     <h2>Migration à jouer</h2>
-    <pre>mysql --default-character-set=utf8mb4 -u root -p formation_ia &lt; migration-battle.sql</pre>
+    <pre>mysql --default-character-set=utf8mb4 -u root -p formation_ia &lt; exercices/battle/migration.sql</pre>
   </section>
 <?php else: ?>
 

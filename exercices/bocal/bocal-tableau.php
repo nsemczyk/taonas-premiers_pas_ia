@@ -4,7 +4,7 @@
 // trouvées, oubliées, faux positifs) et le prompt réécrit, à copier pour le
 // tester dans son IA ; puis les points, individuels : surlignage (0, 10 ou 20,
 // suggestion automatique) et prompt (0 ou 10).
-require __DIR__ . '/core/bocal.php';
+require __DIR__ . '/fonctions.php';
 
 // Accès réservé à l'animateur
 $cle = (string)($_REQUEST['cle'] ?? '');
@@ -109,8 +109,8 @@ function boutons_note(string $moi, int $pid, string $critere, array $valeurs, ?i
   <section class="card">
     <h2>Migration à jouer</h2>
     <p>Les tables de l'exercice ou des points n'existent pas encore. Jouez une fois, avec un compte administrateur&nbsp;:</p>
-    <pre>mysql --default-character-set=utf8mb4 -u root -p formation_ia &lt; migration-points.sql
-mysql --default-character-set=utf8mb4 -u root -p formation_ia &lt; migration-bocal.sql</pre>
+    <pre>mysql --default-character-set=utf8mb4 -u root -p formation_ia &lt; exercices/scores/migration.sql
+mysql --default-character-set=utf8mb4 -u root -p formation_ia &lt; exercices/bocal/migration.sql</pre>
   </section>
 
 <?php else: ?>

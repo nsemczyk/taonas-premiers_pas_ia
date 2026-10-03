@@ -3,8 +3,8 @@
 // par étape, rempli en direct. Pensé pour le vidéoprojecteur : « Masquer le
 // contenu » ne montre que l'avancement pendant le jeu, puis on dévoile tout
 // au débrief. Chaque équipe peut revenir d'une étape (faute, validation par erreur).
-require __DIR__ . '/core/boule.php';
-require __DIR__ . '/core/points.php';
+require __DIR__ . '/fonctions.php';
+require __DIR__ . '/../../core/points.php';
 
 // Accès réservé à l'animateur
 $cle = (string)($_REQUEST['cle'] ?? '');
@@ -120,7 +120,7 @@ body.boule-tableau { background: var(--blanc); margin: 0; }
 </header>
 
 <?php if (!$table_ok): ?>
-  <p class="bt-vide">Tables absentes : jouez <code>migration-boule.sql</code>.</p>
+  <p class="bt-vide">Tables absentes : jouez <code>exercices/boule/migration.sql</code>.</p>
 <?php elseif (!$jouent): ?>
   <p class="bt-vide">Aucune équipe constituée pour l'instant : le tableau se remplira dès que les équipes seront formées.</p>
 <?php else: ?>

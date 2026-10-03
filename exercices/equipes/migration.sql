@@ -10,7 +10,7 @@
 -- À jouer une seule fois, avec un compte administrateur (l'utilisateur
 -- applicatif n'a que SELECT/INSERT/UPDATE/DELETE). Sans effet s'il est rejoué.
 --
---   mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-equipes.sql
+--   mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/equipes/migration.sql
 
 CREATE TABLE IF NOT EXISTS `participants` (
   `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,

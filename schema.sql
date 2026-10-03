@@ -323,7 +323,7 @@ ALTER TABLE `eval_froide_tokens`
   ADD KEY IF NOT EXISTS `idx_formation` (`formation`);
 
 --
--- Participants de la séance et équipes : même table que migration-equipes.sql,
+-- Participants de la séance et équipes : même table que exercices/equipes/migration.sql,
 -- incluse ici pour une installation neuve.
 --
 
@@ -341,7 +341,7 @@ CREATE TABLE IF NOT EXISTS `participants` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Mur des objectifs : même contenu que migration-objectifs.sql, inclus ici
+-- Mur des objectifs : même contenu que exercices/mur/migration.sql, inclus ici
 -- pour une installation neuve.
 --
 
@@ -368,7 +368,7 @@ INSERT IGNORE INTO `etapes` (`formation`, `cle`, `titre`, `ordre`, `ouverte`) VA
 ('n2', 'objectifs', 'Mon objectif du jour', 1, 0);
 
 --
--- Prompt boule de neige : mêmes tables que migration-boule.sql, incluses ici
+-- Prompt boule de neige : mêmes tables que exercices/boule/migration.sql, incluses ici
 -- pour une installation neuve.
 --
 
@@ -400,7 +400,7 @@ CREATE TABLE IF NOT EXISTS `boule_briques` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Points de la séance : même table que migration-points.sql, incluse ici
+-- Points de la séance : même table que exercices/scores/migration.sql, incluse ici
 -- pour une installation neuve.
 --
 
@@ -421,7 +421,7 @@ CREATE TABLE IF NOT EXISTS `points` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Prompt Battle : mêmes tables que migration-battle.sql, incluses ici pour
+-- Prompt Battle : mêmes tables que exercices/battle/migration.sql, incluses ici pour
 -- une installation neuve.
 --
 
@@ -475,7 +475,7 @@ CREATE TABLE IF NOT EXISTS `battle_votes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Le bocal à secrets : même table que migration-bocal.sql, incluse ici pour
+-- Le bocal à secrets : même table que exercices/bocal/migration.sql, incluse ici pour
 -- une installation neuve.
 --
 

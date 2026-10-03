@@ -4,10 +4,12 @@
 #   /n2/         → accueil du niveau 2 (index.php)
 #   /n2/page.php → page.php, formation n2 (variable FORMATION_URL, lue par core/formation.php)
 #   /n2/style.css, /n2/assets/… → les fichiers communs
+#   /n2/bocal.php → exercices/bocal/bocal.php (pages des exercices, voir plus bas)
 #
 # Les adresses d'avant restent valables : /equipes.php (niveau 1) et
 # /equipes.php?f=n2. Sans mod_rewrite (ou avec AllowOverride None), ce fichier
-# est ignoré et le site retombe de lui-même sur ?f=.
+# est ignoré et le site retombe de lui-même sur ?f= — sauf les pages des
+# exercices, qui ont besoin de lui.
 # Fonctionne à la racine du domaine comme dans un sous-dossier, sans RewriteBase.
 
 <IfModule mod_rewrite.c>
@@ -19,6 +21,20 @@
 
     # Signale à PHP que les adresses /<formation>/ sont disponibles
     RewriteRule ^ - [E=URL_PROPRES:1]
+
+    # Les exercices (exercices/<nom>/) : jamais servis par leur chemin réel, dont
+    # les liens relatifs (style.css…) ne tiendraient pas
+    RewriteCond %{ENV:REDIRECT_STATUS} ^$
+    RewriteRule ^exercices/ - [R=404,L]
+
+    # Pages des exercices, servies à la racine ou sous /n2/ : une ligne par
+    # exercice, avec ses pages. Nouvel exercice → son dossier + une ligne ici.
+    RewriteRule ^(?:([a-z0-9-]+)/)?(equipes|arrivee)\.php$         %{ENV:BASE}exercices/equipes/$2.php [E=FORMATION_URL:$1,L]
+    RewriteRule ^(?:([a-z0-9-]+)/)?(scores)\.php$                  %{ENV:BASE}exercices/scores/$2.php  [E=FORMATION_URL:$1,L]
+    RewriteRule ^(?:([a-z0-9-]+)/)?(mur|objectif)\.php$            %{ENV:BASE}exercices/mur/$2.php     [E=FORMATION_URL:$1,L]
+    RewriteRule ^(?:([a-z0-9-]+)/)?(boule|boule-tableau)\.php$     %{ENV:BASE}exercices/boule/$2.php   [E=FORMATION_URL:$1,L]
+    RewriteRule ^(?:([a-z0-9-]+)/)?(battle|battle-tableau)\.php$   %{ENV:BASE}exercices/battle/$2.php  [E=FORMATION_URL:$1,L]
+    RewriteRule ^(?:([a-z0-9-]+)/)?(bocal|bocal-tableau)\.php$     %{ENV:BASE}exercices/bocal/$2.php   [E=FORMATION_URL:$1,L]
 
     # /n2 → /n2/ : sans la barre finale, les liens relatifs sortiraient de la formation
     RewriteCond %{REQUEST_FILENAME} !-f

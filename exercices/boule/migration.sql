@@ -3,10 +3,10 @@
 -- 5e joueur le passe à l'IA et colle sa réponse. Une partie par équipe et par
 -- séance ; une ligne par brique validée.
 --
--- Nécessite migration-equipes.sql (table participants). À jouer avec un compte
+-- Nécessite exercices/equipes/migration.sql (table participants). À jouer avec un compte
 -- administrateur. Sans effet s'il est rejoué.
 --
---   mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-boule.sql
+--   mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/boule/migration.sql
 
 CREATE TABLE IF NOT EXISTS `boule_parties` (
   `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,

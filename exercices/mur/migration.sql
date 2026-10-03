@@ -4,11 +4,11 @@
 -- Position et taille sont relatives au tableau (0 à 1), pour que la disposition
 -- soit la même quel que soit l'écran ou le vidéoprojecteur.
 --
--- Nécessite migration-equipes.sql (table participants). À jouer avec un compte
+-- Nécessite exercices/equipes/migration.sql (table participants). À jouer avec un compte
 -- administrateur. Sans effet s'il est rejoué ; rejoué sur une base plus
 -- ancienne, il ajoute seulement ce qui manque (colonne `anonyme`).
 --
---   mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-objectifs.sql
+--   mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/mur/migration.sql
 
 CREATE TABLE IF NOT EXISTS `objectifs` (
   `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,

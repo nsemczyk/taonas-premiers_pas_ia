@@ -4,8 +4,7 @@
 //     IA, enregistrés au fil de la frappe jusqu'à la fin du chrono ;
 //   - pendant le vote : les copies anonymes et ses bulletins (sauf volontaires) ;
 //   - à la révélation : la copie gagnante et les prompts, pour le débrief.
-require __DIR__ . '/core/battle.php';
-require __DIR__ . '/core/etapes.php';
+require __DIR__ . '/fonctions.php';
 
 const ETAPE_BATTLE = 'battle';
 

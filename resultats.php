@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/horodatage.php';
+require __DIR__ . '/core/horodatage.php';
 
 // Accès réservé à l'animateur
 if (($_GET['cle'] ?? '') !== CLE_ANIMATEUR) {
@@ -237,15 +237,19 @@ function repondre(array $data): void
 }
 
 // ---------------------------------------------------------------- API JSON --
+// Tout le tableau de bord porte sur la formation courante (?f=…)
 $api = $_GET['json'] ?? '';
+$F   = formation_slug();
 
 // Liste des journées de formation, de la plus récente à la plus ancienne
 if ($api === 'jours') {
     // Regroupement en PHP et non en SQL : la journée est celle de l'heure
     // locale, que le serveur soit en UTC ou non (volumes minuscules).
     $jours = [];
-    $collecte = function (string $table, string $cle) use (&$jours) {
-        foreach (db()->query("SELECT session_code, created_at FROM $table") as $r) {
+    $collecte = function (string $sql, string $cle) use (&$jours, $F) {
+        $st = db()->prepare($sql);
+        $st->execute([$F]);
+        foreach ($st as $r) {
             $d = jour_local($r['created_at']);
             $jours[$d] ??= ['date' => $d, 'quiz' => 0, 'avis' => 0, 'sessions' => []];
             $jours[$d][$cle]++;
@@ -254,8 +258,9 @@ if ($api === 'jours') {
             }
         }
     };
-    $collecte('resultats', 'quiz');
-    $collecte('satisfaction', 'avis');
+    $collecte('SELECT r.session_code, r.created_at FROM resultats r
+               JOIN quizzes z ON z.id = r.quiz_id WHERE z.formation = ?', 'quiz');
+    $collecte('SELECT session_code, created_at FROM satisfaction WHERE formation = ?', 'avis');
 
     krsort($jours);
     repondre(['jours' => array_values(array_map(fn($j) => [
@@ -280,13 +285,15 @@ if ($api === 'jour') {
 
     $st = db()->prepare('SELECT ' . CHAMPS_RES . ' FROM resultats r
                          JOIN quizzes z ON z.id = r.quiz_id
-                         WHERE r.created_at >= ? AND r.created_at < ? ORDER BY r.created_at DESC');
-    $st->execute([$debut, $fin]);
+                         WHERE z.formation = ? AND r.created_at >= ? AND r.created_at < ?
+                         ORDER BY r.created_at DESC');
+    $st->execute([$F, $debut, $fin]);
     $rows = $st->fetchAll();
 
     $st = db()->prepare('SELECT ' . CHAMPS_SAT . ' FROM satisfaction
-                         WHERE created_at >= ? AND created_at < ? ORDER BY created_at DESC');
-    $st->execute([$debut, $fin]);
+                         WHERE formation = ? AND created_at >= ? AND created_at < ?
+                         ORDER BY created_at DESC');
+    $st->execute([$F, $debut, $fin]);
     $avis = $st->fetchAll();
 
     // Codes historiques uniquement : depuis la suppression de la saisie,
@@ -312,9 +319,13 @@ if ($api === 'jour') {
 
 // Statistiques cumulées sur toutes les sessions
 if ($api === 'global') {
-    $rows = db()->query('SELECT ' . CHAMPS_RES . ' FROM resultats r
-                         JOIN quizzes z ON z.id = r.quiz_id')->fetchAll();
-    $avis = db()->query('SELECT ' . CHAMPS_SAT . ' FROM satisfaction')->fetchAll();
+    $st = db()->prepare('SELECT ' . CHAMPS_RES . ' FROM resultats r
+                         JOIN quizzes z ON z.id = r.quiz_id WHERE z.formation = ?');
+    $st->execute([$F]);
+    $rows = $st->fetchAll();
+    $st = db()->prepare('SELECT ' . CHAMPS_SAT . ' FROM satisfaction WHERE formation = ?');
+    $st->execute([$F]);
+    $avis = $st->fetchAll();
 
     $agr = agreger_resultats($rows);
     unset($agr['participants']); // inutile ici : on ne liste pas 12 mois de prénoms
@@ -381,6 +392,8 @@ if ($dateInitiale === '' && ($code = session_code_clean($_GET['s'] ?? '')) !== '
 
 <main class="wrap wrap-large">
 
+  <?= selecteur_formation('resultats.php?cle=' . rawurlencode(CLE_ANIMATEUR)) ?>
+
   <div class="dash">
 
     <aside class="card dash-side">
@@ -392,7 +405,7 @@ if ($dateInitiale === '' && ($code = session_code_clean($_GET['s'] ?? '')) !== '
       <button type="button" class="btn btn-ghost" id="btn-global" style="margin-top:14px">
         Bilan toutes sessions
       </button>
-      <a class="btn btn-ghost" style="margin-top:10px" href="eval-froide-resultats.php?cle=<?= rawurlencode(CLE_ANIMATEUR) ?>">
+      <a class="btn btn-ghost" style="margin-top:10px" href="<?= e(avec_f('eval-froide-resultats.php?cle=' . rawurlencode(CLE_ANIMATEUR))) ?>">
         Évaluation à froid
       </a>
     </aside>
@@ -467,12 +480,13 @@ if ($dateInitiale === '' && ($code = session_code_clean($_GET['s'] ?? '')) !== '
 
 <script>
 var CLE  = '<?= rawurlencode(CLE_ANIMATEUR) ?>';
+var F    = '<?= param_f() ?>';   // formation affichée, vide pour la formation par défaut
 var JOUR_INITIAL = '<?= e($dateInitiale) ?>';
 var AUJOURDHUI   = '<?= aujourdhui_local() ?>';
 var timerLive = null;
 
 function api(params, ok) {
-  fetch('resultats.php?cle=' + CLE + '&' + params)
+  fetch('resultats.php?cle=' + CLE + F + '&' + params)
     .then(function (r) { return r.json(); })
     .then(ok)
     .catch(function () {});
@@ -574,7 +588,7 @@ function chargerJour(d) {
     document.getElementById('jour-satisfaction').innerHTML = blocSatisfaction(j.satisfaction);
 
     var exporter = document.getElementById('jour-export');
-    exporter.href = 'export-satisfaction.php?cle=' + CLE + '&d=' + encodeURIComponent(j.date);
+    exporter.href = 'export-satisfaction.php?cle=' + CLE + F + '&d=' + encodeURIComponent(j.date);
     exporter.hidden = !j.satisfaction.nb;
   });
 }

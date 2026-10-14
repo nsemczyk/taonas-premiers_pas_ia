@@ -5,10 +5,10 @@
 //
 // Aucune sortie : ce fichier ne fait que produire un objet FPDF.
 
-require_once __DIR__ . '/horodatage.php';            // -> config.php + dates
+require_once __DIR__ . '/horodatage.php';            // -> config.php, formation + dates
 require_once __DIR__ . '/eval-froide-questions.php'; // définitions + helpers
 
-$chemin_fpdf = __DIR__ . '/lib/fpdf/fpdf.php';
+$chemin_fpdf = __DIR__ . '/../lib/fpdf/fpdf.php';
 if (!is_file($chemin_fpdf)) {
     throw new RuntimeException(
         'Bibliothèque PDF absente : déposez fpdf.php et son dossier font/ dans lib/fpdf/.'
@@ -25,6 +25,7 @@ class EvalFroidePdf extends FPDF
     public int $numero = 0;
     public int $total = 0;
     public bool $compteur = true;
+    public string $formation = '';   // titre de la formation de la réponse en cours
 
     private const L_UTILE = 180;   // 210 - 2 × 15 mm de marge
 
@@ -45,7 +46,7 @@ class EvalFroidePdf extends FPDF
         $this->Cell(0, 7, $this->txt('Évaluation à froid'), 0, 1);
 
         $this->SetFont('Helvetica', '', 9);
-        $this->Cell(120, 5, $this->txt('Premiers pas avec l\'IA générative — suivi après formation'), 0, 0);
+        $this->Cell(120, 5, $this->txt($this->formation . ' — suivi après formation'), 0, 0);
         $this->Cell(0, 5, $this->compteur
             ? $this->txt('Réponse ' . $this->numero . ' / ' . $this->total)
             : '', 0, 1, 'R');
@@ -226,7 +227,8 @@ function ef_pdf_document(array $reponses, bool $compteur = true): EvalFroidePdf
     $pdf->total    = count($reponses);
 
     foreach ($reponses as $i => $r) {
-        $pdf->numero = $i + 1;
+        $pdf->numero    = $i + 1;
+        $pdf->formation = formation($r['formation'] ?? null)['titre'];
         $pdf->AddPage();
 
         // Identité : nom facultatif, repère du lien, date de dépôt

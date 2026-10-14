@@ -62,7 +62,15 @@ adresses d'avant, liens d'évaluation à froid déjà envoyés compris, fonction
 à l'identique, et `/n1/…` y mène aussi. Une formation inconnue répond
 « Formation inconnue » plutôt que d'enregistrer au mauvais endroit.
 
-Sans `mod_rewrite` (serveur intégré de PHP, hébergement qui l'interdit), la même
+En local, le serveur intégré de PHP ignore le `.htaccess` : lancez-le avec le
+routeur qui le remplace, depuis la racine du site, et les adresses sont les
+mêmes qu'en production (`/n2/`, `/n2/bocal.php`…) :
+
+```bash
+php -S localhost:8000 core/routeur.php
+```
+
+Sans `mod_rewrite` (hébergement qui l'interdit), la même
 formation s'atteint par `?f=n2` : `/equipes.php?f=n2`. Cette forme reste
 acceptée partout, et les pages s'adaptent seules au mode disponible — sauf
 celles des exercices, qui ont besoin de `mod_rewrite`. Le site
@@ -657,6 +665,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `core/points.php` | Points d'équipe et individuels : attribution, totaux, rangs — helpers seuls |
 | `core/etapes.php` | Lecture des étapes ouvertes de la formation (aucune sortie, helpers seuls) |
 | `core/horodatage.php` | Conversion des horodatages serveur vers l'heure locale (helpers seuls) |
+| `core/routeur.php` | Routeur du serveur intégré de PHP (`php -S localhost:8000 core/routeur.php`), équivalent local du `.htaccess` |
 | `exercices/equipes/` | `arrivee.php` (prénom → cookie de séance, « Ce n'est pas moi »), `equipes.php` (constitution des équipes en direct, protégé par clé), `migration.sql` |
 | `exercices/scores/` | `scores.php` : points et classement, `?vue=projection` pour le vidéoprojecteur (protégé par clé) ; `migration.sql` |
 | `exercices/mur/` | Mur des objectifs : `objectif.php` (saisie du stagiaire), `mur.php` (tableau blanc au vidéoprojecteur, protégé par clé), `fonctions.php`, `migration.sql` |

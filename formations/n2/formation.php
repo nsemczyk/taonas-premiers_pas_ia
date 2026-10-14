@@ -16,6 +16,7 @@ return [
         'bocal'     => 'Le bocal à secrets',
         'assistant' => 'La fiche de poste de votre assistant',
         'speeddating' => 'Speed-dating d\'assistants',
+        'bingo'     => 'Bingo de l\'hallucination',
     ],
     // Équipes de la séance : clé stable (stockée en base) => nom affiché et couleur.
     // Renommer une équipe ne casse rien ; changer sa clé détache ses membres.
@@ -83,6 +84,31 @@ MAIL,
         ],
         'reference'  => 'Point RH sur un technicien d\'atelier en CDI depuis environ 5 ans, absent deux jours cette semaine (arrêt maladie), avec des tensions récentes avec un collègue et une situation personnelle difficile. Il est le seul à connaître un dossier client important, livraison prévue dans deux mois, et le client s\'impatiente. La RH propose un entretien cette semaine. Résume les enjeux et propose un ordre du jour pour cet entretien.',
     ],
+    // Bingo de l'hallucination : les 9 cases (mélangées sur chaque grille), le
+    // texte projeté, et le corrigé : [passage(s) du texte surligné(s), erreur, case(s)].
+    // Toutes les références du texte sont fausses par construction.
+    'bingo' => [
+        'cases' => [
+            'Une date fausse', 'Une source inventée', 'Une statistique sans origine',
+            'Un nom de personne inventé', 'Un « certainement » sans preuve', 'Une citation attribuée au hasard',
+            'Un chiffre trop précis', 'Une loi ou norme qui n\'existe pas', 'Une contradiction interne',
+        ],
+        'texte' => <<<'TEXTE'
+Le télétravail en France : ce qu'il faut savoir
+
+Le télétravail a été introduit en France par la loi Delcourt du 12 mars 2004, qui imposait déjà deux jours de présence minimum au bureau. Selon une étude de l'Institut National du Travail à Distance, 73,4 % des salariés français télétravaillent aujourd'hui au moins trois jours par semaine. Comme l'a déclaré le sociologue Jean-Marc Lévrier, « le bureau est devenu un lieu de passage, pas un lieu de travail ». Il est certainement établi que le télétravail augmente la productivité de 27,8 % en moyenne. La norme AFNOR NF-T 2021 fixe d'ailleurs les conditions d'ergonomie du poste à domicile. Notons enfin que la majorité des salariés préfèrent revenir au bureau à temps plein, ce qui explique le succès durable du télétravail.
+TEXTE,
+        'corrige' => [
+            ['loi Delcourt du 12 mars 2004', '« Loi Delcourt du 12 mars 2004 » : loi et date inventées', 'Loi ou norme qui n\'existe pas · Date fausse'],
+            ['Institut National du Travail à Distance', '« Institut National du Travail à Distance » : organisme inventé', 'Source inventée'],
+            [['73,4 %', '27,8 %'], '« 73,4 % » et « 27,8 % » : chiffres précis sans origine vérifiable', 'Statistique sans origine · Chiffre trop précis'],
+            [['Jean-Marc Lévrier', '« le bureau est devenu un lieu de passage, pas un lieu de travail »'], '« Jean-Marc Lévrier » : personne inventée, citation attribuée', 'Nom inventé · Citation attribuée au hasard'],
+            ['Il est certainement établi que', '« Il est certainement établi que » : affirmation sans preuve', 'Un « certainement » sans preuve'],
+            ['La norme AFNOR NF-T 2021', '« Norme AFNOR NF-T 2021 » : référence inventée', 'Loi ou norme qui n\'existe pas'],
+            ['la majorité des salariés préfèrent revenir au bureau à temps plein, ce qui explique le succès durable du télétravail', '« La majorité préfère revenir… ce qui explique le succès du télétravail » : contradiction', 'Contradiction interne'],
+        ],
+        'avertissement' => 'Toutes les références de ce texte sont fausses par construction. Ne laissez personne repartir en croyant qu\'une de ces sources existe.',
+    ],
     // Pages de l'animateur proposées sur la télécommande (page => libellé du bouton)
     'outils'      => [
         'equipes.php' => 'Constituer les équipes',
@@ -90,6 +116,7 @@ MAIL,
         'boule-tableau.php' => 'Tableau du prompt boule de neige',
         'battle-tableau.php' => 'Prompt Battle',
         'bocal-tableau.php' => 'Le bocal à secrets : les copies',
+        'bingo-tableau.php' => 'Bingo de l\'hallucination',
         'scores.php'  => 'Points et classement',
     ],
 ];

@@ -14,3 +14,5 @@
   <?= bloc_bocal('bocal') ?>
 
   <?= bloc_assistant('assistant') ?>
+
+  <?= bloc_bingo('bingo') ?>

@@ -536,3 +536,35 @@ CREATE TABLE IF NOT EXISTS `assistant_retours` (
   CONSTRAINT `fk_retour_testeur` FOREIGN KEY (`testeur_id`) REFERENCES `participants` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_retour_cible` FOREIGN KEY (`cible_id`) REFERENCES `participants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Bingo de l'hallucination : mêmes tables que exercices/bingo/migration.sql,
+-- incluses ici pour une installation neuve.
+--
+
+-- La partie de la séance : ce que montre le vidéoprojecteur
+CREATE TABLE IF NOT EXISTS `bingo_parties` (
+  `id`              INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `formation`       VARCHAR(32)  NOT NULL,
+  `seance`          DATE         NOT NULL,
+  `texte_visible`   TINYINT(1)   NOT NULL DEFAULT 0,   -- 1 : texte projeté, les grilles s'ouvrent
+  `corrige_visible` TINYINT(1)   NOT NULL DEFAULT 0,   -- 1 : erreurs surlignées et corrigé projetés
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_partie` (`formation`, `seance`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- La grille de chaque joueur
+CREATE TABLE IF NOT EXISTS `bingo_grilles` (
+  `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `formation`      VARCHAR(32)  NOT NULL,
+  `seance`         DATE         NOT NULL,
+  `participant_id` INT UNSIGNED NOT NULL,
+  `ordre`          VARCHAR(64)  NOT NULL,               -- JSON : position => numéro de case
+  `coches`         VARCHAR(64)  NOT NULL DEFAULT '[]',  -- JSON : positions cochées
+  `bingo_at`       DATETIME(6)  DEFAULT NULL,           -- annonce du bingo (ordre d'arrivée)
+  `statut`         VARCHAR(10)  DEFAULT NULL,           -- attente | valide | refuse
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_grille` (`formation`, `seance`, `participant_id`),
+  CONSTRAINT `fk_bingo_participant` FOREIGN KEY (`participant_id`)
+    REFERENCES `participants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

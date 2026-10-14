@@ -689,3 +689,32 @@ body.battle-projete { margin: 0; min-height: 100vh; background: radial-gradient(
 .retour-remarque { font-style: italic; margin: 6px 0 0; }
 .merci { background: var(--leaf-soft); border-left: 6px solid var(--olive); padding: 12px 14px; margin-bottom: 16px; font-weight: 600; }
 .form-grille select.field { width: 100%; min-height: 54px; padding: 12px 14px; font-size: 1.1rem; border: 2px solid var(--gris); margin-bottom: 14px; background: #fff; }
+
+/* ------------------------------------------------ Bingo de l'hallucination */
+.bingo-grille { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.bingo-case {
+  min-height: 92px; padding: 8px 6px; border: 2px solid var(--doux); background: var(--glacier);
+  font: inherit; font-size: clamp(.78rem, 3.5vw, 1rem); line-height: 1.25; color: var(--nuit); cursor: pointer;
+  -webkit-tap-highlight-color: transparent; hyphens: auto; overflow-wrap: break-word;
+}
+.bingo-case:disabled { cursor: default; opacity: .75; }
+.bingo-case.cochee { background: var(--marque); border-color: var(--marque); color: var(--blanc); opacity: 1; }
+.bingo-case.ligne { background: #f2c94c; border-color: #c9a227; color: var(--nuit); }
+.bingo-bouton { margin-top: 14px; font-size: 1.6rem; letter-spacing: .06em; animation: pouls 1s infinite; }
+.bingo-annonce { border-top: 1px solid var(--gris); padding: 10px 0; }
+.bingo-annonce p { margin: 0 0 6px; }
+.bingo-annonce.statut-valide { border-left: 6px solid var(--olive); padding-left: 10px; }
+.bingo-annonce.statut-refuse { opacity: .6; }
+.bingo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.bingo-actions form { margin: 0; }
+.bingo-actions .btn { width: auto; min-height: 0; margin: 0; padding: 8px 16px; }
+.bingo-texte {
+  max-width: 62em; margin: 2vh auto 0; text-align: left; background: var(--blanc); color: var(--nuit);
+  padding: 28px 36px; font-size: clamp(1.15rem, 1.7vw, 1.6rem); line-height: 1.55; box-shadow: 0 10px 28px rgba(0,0,0,.45);
+}
+.bingo-texte mark { background: #ffe66b; padding: 0 2px; }
+.bingo-texte mark::before { content: attr(data-n); font-size: .6em; vertical-align: super; color: var(--brique); font-weight: 700; margin-right: 2px; }
+.bingo-corrige { max-width: 62em; margin: 18px auto 0; border-collapse: collapse; text-align: left; font-size: 1.05rem; }
+.bingo-corrige td { padding: 6px 12px; border-bottom: 1px solid rgba(255,255,255,.2); vertical-align: top; }
+.bingo-corrige td.n { color: #ffe66b; font-weight: 700; }
+.bingo-avertissement { color: #f2c94c; font-size: 1.1rem; margin-top: 14px; }

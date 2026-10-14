@@ -41,7 +41,7 @@ Quatre étages :
 - **À la racine** : uniquement des pages (accueil, quiz, pilotage, tableau de
   bord, exports…). Elles sont communes à toutes les formations.
 - **`exercices/<nom>/`** : un dossier par exercice (équipes, scores, mur,
-  boule, battle, bocal, assistant) avec ses pages, ses helpers (`fonctions.php`, carte
+  boule, battle, bocal, assistant, bingo) avec ses pages, ses helpers (`fonctions.php`, carte
   d'accueil comprise) et sa migration. Un exercice n'appartient à aucune
   formation : il ne s'anime que là où une formation déclare son étape et son
   contenu. Ses pages restent servies à la racine (`/n2/bocal.php`), jamais par
@@ -97,7 +97,7 @@ leur étape `quiz`.
    `core/blocs.php`, `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`,
    `bloc_arrivee()` ; dans chaque `exercices/<nom>/fonctions.php`,
    `bloc_objectif()`, `bloc_boule()`, `bloc_battle()`, `bloc_bocal()`,
-   `bloc_assistant()`. Un
+   `bloc_assistant()`, `bloc_bingo()`. Un
    dossier préfixé par `_` (brouillon) est ignoré.
 2. Déclarer ses étapes dans `formation.php`, dans l'ordre de la journée :
 
@@ -448,6 +448,40 @@ mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/assist
 
 À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
 
+## Bingo de l'hallucination (niveau 2)
+
+Un texte produit par une IA, truffé d'erreurs plantées, est projeté et lu à
+voix haute par un volontaire ; chacun coche sur son téléphone les
+hallucinations repérées. Première ligne complète gagne : **10 points**
+individuels au premier bingo validé.
+
+**Côté stagiaire** : « Ma grille de bingo » sur l'accueil. Les 9 cases sont les
+mêmes pour tous, à des places tirées au hasard pour chacun : les lignes
+diffèrent. La grille est visible mais bloquée tant que le texte n'est pas
+projeté. Une ligne complète (ligne, colonne ou diagonale) s'allume et fait
+apparaître **BINGO !** ; une fois le bingo annoncé, la grille se fige en
+attendant le verdict. Le texte, lui, n'est qu'au vidéoprojecteur.
+
+**Côté formateur** : `/n2/bingo-tableau.php?cle=VOTRE_CLE`, aussi sur la
+télécommande. **Ouvrir l'écran de projection**, puis **Afficher le texte** :
+les grilles s'ouvrent. Les bingos arrivent dans l'ordre, avec la ligne de
+chacun ; faites citer les passages, puis **Valider** (un seul gagnant, points
+attribués, la partie s'arrête partout) ou **Refuser** (le joueur reprend, la
+partie continue). Une validation s'annule, points compris. Au débrief,
+**Afficher le corrigé au vidéoprojecteur** surligne et numérote les erreurs
+dans le texte, avec le tableau du corrigé et l'avertissement : toutes les
+références sont fausses par construction. **Recommencer la partie** efface
+grilles, bingos et points du bingo.
+
+Cases, texte et corrigé : `formations/n2/formation.php`, clé `bingo` (chaque
+ligne du corrigé : passage(s) du texte à surligner, erreur, case).
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/bingo/migration.sql
+```
+
+À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
+
 ## La télécommande
 
 `pilotage.php?cle=VOTRE_CLE` ouvre les sections de l'accueil au rythme du
@@ -686,7 +720,8 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
   Les manches de la Prompt Battle (copies et votes compris) :
   `DELETE FROM battle_manches WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
   Les copies du bocal à secrets, les fiches d'assistant et les retours du
-  speed-dating partent avec leur participant.
+  speed-dating partent avec leur participant, comme les grilles du bingo ;
+  les parties du bingo : `DELETE FROM bingo_parties WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
 
 ## Fichiers
 
@@ -714,6 +749,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `exercices/battle/` | Prompt Battle : `battle.php` (stagiaire), `battle-tableau.php` (pilotage et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/bocal/` | Bocal à secrets : `bocal.php` (surligner, réécrire, rendre), `bocal-tableau.php` (correction, test des prompts, points, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/assistant/` | Fiche de poste de l'assistant : `assistant.php` (rubriques, enregistrement, copie pour son IA, grille du speed-dating et retours reçus), `fonctions.php`, `migration.sql` |
+| `exercices/bingo/` | Bingo de l'hallucination : `bingo.php` (grille du joueur), `bingo-tableau.php` (pilotage et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
 | `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |
 | `quiz.php` | Le quiz : prénom → questions une par une → feedback → score |

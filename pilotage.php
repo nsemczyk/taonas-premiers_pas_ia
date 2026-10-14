@@ -51,7 +51,8 @@ if (formation()['outils'] ?? []) {
     foreach (['participants' => 'exercices/equipes/migration.sql', 'objectifs.anonyme' => 'exercices/mur/migration.sql',
               'boule_briques' => 'exercices/boule/migration.sql', 'points' => 'exercices/scores/migration.sql',
               'battle_votes' => 'exercices/battle/migration.sql',
-              'bocal_copies' => 'exercices/bocal/migration.sql'] as $cible => $script) {
+              'bocal_copies' => 'exercices/bocal/migration.sql',
+              'assistant_fiches' => 'exercices/assistant/migration.sql'] as $cible => $script) {
         [$table, $colonne] = explode('.', $cible . '.1');   // table ou table.colonne attendue
         try {
             db()->query("SELECT $colonne FROM `$table` LIMIT 1");

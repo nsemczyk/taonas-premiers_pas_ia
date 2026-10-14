@@ -41,7 +41,7 @@ Quatre étages :
 - **À la racine** : uniquement des pages (accueil, quiz, pilotage, tableau de
   bord, exports…). Elles sont communes à toutes les formations.
 - **`exercices/<nom>/`** : un dossier par exercice (équipes, scores, mur,
-  boule, battle, bocal) avec ses pages, ses helpers (`fonctions.php`, carte
+  boule, battle, bocal, assistant) avec ses pages, ses helpers (`fonctions.php`, carte
   d'accueil comprise) et sa migration. Un exercice n'appartient à aucune
   formation : il ne s'anime que là où une formation déclare son étape et son
   contenu. Ses pages restent servies à la racine (`/n2/bocal.php`), jamais par
@@ -96,7 +96,8 @@ leur étape `quiz`.
    (titres) et `accueil.php` (cartes). Les briques disponibles : dans
    `core/blocs.php`, `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`,
    `bloc_arrivee()` ; dans chaque `exercices/<nom>/fonctions.php`,
-   `bloc_objectif()`, `bloc_boule()`, `bloc_battle()`, `bloc_bocal()`. Un
+   `bloc_objectif()`, `bloc_boule()`, `bloc_battle()`, `bloc_bocal()`,
+   `bloc_assistant()`. Un
    dossier préfixé par `_` (brouillon) est ignoré.
 2. Déclarer ses étapes dans `formation.php`, dans l'ordre de la journée :
 
@@ -408,6 +409,31 @@ mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/bocal/
 
 À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
 
+## La fiche de poste de votre assistant (niveau 2)
+
+Chaque stagiaire rédige la fiche de poste de l'assistant IA qu'il voudrait pour
+son travail : mission, contexte, documents de référence, règles de
+fonctionnement, ce qu'il ne fait jamais, format des réponses, questions à
+poser. Exercice individuel, sans points, ouvert par l'étape « La fiche de poste
+de votre assistant ».
+
+Tout est enregistré au fil de la frappe et reste modifiable toute la journée :
+on y revient en fin de séance. **Copier mon assistant** met la fiche en forme
+d'instructions (« Tu es mon assistant… », une section par rubrique remplie)
+pour la coller dans son outil d'IA et l'essayer ; « Voir le texte copié » la
+montre.
+
+Pas de dépôt de fichier : la rubrique « Documents de référence » ne fait que
+les lister, un par ligne, et rappelle de les joindre soi-même à son IA,
+anonymisés. Les rubriques sont dans `exercices/assistant/fonctions.php`
+(`ASSISTANT_RUBRIQUES`).
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/assistant/migration.sql
+```
+
+À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
+
 ## La télécommande
 
 `pilotage.php?cle=VOTRE_CLE` ouvre les sections de l'accueil au rythme du
@@ -645,7 +671,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
   Les points : `DELETE FROM points WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
   Les manches de la Prompt Battle (copies et votes compris) :
   `DELETE FROM battle_manches WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
-  Les copies du bocal à secrets partent avec leur participant.
+  Les copies du bocal à secrets et les fiches d'assistant partent avec leur participant.
 
 ## Fichiers
 
@@ -672,6 +698,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `exercices/boule/` | Prompt boule de neige : `boule.php` (joueur), `boule-tableau.php` (une colonne par équipe, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/battle/` | Prompt Battle : `battle.php` (stagiaire), `battle-tableau.php` (pilotage et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/bocal/` | Bocal à secrets : `bocal.php` (surligner, réécrire, rendre), `bocal-tableau.php` (correction, test des prompts, points, protégé par clé), `fonctions.php`, `migration.sql` |
+| `exercices/assistant/` | Fiche de poste de l'assistant : `assistant.php` (rubriques, enregistrement, copie pour son IA), `fonctions.php`, `migration.sql` |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
 | `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |
 | `quiz.php` | Le quiz : prénom → questions une par une → feedback → score |

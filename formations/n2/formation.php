@@ -14,6 +14,7 @@ return [
         'boule'     => 'Le prompt boule de neige',
         'battle'    => 'Prompt Battle',
         'bocal'     => 'Le bocal à secrets',
+        'assistant' => 'La fiche de poste de votre assistant',
     ],
     // Équipes de la séance : clé stable (stockée en base) => nom affiché et couleur.
     // Renommer une équipe ne casse rien ; changer sa clé détache ses membres.

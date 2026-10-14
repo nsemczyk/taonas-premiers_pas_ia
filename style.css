@@ -663,3 +663,11 @@ body.battle-projete { margin: 0; min-height: 100vh; background: radial-gradient(
 .bocal-corrige { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: .95rem; }
 .bocal-corrige th, .bocal-corrige td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--gris); vertical-align: top; }
 .bocal-corrige th { background: var(--nuit); color: var(--blanc); font-weight: 400; }
+
+/* ------------------------------------------------ La fiche de poste de votre assistant */
+.assistant-grille { display: grid; gap: 0 18px; }
+@media (min-width: 900px) { .assistant-grille { grid-template-columns: 1fr 1fr; } }
+.assistant-rubrique { background: var(--glacier); }
+.assistant-titre { display: block; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: var(--marque); }
+.assistant-aide { margin: 4px 0 10px; color: var(--indigo); font-size: .95rem; }
+.assistant-rubrique textarea { background: var(--blanc); margin-bottom: 0; }

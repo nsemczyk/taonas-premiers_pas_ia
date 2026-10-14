@@ -493,3 +493,27 @@ CREATE TABLE IF NOT EXISTS `bocal_copies` (
   CONSTRAINT `fk_bocal_participant` FOREIGN KEY (`participant_id`)
     REFERENCES `participants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- La fiche de poste de votre assistant : même table que
+-- exercices/assistant/migration.sql, incluse ici pour une installation neuve.
+--
+
+CREATE TABLE IF NOT EXISTS `assistant_fiches` (
+  `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `formation`      VARCHAR(32)  NOT NULL,
+  `seance`         DATE         NOT NULL,
+  `participant_id` INT UNSIGNED NOT NULL,
+  `mission`        TEXT         NOT NULL,
+  `contexte`       TEXT         NOT NULL,
+  `documents`      TEXT         NOT NULL,             -- un document par ligne, sans le fichier
+  `regles`         TEXT         NOT NULL,
+  `interdits`      TEXT         NOT NULL,
+  `format`         TEXT         NOT NULL,
+  `questions`      TEXT         NOT NULL,
+  `updated_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_fiche` (`formation`, `seance`, `participant_id`),
+  CONSTRAINT `fk_assistant_participant` FOREIGN KEY (`participant_id`)
+    REFERENCES `participants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

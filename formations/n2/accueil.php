@@ -12,3 +12,5 @@
   <?= bloc_battle('battle') ?>
 
   <?= bloc_bocal('bocal') ?>
+
+  <?= bloc_assistant('assistant') ?>

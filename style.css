@@ -671,3 +671,21 @@ body.battle-projete { margin: 0; min-height: 100vh; background: radial-gradient(
 .assistant-titre { display: block; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: var(--marque); }
 .assistant-aide { margin: 4px 0 10px; color: var(--indigo); font-size: .95rem; }
 .assistant-rubrique textarea { background: var(--blanc); margin-bottom: 0; }
+
+/* Speed-dating d'assistants */
+.trois-questions { margin-top: 12px; background: var(--blanc); }
+.trois-questions ol { margin: 6px 0 0; padding-left: 20px; }
+.trois-questions li { margin-bottom: 6px; }
+.grille { display: grid; gap: 8px; margin: 6px 0 16px; }
+@media (min-width: 700px) { .grille { grid-template-columns: 1fr 1fr; } }
+.grille-case { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--glacier); cursor: pointer; }
+.grille-case input { width: 22px; height: 22px; flex: none; }
+.retour { border-top: 1px solid var(--gris); padding-top: 12px; margin-top: 12px; }
+.retour-qui { font-weight: 600; margin: 0 0 6px; }
+.grille-resultat { list-style: none; margin: 0; padding: 0; }
+.grille-resultat li { padding: 3px 0; }
+.grille-ok span { color: var(--olive); }
+.grille-alerte { color: var(--brique); }
+.retour-remarque { font-style: italic; margin: 6px 0 0; }
+.merci { background: var(--leaf-soft); border-left: 6px solid var(--olive); padding: 12px 14px; margin-bottom: 16px; font-weight: 600; }
+.form-grille select.field { width: 100%; min-height: 54px; padding: 12px 14px; font-size: 1.1rem; border: 2px solid var(--gris); margin-bottom: 14px; background: #fff; }

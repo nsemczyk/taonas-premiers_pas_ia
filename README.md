@@ -424,9 +424,23 @@ pour la coller dans son outil d'IA et l'essayer ; « Voir le texte copié » la
 montre.
 
 Pas de dépôt de fichier : la rubrique « Documents de référence » ne fait que
-les lister, un par ligne, et rappelle de les joindre soi-même à son IA,
-anonymisés. Les rubriques sont dans `exercices/assistant/fonctions.php`
-(`ASSISTANT_RUBRIQUES`).
+les lister, un par ligne, et rappelle de les joindre soi-même à son IA, après
+le **test des 3 questions** (nécessaire ? identifiant ? confidentiel ?), dépliable
+sous la rubrique.
+
+**Speed-dating d'assistants** : étape séparée de la télécommande, « Speed-dating
+d'assistants », sans carte propre sur l'accueil. Quand elle s'ouvre, la carte de
+la fiche invite à noter l'assistant de son binôme, et la grille apparaît en bas
+de la fiche (un bandeau prévient ceux qui l'ont déjà ouverte) : chacun change de
+poste avec le binôme de son choix, teste SON assistant avec une vraie demande,
+le choisit dans la liste et coche les 4 questions (compris la mission ? inventé
+quelque chose ? respecté les règles ? posé des questions ?), avec une remarque
+facultative. Le propriétaire voit les retours reçus sous sa fiche, problèmes
+en rouge, pour la corriger. Un retour peut être repris : choisir à nouveau le
+même binôme remplit la grille avec le précédent.
+
+Rubriques, grille et test des 3 questions : constantes `ASSISTANT_*` de
+`exercices/assistant/fonctions.php`.
 
 ```bash
 mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/assistant/migration.sql
@@ -671,7 +685,8 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
   Les points : `DELETE FROM points WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
   Les manches de la Prompt Battle (copies et votes compris) :
   `DELETE FROM battle_manches WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
-  Les copies du bocal à secrets et les fiches d'assistant partent avec leur participant.
+  Les copies du bocal à secrets, les fiches d'assistant et les retours du
+  speed-dating partent avec leur participant.
 
 ## Fichiers
 
@@ -698,7 +713,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `exercices/boule/` | Prompt boule de neige : `boule.php` (joueur), `boule-tableau.php` (une colonne par équipe, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/battle/` | Prompt Battle : `battle.php` (stagiaire), `battle-tableau.php` (pilotage et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/bocal/` | Bocal à secrets : `bocal.php` (surligner, réécrire, rendre), `bocal-tableau.php` (correction, test des prompts, points, protégé par clé), `fonctions.php`, `migration.sql` |
-| `exercices/assistant/` | Fiche de poste de l'assistant : `assistant.php` (rubriques, enregistrement, copie pour son IA), `fonctions.php`, `migration.sql` |
+| `exercices/assistant/` | Fiche de poste de l'assistant : `assistant.php` (rubriques, enregistrement, copie pour son IA, grille du speed-dating et retours reçus), `fonctions.php`, `migration.sql` |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
 | `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |
 | `quiz.php` | Le quiz : prénom → questions une par une → feedback → score |

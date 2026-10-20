@@ -488,8 +488,10 @@ Douze cartes à ranger en prompt, assistant, workflow, automatisation ou agent.
 Chacun trie sur son téléphone, le score compte pour l'équipe.
 
 **Côté stagiaire** (il faut être placé dans une équipe) : « Trier les cartes »
-sur l'accueil. Chaque carte a ses 5 catégories : on touche celle choisie (la
-toucher à nouveau la retire). Enregistré à chaque choix, modifiable jusqu'à la
+sur l'accueil. Sur téléphone, chaque carte a ses 5 catégories : on touche celle
+choisie (la toucher à nouveau la retire). Sur ordinateur (grand écran et
+souris), un plateau à 5 colonnes : on glisse les cartes depuis la pioche du bas
+vers leur colonne, d'une colonne à l'autre, ou de retour dans la pioche. Enregistré à chaque choix, modifiable jusqu'à la
 clôture. Pendant la correction, chaque carte dévoilée indique au joueur s'il
 l'avait bien placée.
 

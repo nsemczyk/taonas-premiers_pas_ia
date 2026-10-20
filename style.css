@@ -745,3 +745,32 @@ body.battle-projete { margin: 0; min-height: 100vh; background: radial-gradient(
 .tp-debat { font-size: 1.4rem; color: #f2c94c; margin-top: 3vh; }
 .tp-scores { display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; margin-top: 3vh; font-size: 1.3rem; }
 .tp-scores p { margin: 0; }
+
+/* Jeu de tri sur ordinateur : plateau à 5 colonnes et pioche, en glisser-déposer */
+.tri-plateau, .tri-souris { display: none; }
+@media (min-width: 900px) and (pointer: fine) {
+  .tri-plateau { display: block; }
+  .tri-liste, .tri-tactile { display: none; }
+  .tri-souris { display: inline; }
+}
+.tri-colonnes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.tri-zone { background: var(--glacier); min-height: 220px; padding: 0 8px 10px; transition: background .15s, box-shadow .15s; }
+.tri-zone.survol { background: #cfe8f6; box-shadow: inset 0 0 0 3px var(--vif); }
+.tri-zone-titre { margin: 0 -8px 10px; padding: 10px; background: var(--doux); color: var(--blanc); text-align: center; font-weight: 600; }
+.tri-pioche-titre { margin: 22px 0 8px; font-weight: 600; color: var(--marque); }
+.tri-pioche { min-height: 90px; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; align-items: start; }
+.tri-colonnes .tri-jeton { margin-bottom: 8px; }
+.tri-jeton {
+  background: var(--blanc); border: 1px solid var(--gris); border-left: 5px solid var(--marque);
+  padding: 8px 10px; font-size: .88rem; line-height: 1.35; color: var(--nuit);
+  box-shadow: 0 2px 5px rgba(21,22,44,.12); user-select: none;
+}
+.tri-jeton[draggable] { cursor: grab; }
+.tri-jeton[draggable]:hover { box-shadow: 0 6px 14px rgba(21,22,44,.22); transform: translateY(-1px); }
+.tri-jeton.deplace { opacity: .35; }
+.tri-jeton .tri-num { min-width: 1.5em; padding: 0 4px; margin-right: 4px; font-size: .8rem; }
+.tri-jeton.juste { border-left-color: var(--olive); }
+.tri-jeton.faux { border-left-color: var(--brique); }
+.tri-jeton-verdict { display: block; margin-top: 6px; font-weight: 600; font-size: .82rem; }
+.tri-jeton.juste .tri-jeton-verdict { color: var(--olive); }
+.tri-jeton.faux .tri-jeton-verdict { color: var(--brique); }

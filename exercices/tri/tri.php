@@ -1,6 +1,7 @@
 <?php
 // Jeu de tri, côté stagiaire : les 12 cartes, chacune avec ses 5 catégories
-// à toucher. Enregistré à chaque choix, modifiable jusqu'à ce que le
+// à toucher sur téléphone ; sur ordinateur (grand écran et souris), un plateau
+// à 5 colonnes où l'on glisse les cartes depuis la pioche du bas. Enregistré à chaque choix, modifiable jusqu'à ce que le
 // formateur clôture le tri. Pendant la correction, chaque carte dévoilée
 // indique au joueur s'il l'avait bien placée.
 require __DIR__ . '/fonctions.php';
@@ -57,7 +58,7 @@ if (($_GET['json'] ?? '') === 'etat') {
   <p>Prompt, assistant, workflow, automatisation ou agent</p>
 </header>
 
-<main class="wrap">
+<main class="wrap<?= $pret ? ' wrap-large' : '' ?>">
 
 <?php if (!$ouverte): ?>
   <section class="card"><h2>Pas encore ouvert</h2><p class="lead">Le formateur lancera le jeu dans un instant.</p></section>
@@ -74,8 +75,9 @@ if (($_GET['json'] ?? '') === 'etat') {
 <?php else: ?>
   <section class="card">
     <?php if (!$partie['clos']): ?>
-      <p class="lead">Pour chaque carte, touchez sa catégorie. Votre score compte pour l'équipe <?= badge_equipe($moi['equipe']) ?> :
-        débattez, mais chacun choisit.</p>
+      <p class="lead"><span class="tri-tactile">Pour chaque carte, touchez sa catégorie.</span>
+        <span class="tri-souris">Glissez chaque carte de la pioche vers sa colonne ; vous pouvez la déplacer à nouveau, ou la remettre dans la pioche.</span>
+        Votre score compte pour l'équipe <?= badge_equipe($moi['equipe']) ?> : débattez, mais chacun choisit.</p>
       <p class="tri-compte"><strong id="compte"><?= count($reponses) ?></strong> / <?= $nb ?> cartes rangées</p>
     <?php elseif (!$devoilees): ?>
       <h2>Tri terminé</h2>
@@ -87,6 +89,40 @@ if (($_GET['json'] ?? '') === 'etat') {
     <?php endif; ?>
   </section>
 
+  <?php
+  // Une carte du plateau, à glisser (ordinateur)
+  $jeton = function (int $n) use ($config, $reponses, $devoilees, $partie): string {
+      $carte = $config['cartes'][$n];
+      $choix = $reponses[$n] ?? null;
+      $etat  = $n < $devoilees ? (tri_juste($n, $choix) ? ' juste' : ' faux') : '';
+      $h = '<div class="tri-jeton' . $etat . '" data-carte="' . $n . '"' . ($partie['clos'] ? '' : ' draggable="true"') . '>'
+         . '<span class="tri-num">' . ($n + 1) . '</span> ' . e($carte['texte']);
+      if ($etat === ' faux') {
+          $h .= '<span class="tri-jeton-verdict">✗ C\'était : ' . e(tri_libelles($carte['reponses'])) . '</span>';
+      } elseif ($etat === ' juste') {
+          $h .= '<span class="tri-jeton-verdict">✓ Bien vu</span>';
+      }
+      return $h . '</div>';
+  };
+  ?>
+  <section class="card tri-plateau">
+    <div class="tri-colonnes">
+      <?php foreach ($config['categories'] as $cle => $libelle): ?>
+      <div class="tri-zone" data-cat="<?= e($cle) ?>">
+        <p class="tri-zone-titre"><?= e($libelle) ?></p>
+        <?php foreach ($config['cartes'] as $n => $carte): if (($reponses[$n] ?? null) === $cle): ?><?= $jeton($n) ?><?php endif; endforeach; ?>
+      </div>
+      <?php endforeach; ?>
+    </div>
+    <?php if (!$partie['clos'] || count($reponses) < $nb): ?>
+    <p class="tri-pioche-titre"><?= $partie['clos'] ? 'Cartes non rangées' : 'La pioche : glissez les cartes vers leur colonne' ?></p>
+    <div class="tri-zone tri-pioche" data-cat="">
+      <?php foreach ($config['cartes'] as $n => $carte): if (!isset($reponses[$n])): ?><?= $jeton($n) ?><?php endif; endforeach; ?>
+    </div>
+    <?php endif; ?>
+  </section>
+
+  <div class="tri-liste">
   <?php foreach ($config['cartes'] as $n => $carte):
       $choix = $reponses[$n] ?? null;
       $corrigee = $n < $devoilees; ?>
@@ -104,6 +140,7 @@ if (($_GET['json'] ?? '') === 'etat') {
     <?php endif; ?>
   </section>
   <?php endforeach; ?>
+  </div>
 <?php endif; ?>
 
   <section class="card">
@@ -120,18 +157,64 @@ if (($_GET['json'] ?? '') === 'etat') {
   var URL_RANGER = <?= json_encode(avec_f('tri.php?json=ranger')) ?>;
   var compte = document.getElementById('compte');
 
+  // Range la carte n dans la catégorie cat ('' : la remet dans la pioche).
+  // La liste (téléphone) et le plateau (ordinateur) restent synchronisés.
+  function ranger(n, cat) {
+    var liste = document.querySelector('.tri-carte[data-carte="' + n + '"]');
+    liste.querySelectorAll('.tri-cat').forEach(function (b) { b.classList.toggle('choisie', b.dataset.cat === cat); });
+    var jeton = document.querySelector('.tri-jeton[data-carte="' + n + '"]');
+    var zone = document.querySelector('.tri-zone[data-cat="' + cat + '"]');
+    if (jeton && zone) {
+      // à sa place dans la colonne, dans l'ordre des numéros
+      var apres = Array.prototype.filter.call(zone.querySelectorAll('.tri-jeton'), function (j) { return +j.dataset.carte > n; })[0];
+      zone.insertBefore(jeton, apres || null);
+    }
+    if (compte) { compte.textContent = document.querySelectorAll('.tri-liste .tri-cat.choisie').length; }
+    fetch(URL_RANGER, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ carte: n, categorie: cat })
+    }).then(function (r) { if (!r.ok) { location.reload(); } }).catch(function () {});
+  }
+
+  // Téléphone : toucher une catégorie ; toucher le choix actuel le retire
   document.querySelectorAll('.tri-carte').forEach(function (carte) {
     carte.addEventListener('click', function (ev) {
       var b = ev.target.closest('.tri-cat');
       if (!b || b.disabled) { return; }
-      var deja = b.classList.contains('choisie');   // toucher le choix actuel le retire
-      carte.querySelectorAll('.tri-cat').forEach(function (x) { x.classList.remove('choisie'); });
-      if (!deja) { b.classList.add('choisie'); }
-      if (compte) { compte.textContent = document.querySelectorAll('.tri-cat.choisie').length; }
-      fetch(URL_RANGER, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ carte: +carte.dataset.carte, categorie: deja ? '' : b.dataset.cat })
-      }).then(function (r) { if (!r.ok) { location.reload(); } }).catch(function () {});
+      ranger(+carte.dataset.carte, b.classList.contains('choisie') ? '' : b.dataset.cat);
+    });
+  });
+
+  // Ordinateur : glisser-déposer entre la pioche et les colonnes
+  var enCours = null;
+  document.querySelectorAll('.tri-jeton[draggable]').forEach(function (j) {
+    j.addEventListener('dragstart', function (ev) {
+      enCours = j;
+      ev.dataTransfer.effectAllowed = 'move';
+      ev.dataTransfer.setData('text/plain', j.dataset.carte);
+      setTimeout(function () { j.classList.add('deplace'); }, 0);
+    });
+    j.addEventListener('dragend', function () {
+      j.classList.remove('deplace');
+      enCours = null;
+      document.querySelectorAll('.tri-zone.survol').forEach(function (z) { z.classList.remove('survol'); });
+    });
+  });
+  document.querySelectorAll('.tri-zone').forEach(function (zone) {
+    zone.addEventListener('dragover', function (ev) {
+      if (!enCours) { return; }
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = 'move';
+      zone.classList.add('survol');
+    });
+    zone.addEventListener('dragleave', function (ev) {
+      if (!zone.contains(ev.relatedTarget)) { zone.classList.remove('survol'); }
+    });
+    zone.addEventListener('drop', function (ev) {
+      ev.preventDefault();
+      zone.classList.remove('survol');
+      if (!enCours || enCours.parentNode === zone) { return; }
+      ranger(+enCours.dataset.carte, zone.dataset.cat);
     });
   });
 

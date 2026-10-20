@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/horodatage.php';   // -> config.php + helpers de date
+require __DIR__ . '/core/horodatage.php';   // -> config.php + helpers de date
 
 // Accès réservé à l'animateur
 $cle = $_REQUEST['cle'] ?? '';
@@ -8,7 +8,7 @@ if (!hash_equals(CLE_ANIMATEUR, (string)$cle)) {
     exit('Accès réservé. Ajoutez ?cle=... à l\'adresse.');
 }
 
-$moi = 'eval-froide-liens.php?cle=' . rawurlencode(CLE_ANIMATEUR);
+$moi = avec_f('eval-froide-liens.php?cle=' . rawurlencode(CLE_ANIMATEUR));
 
 // URL absolue de base pour composer les liens participants (copiés-collés dans les mails)
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
@@ -28,19 +28,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nb = (int)($_POST['nb'] ?? 1);
             $nb = max(1, min(50, $nb));   // borne raisonnable
 
-            $st = db()->prepare('INSERT INTO eval_froide_tokens (token, libelle) VALUES (?, ?)');
+            $st = db()->prepare('INSERT INTO eval_froide_tokens (formation, token, libelle) VALUES (?, ?, ?)');
             for ($i = 0; $i < $nb; $i++) {
                 $lib = $libelle;
                 if ($libelle !== '' && $nb > 1) {
                     $lib = $libelle . ' #' . ($i + 1);
                 }
-                $st->execute([bin2hex(random_bytes(16)), $lib !== '' ? $lib : null]);
+                $st->execute([formation_slug(), bin2hex(random_bytes(16)), $lib !== '' ? $lib : null]);
             }
 
         } elseif ($action === 'supprimer') {
             // On ne supprime qu'un lien non utilisé : un lien répondu porte une réponse rattachée.
-            $st = db()->prepare('DELETE FROM eval_froide_tokens WHERE id = ? AND used_at IS NULL');
-            $st->execute([(int)($_POST['id'] ?? 0)]);
+            $st = db()->prepare('DELETE FROM eval_froide_tokens WHERE id = ? AND formation = ? AND used_at IS NULL');
+            $st->execute([(int)($_POST['id'] ?? 0), formation_slug()]);
         }
     } catch (PDOException $e) {
         // Table absente : on retombera sur le message d'aide plus bas.
@@ -52,9 +52,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Chargement des liens
 $tokens = [];
 try {
-    $tokens = db()->query(
-        'SELECT id, token, libelle, created_at, used_at FROM eval_froide_tokens ORDER BY id DESC'
-    )->fetchAll();
+    $st = db()->prepare(
+        'SELECT id, token, libelle, created_at, used_at FROM eval_froide_tokens WHERE formation = ? ORDER BY id DESC'
+    );
+    $st->execute([formation_slug()]);
+    $tokens = $st->fetchAll();
 } catch (PDOException $e) {
     $table_ok = false;
 }
@@ -99,11 +101,13 @@ form.inline { display:inline; }
 
 <main class="wrap">
 
+<?= selecteur_formation('eval-froide-liens.php?cle=' . rawurlencode(CLE_ANIMATEUR)) ?>
+
 <?php if ($table_ok): ?>
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
-    <a class="btn btn-ghost" href="eval-froide-resultats.php?cle=<?= rawurlencode(CLE_ANIMATEUR) ?>">Voir les réponses</a>
+    <a class="btn btn-ghost" href="<?= e(avec_f('eval-froide-resultats.php?cle=' . rawurlencode(CLE_ANIMATEUR))) ?>">Voir les réponses</a>
     <?php if ($en_attente > 0): ?>
-    <a class="btn btn-primary" href="export-eval-froide-liens.php?cle=<?= rawurlencode(CLE_ANIMATEUR) ?>">
+    <a class="btn btn-primary" href="<?= e(avec_f('export-eval-froide-liens.php?cle=' . rawurlencode(CLE_ANIMATEUR))) ?>">
       Exporter les liens en attente (Excel) · <?= (int)$en_attente ?>
     </a>
     <?php endif; ?>

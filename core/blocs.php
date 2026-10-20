@@ -1,0 +1,110 @@
+<?php
+// Briques de l'accueil, partagées par toutes les formations : chaque
+// formations/<slug>/accueil.php les assemble dans l'ordre de sa journée.
+// Aucune sortie : ces fonctions rendent du HTML, à afficher avec echo / <?=.
+require_once __DIR__ . '/etapes.php';
+require_once __DIR__ . '/participants.php';
+require_once __DIR__ . '/points.php';
+
+// Les exercices (exercices/<nom>/fonctions.php) : helpers et carte d'accueil de chacun
+foreach (glob(__DIR__ . '/../exercices/*/fonctions.php') as $exercice) {
+    require_once $exercice;
+}
+
+// Bouton « Copier » + confirmation + texte dépliable. Le script de copie est
+// dans index.php ; $id doit être unique sur la page.
+function texte_a_copier(string $id, string $bouton, string $confirmation, string $texte, string $style = ''): string
+{
+    return '<button class="btn btn-gold"' . ($style !== '' ? ' style="' . e($style) . '"' : '')
+         . ' data-copy="' . e($id) . '">' . e($bouton) . '</button>' . "\n"
+         . '    <div class="copied-note" id="note-' . e($id) . '">' . e($confirmation) . '</div>' . "\n"
+         . '    <details class="doc">' . "\n"
+         . '      <summary>Voir le texte</summary>' . "\n"
+         . '      <pre id="txt-' . e($id) . '">' . e($texte) . '</pre>' . "\n"
+         . '    </details>';
+}
+
+// Les quiz actifs de la formation courante, derrière l'étape $cle
+function bloc_quiz(string $cle = 'quiz'): string
+{
+    if (!etape_ouverte($cle)) {
+        return carte_verrouillee($cle);
+    }
+    $st = db()->prepare('SELECT slug, titre FROM quizzes WHERE actif = 1 AND formation = ? ORDER BY id');
+    $st->execute([formation_slug()]);
+    $quizzes = $st->fetchAll();
+
+    $h = '<section class="card">' . "\n"
+       . '    <h2>Les quiz</h2>' . "\n"
+       . '    <p class="lead">Touchez un quiz pour commencer. Votre prénom suffit.</p>' . "\n";
+    foreach ($quizzes as $q) {
+        $h .= '      <a class="btn btn-primary" href="' . e(avec_f('quiz.php?slug=' . $q['slug'])) . '">' . "\n"
+            . '        ' . e($q['titre']) . "\n"
+            . '      </a>' . "\n";
+    }
+    if (!$quizzes) {
+        $h .= '      <p class="lead">Aucun quiz ouvert pour le moment.</p>' . "\n";
+    }
+    return $h . '  </section>';
+}
+
+// Lien vers le questionnaire de satisfaction, derrière l'étape $cle
+function bloc_avis(string $cle = 'avis'): string
+{
+    if (!etape_ouverte($cle)) {
+        return carte_verrouillee($cle);
+    }
+    return '<section class="card">' . "\n"
+         . '    <h2>Votre avis</h2>' . "\n"
+         . '    <p class="lead">En fin de journée : 2 minutes, anonyme, pour améliorer la prochaine session.</p>' . "\n"
+         . '    <a class="btn btn-ghost" href="' . e(avec_f('satisfaction.php')) . '">Donner mon avis sur la journée</a>' . "\n"
+         . '  </section>';
+}
+
+// Accueil du participant : son prénom à l'arrivée, puis son équipe dès que le
+// formateur l'a placé. Hors étapes : c'est la première chose à faire.
+function bloc_arrivee(): string
+{
+    if (!participants_table_ok()) {
+        return '';
+    }
+    $p = participant_courant();
+
+    if (!$p) {
+        return '<section class="card">' . "\n"
+             . '    <h2>Bienvenue !</h2>' . "\n"
+             . '    <p class="lead">Pour commencer, indiquez votre prénom : il servira à former les équipes.</p>' . "\n"
+             . '    <form method="post" action="' . e(avec_f('arrivee.php')) . '">' . "\n"
+             . '      <input type="hidden" name="action" value="arriver">' . "\n"
+             . '      <label class="field" for="prenom-arrivee">Votre prénom</label>' . "\n"
+             . '      <input class="field" id="prenom-arrivee" name="prenom" type="text" maxlength="40" required' . "\n"
+             . '             autocomplete="given-name" placeholder="Par exemple : Sam">' . "\n"
+             . '      <button class="btn btn-primary">C\'est moi !</button>' . "\n"
+             . '    </form>' . "\n"
+             . '  </section>';
+    }
+
+    $h = '<section class="card">' . "\n"
+       . '    <h2>Bonjour ' . e($p['prenom']) . ' !</h2>' . "\n";
+    if (equipe_existe($p['equipe'])) {
+        // Par id, pas par prénom : deux Marie peuvent être dans la même équipe
+        $autres = array_column(array_filter(participants_seance(),
+            fn($x) => $x['equipe'] === $p['equipe'] && (int)$x['id'] !== (int)$p['id']), 'prenom');
+        $h .= '    <p class="lead">Vous êtes dans l\'équipe ' . badge_equipe($p['equipe']) . '</p>' . "\n"
+            . '    <p>' . ($autres ? 'Avec : ' . e(implode(', ', $autres)) . '.' : 'Vos coéquipiers arrivent.') . '</p>' . "\n";
+    } else {
+        $h .= '    <p class="lead">Le formateur va constituer les équipes : votre équipe s\'affichera ici.</p>' . "\n";
+    }
+    if (points_actifs() && points_table_ok()) {
+        $pts = points_de($p);
+        $h .= '    <p class="mes-points">Mes points : <strong id="points-joueur">' . $pts['joueur'] . '</strong>'
+            . ($pts['equipe'] !== null ? ' · Mon équipe : <strong id="points-equipe">' . $pts['equipe'] . '</strong>' : '')
+            . '</p>' . "\n";
+    }
+    return $h
+         . '    <form method="post" action="' . e(avec_f('arrivee.php')) . '">' . "\n"
+         . '      <input type="hidden" name="action" value="oublier">' . "\n"
+         . '      <button class="btn-lien">Ce n\'est pas moi</button>' . "\n"
+         . '    </form>' . "\n"
+         . '  </section>';
+}

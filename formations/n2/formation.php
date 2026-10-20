@@ -17,6 +17,7 @@ return [
         'assistant' => 'La fiche de poste de votre assistant',
         'speeddating' => 'Speed-dating d\'assistants',
         'bingo'     => 'Bingo de l\'hallucination',
+        'tri'       => 'Jeu de tri : qui est quoi ?',
     ],
     // Équipes de la séance : clé stable (stockée en base) => nom affiché et couleur.
     // Renommer une équipe ne casse rien ; changer sa clé détache ses membres.
@@ -109,6 +110,33 @@ TEXTE,
         ],
         'avertissement' => 'Toutes les références de ce texte sont fausses par construction. Ne laissez personne repartir en croyant qu\'une de ces sources existe.',
     ],
+    // Jeu de tri : les catégories (clé stable => libellé) et les cartes, avec la
+    // ou les réponses acceptées ; 'debat' est montré à la correction.
+    'tri' => [
+        'categories' => [
+            'prompt'         => 'Prompt',
+            'assistant'      => 'Assistant',
+            'workflow'       => 'Workflow',
+            'automatisation' => 'Automatisation',
+            'agent'          => 'Agent',
+        ],
+        'cartes' => [
+            ['texte' => 'Je demande à l\'IA de corriger l\'orthographe de mon mail.', 'reponses' => ['prompt']],
+            ['texte' => 'J\'ai configuré un espace où l\'IA connaît mon métier et mes règles, et je l\'ouvre chaque fois que je prépare un rendez-vous.', 'reponses' => ['assistant']],
+            ['texte' => 'Après chaque réunion, je colle mes notes, je fais faire la synthèse, puis la liste des actions, puis le mail de suivi, que je relis avant envoi.', 'reponses' => ['workflow']],
+            ['texte' => 'Chaque lundi à 8h, un résumé des mails de la semaine passée arrive dans ma boîte sans que je fasse rien.', 'reponses' => ['automatisation']],
+            ['texte' => 'Je confie à l\'IA l\'objectif de me trouver 5 fournisseurs de mobilier de bureau ; elle cherche, compare, et me propose une sélection.', 'reponses' => ['agent']],
+            ['texte' => '« Réécris ce paragraphe dans un ton plus formel. »', 'reponses' => ['prompt']],
+            ['texte' => 'Dès qu\'un formulaire de contact est rempli sur le site, une fiche est créée dans le tableau de suivi.', 'reponses' => ['automatisation']],
+            ['texte' => 'J\'ai un GPT / Gem / projet « Relecteur de CV » avec la consigne de ne jamais inventer d\'expérience.', 'reponses' => ['assistant']],
+            ['texte' => 'Pour chaque offre d\'emploi : analyse, comparaison avec mon CV, écarts, arguments, questions d\'entretien. Toujours dans cet ordre.', 'reponses' => ['workflow']],
+            ['texte' => 'Je donne à un système l\'objectif « organise mon déplacement à Lyon » et il enchaîne recherche de train, d\'hôtel et proposition d\'agenda.', 'reponses' => ['agent']],
+            ['texte' => 'Quand une facture arrive par mail, elle est résumée par l\'IA et une ligne s\'ajoute dans mon tableau ; je valide chaque ligne le vendredi.', 'reponses' => ['automatisation', 'workflow'],
+             'debat' => 'Automatisation (avec contrôle humain), mais c\'est aussi un workflow automatisé.'],
+            ['texte' => '« Tu es un recruteur exigeant. Pose-moi 5 questions sur ce poste. »', 'reponses' => ['prompt', 'assistant'],
+             'debat' => 'Prompt (avec rôle) : ça ressemble à une mini-fiche de poste, mais c\'est ponctuel.'],
+        ],
+    ],
     // Pages de l'animateur proposées sur la télécommande (page => libellé du bouton)
     'outils'      => [
         'equipes.php' => 'Constituer les équipes',
@@ -117,6 +145,7 @@ TEXTE,
         'battle-tableau.php' => 'Prompt Battle',
         'bocal-tableau.php' => 'Le bocal à secrets : les copies',
         'bingo-tableau.php' => 'Bingo de l\'hallucination',
+        'tri-tableau.php' => 'Jeu de tri',
         'scores.php'  => 'Points et classement',
     ],
 ];

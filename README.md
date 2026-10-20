@@ -41,7 +41,7 @@ Quatre étages :
 - **À la racine** : uniquement des pages (accueil, quiz, pilotage, tableau de
   bord, exports…). Elles sont communes à toutes les formations.
 - **`exercices/<nom>/`** : un dossier par exercice (équipes, scores, mur,
-  boule, battle, bocal, assistant, bingo) avec ses pages, ses helpers (`fonctions.php`, carte
+  boule, battle, bocal, assistant, bingo, tri) avec ses pages, ses helpers (`fonctions.php`, carte
   d'accueil comprise) et sa migration. Un exercice n'appartient à aucune
   formation : il ne s'anime que là où une formation déclare son étape et son
   contenu. Ses pages restent servies à la racine (`/n2/bocal.php`), jamais par
@@ -97,7 +97,7 @@ leur étape `quiz`.
    `core/blocs.php`, `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`,
    `bloc_arrivee()` ; dans chaque `exercices/<nom>/fonctions.php`,
    `bloc_objectif()`, `bloc_boule()`, `bloc_battle()`, `bloc_bocal()`,
-   `bloc_assistant()`, `bloc_bingo()`. Un
+   `bloc_assistant()`, `bloc_bingo()`, `bloc_tri()`. Un
    dossier préfixé par `_` (brouillon) est ignoré.
 2. Déclarer ses étapes dans `formation.php`, dans l'ordre de la journée :
 
@@ -482,6 +482,40 @@ mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/bingo/
 
 À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
 
+## Jeu de tri : qui est quoi ? (niveau 2)
+
+Douze cartes à ranger en prompt, assistant, workflow, automatisation ou agent.
+Chacun trie sur son téléphone, le score compte pour l'équipe.
+
+**Côté stagiaire** (il faut être placé dans une équipe) : « Trier les cartes »
+sur l'accueil. Chaque carte a ses 5 catégories : on touche celle choisie (la
+toucher à nouveau la retire). Enregistré à chaque choix, modifiable jusqu'à la
+clôture. Pendant la correction, chaque carte dévoilée indique au joueur s'il
+l'avait bien placée.
+
+**Côté formateur** : `/n2/tri-tableau.php?cle=VOTRE_CLE`, aussi sur la
+télécommande. L'avancement par équipe (qui a rangé les 12 cartes), puis
+**Clore le tri** : plus de modification. **Correction carte par carte** au
+vidéoprojecteur : la carte et les réponses des équipes dans les 5 colonnes,
+puis **Révéler la réponse** (bonne colonne en vert, et le point de débat pour
+les cartes ambiguës), **Carte suivante**… jusqu'aux scores.
+
+**Score** : moyenne des cartes bien placées par les membres de l'équipe,
+arrondie, × 5 points (60 au maximum). Les cartes 11 et 12, volontairement
+ambiguës, acceptent deux réponses (automatisation ou workflow ; prompt ou
+assistant). **Donner les points aux équipes** les verse au classement ; un
+second clic les reprend. **Recommencer le jeu** efface tris, correction et
+points du jeu.
+
+Cartes, réponses acceptées et points de débat : `formations/n2/formation.php`,
+clé `tri`.
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/tri/migration.sql
+```
+
+À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
+
 ## La télécommande
 
 `pilotage.php?cle=VOTRE_CLE` ouvre les sections de l'accueil au rythme du
@@ -721,7 +755,9 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
   `DELETE FROM battle_manches WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
   Les copies du bocal à secrets, les fiches d'assistant et les retours du
   speed-dating partent avec leur participant, comme les grilles du bingo ;
-  les parties du bingo : `DELETE FROM bingo_parties WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
+  les parties du bingo et du tri :
+  `DELETE FROM bingo_parties WHERE seance < CURDATE() - INTERVAL 12 MONTH;`,
+  `DELETE FROM tri_parties WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
 
 ## Fichiers
 
@@ -750,6 +786,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `exercices/bocal/` | Bocal à secrets : `bocal.php` (surligner, réécrire, rendre), `bocal-tableau.php` (correction, test des prompts, points, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/assistant/` | Fiche de poste de l'assistant : `assistant.php` (rubriques, enregistrement, copie pour son IA, grille du speed-dating et retours reçus), `fonctions.php`, `migration.sql` |
 | `exercices/bingo/` | Bingo de l'hallucination : `bingo.php` (grille du joueur), `bingo-tableau.php` (pilotage et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
+| `exercices/tri/` | Jeu de tri : `tri.php` (cartes du joueur), `tri-tableau.php` (pilotage, correction carte par carte et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
 | `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |
 | `quiz.php` | Le quiz : prénom → questions une par une → feedback → score |

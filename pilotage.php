@@ -53,7 +53,8 @@ if (formation()['outils'] ?? []) {
               'battle_votes' => 'exercices/battle/migration.sql',
               'bocal_copies' => 'exercices/bocal/migration.sql',
               'assistant_retours' => 'exercices/assistant/migration.sql',
-              'bingo_grilles' => 'exercices/bingo/migration.sql'] as $cible => $script) {
+              'bingo_grilles' => 'exercices/bingo/migration.sql',
+              'tri_copies' => 'exercices/tri/migration.sql'] as $cible => $script) {
         [$table, $colonne] = explode('.', $cible . '.1');   // table ou table.colonne attendue
         try {
             db()->query("SELECT $colonne FROM `$table` LIMIT 1");

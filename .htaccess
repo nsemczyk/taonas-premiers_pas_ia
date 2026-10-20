@@ -37,6 +37,7 @@
     RewriteRule ^(?:([a-z0-9-]+)/)?(bocal|bocal-tableau)\.php$     %{ENV:BASE}exercices/bocal/$2.php   [E=FORMATION_URL:$1,L]
     RewriteRule ^(?:([a-z0-9-]+)/)?(assistant)\.php$               %{ENV:BASE}exercices/assistant/$2.php [E=FORMATION_URL:$1,L]
     RewriteRule ^(?:([a-z0-9-]+)/)?(bingo|bingo-tableau)\.php$     %{ENV:BASE}exercices/bingo/$2.php   [E=FORMATION_URL:$1,L]
+    RewriteRule ^(?:([a-z0-9-]+)/)?(tri|tri-tableau)\.php$         %{ENV:BASE}exercices/tri/$2.php     [E=FORMATION_URL:$1,L]
 
     # /n2 → /n2/ : sans la barre finale, les liens relatifs sortiraient de la formation
     RewriteCond %{REQUEST_FILENAME} !-f

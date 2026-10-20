@@ -16,3 +16,5 @@
   <?= bloc_assistant('assistant') ?>
 
   <?= bloc_bingo('bingo') ?>
+
+  <?= bloc_tri('tri') ?>

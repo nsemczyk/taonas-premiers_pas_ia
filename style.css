@@ -718,3 +718,30 @@ body.battle-projete { margin: 0; min-height: 100vh; background: radial-gradient(
 .bingo-corrige td { padding: 6px 12px; border-bottom: 1px solid rgba(255,255,255,.2); vertical-align: top; }
 .bingo-corrige td.n { color: #ffe66b; font-weight: 700; }
 .bingo-avertissement { color: #f2c94c; font-size: 1.1rem; margin-top: 14px; }
+
+/* ------------------------------------------------ Jeu de tri */
+.tri-compte { margin: 0; font-size: 1.05rem; }
+.tri-carte { padding-bottom: 14px; }
+.tri-texte { margin: 0 0 10px; font-size: 1.05rem; color: var(--nuit); }
+.tri-num { display: inline-block; min-width: 1.8em; padding: 1px 6px; margin-right: 6px; background: var(--nuit); color: var(--blanc); text-align: center; font-weight: 700; }
+.tri-choix { display: flex; flex-wrap: wrap; gap: 6px; }
+.tri-cat { flex: 1 1 auto; padding: 9px 10px; border: 2px solid var(--doux); background: var(--glacier); font: inherit; font-size: .9rem; color: var(--nuit); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.tri-cat:disabled { cursor: default; }
+.tri-cat.choisie { background: var(--marque); border-color: var(--marque); color: var(--blanc); }
+.tri-cat.bonne { outline: 3px solid var(--olive); outline-offset: 1px; }
+.tri-carte.juste { border-left: 8px solid var(--olive); }
+.tri-carte.faux { border-left: 8px solid var(--brique); }
+.tri-verdict { margin: 10px 0 0; font-weight: 600; }
+.tri-carte.juste .tri-verdict { color: var(--olive); }
+.tri-carte.faux .tri-verdict { color: var(--brique); }
+.tp-carte { max-width: 26em; font-family: var(--font-corps); font-size: clamp(1.8rem, 3.4vw, 3rem); }   /* la police de titre n'a pas de guillemets « » */
+.tp-colonnes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; margin-top: 4vh; }
+.tp-colonne { background: var(--glacier); color: var(--nuit); min-height: 30vh; padding: 0 12px 14px; transition: background .3s; }
+.tp-colonne p { margin: 10px 0; font-size: 1.3rem; }
+.tp-cat { margin: 0 -12px 10px !important; padding: 12px; background: var(--doux); color: var(--blanc); font-size: 1.4rem !important; }
+.tp-colonne.bonne { background: #d9ecb0; box-shadow: 0 0 0 6px #f2c94c; }
+.tp-colonne.bonne .tp-cat { background: var(--olive); }
+.tp-vides .tp-colonne { min-height: 38vh; }
+.tp-debat { font-size: 1.4rem; color: #f2c94c; margin-top: 3vh; }
+.tp-scores { display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; margin-top: 3vh; font-size: 1.3rem; }
+.tp-scores p { margin: 0; }

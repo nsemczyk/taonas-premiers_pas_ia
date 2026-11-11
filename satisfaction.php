@@ -1,6 +1,12 @@
 <?php
 require __DIR__ . '/core/horodatage.php';
 
+// Une formation qui décrit son propre questionnaire (clé 'questionnaire') a son formulaire à part
+if (formation()['questionnaire'] ?? null) {
+    require __DIR__ . '/core/questionnaire-page.php';
+    exit;
+}
+
 // Plus de code de session à saisir : la journée suffit à regrouper les avis
 $session = aujourdhui_local();
 

@@ -121,10 +121,10 @@ INSERT INTO quizzes (formation, slug, titre) VALUES ('n2', 'quiz-final', 'Le gra
 Si une table manque (migration non jouée), la télécommande l'affiche en tête,
 avec la commande à lancer.
 
-Limite actuelle, assumée : le questionnaire de satisfaction et celui de
-l'évaluation à froid sont encore ceux du niveau 1. Chaque réponse est bien
-rattachée à sa formation, mais les questions sont communes ; elles deviendront
-propres à chaque formation quand celles du niveau 2 seront arrêtées.
+Le questionnaire de satisfaction peut être propre à une formation : voir
+« Questionnaire de satisfaction propre à une formation ». Limite actuelle,
+assumée : celui de l'évaluation à froid est encore celui du niveau 1 pour toutes
+les formations (chaque réponse reste rattachée à sa formation).
 
 ### Ajouter un exercice
 
@@ -607,6 +607,29 @@ Les moyennes, repartitions et commentaires remontent en direct dans
 Installation existante (base deja creee avant cet ajout) : rejouer uniquement
 le bloc `CREATE TABLE IF NOT EXISTS satisfaction` de `schema.sql`.
 
+### Questionnaire de satisfaction propre à une formation
+
+Une formation peut décrire son propre questionnaire, au lieu du questionnaire
+historique du niveau 1 : clé `'questionnaire'` de son `formation.php`. Le
+niveau 2 le fait avec `formations/n2/questionnaire.php`, repris du
+questionnaire papier (18 questions en 5 parties). Questions à une réponse, à
+plusieurs réponses (avec « Autres : … » facultatif), texte libre et note sur 10 ;
+les libellés se modifient librement, les clés (q1…, et celles des options) sont
+celles enregistrées en base.
+
+Tout suit cette description : le formulaire (`satisfaction.php`, même rendu
+que le niveau 1, prénom et nom facultatifs), le tableau de bord (note moyenne
+/10, répartition de chaque question, verbatims) et l'export PDF. Les réponses
+vont dans la table `satisfaction_reponses` ; le niveau 1 garde la sienne, sans
+aucun changement.
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-questionnaire.sql
+```
+
+Le nom du formateur, imprimé sur l'export, se règle dans le questionnaire
+(`'formateur'`).
+
 ### Exporter les questionnaires en PDF
 
 `export-satisfaction.php?cle=VOTRE_CLE` liste les journées ayant recueilli des
@@ -617,7 +640,8 @@ ou la remise au financeur.
 
 Un avis très bavard peut déborder sur une seconde page : le commentaire est
 conservé en entier plutôt que tronqué, et l'avis suivant repart toujours d'une
-page neuve.
+page neuve. Le questionnaire du niveau 2, plus long, tient sur deux pages par
+avis ; une question n'est jamais coupée entre deux pages.
 
 La génération repose sur **FPDF**, déposé dans `lib/fpdf/` (fichier `fpdf.php`
 et dossier `font/`, qui doivent rester côte à côte). Aucun gestionnaire de
@@ -768,9 +792,11 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `schema.sql` | Tables + quiz final pré-rempli (10 questions) |
 | `migration-etapes.sql` | Ajout de la table `etapes` sur une base existante |
 | `migration-eval-froide.sql` | Ajout des tables de l'évaluation à froid sur une base existante |
+| `migration-questionnaire.sql` | Table des questionnaires de satisfaction propres à une formation (niveau 2) |
 | `migration-formations.sql` | Passage d'une base existante en multi-formations (colonne `formation`) |
 | `config.example.php` | Identifiants BDD + clé animateur + helpers |
 | `formations/<slug>/formation.php` | Réglages d'une formation : titres, accroche, quiz bonus |
+| `formations/n2/questionnaire.php` | Questionnaire de satisfaction du niveau 2 |
 | `formations/<slug>/accueil.php` | Cartes de l'accueil de cette formation, dans l'ordre de la journée |
 | `.htaccess` | Adresses par formation (`/n2/…` → pages communes), pages des exercices, accès interdit à `config.php` |
 | `core/formation.php` | Formation courante (`/n2/…` ou `?f=`), liens qui la conservent, onglets animateur — helpers seuls |
@@ -779,6 +805,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `core/points.php` | Points d'équipe et individuels : attribution, totaux, rangs — helpers seuls |
 | `core/etapes.php` | Lecture des étapes ouvertes de la formation (aucune sortie, helpers seuls) |
 | `core/horodatage.php` | Conversion des horodatages serveur vers l'heure locale (helpers seuls) |
+| `core/questionnaire.php`, `core/questionnaire-page.php` | Questionnaire de satisfaction décrit par la formation : lecture, enregistrement, synthèse, et son formulaire |
 | `core/routeur.php` | Routeur du serveur intégré de PHP (`php -S localhost:8000 core/routeur.php`), équivalent local du `.htaccess` |
 | `exercices/equipes/` | `arrivee.php` (prénom → cookie de séance, « Ce n'est pas moi »), `equipes.php` (constitution des équipes en direct, protégé par clé), `migration.sql` |
 | `exercices/scores/` | `scores.php` : points et classement, `?vue=projection` pour le vidéoprojecteur (protégé par clé) ; `migration.sql` |

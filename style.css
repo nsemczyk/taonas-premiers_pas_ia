@@ -774,3 +774,23 @@ body.battle-projete { margin: 0; min-height: 100vh; background: radial-gradient(
 .tri-jeton-verdict { display: block; margin-top: 6px; font-weight: 600; font-size: .82rem; }
 .tri-jeton.juste .tri-jeton-verdict { color: var(--olive); }
 .tri-jeton.faux .tri-jeton-verdict { color: var(--brique); }
+
+/* ------------------------------------------------ Questionnaire de satisfaction décrit par la formation (niveau 2) */
+/* Même rendu que le formulaire historique du niveau 1 (styles en ligne de satisfaction.php) */
+.questionnaire fieldset { border: none; margin: 0 0 22px; padding: 0; }
+.questionnaire legend { font-weight: 600; color: var(--navy); font-size: 1.05rem; margin-bottom: 2px; padding: 0; }
+.questionnaire .aide { font-weight: 400; color: var(--muted); font-size: .92rem; }
+.questionnaire .section-title { font-weight: 700; color: var(--navy); margin: 28px 0 4px; font-size: 1.15rem; }
+.questionnaire .q-formation { color: var(--muted); margin: 0 0 18px; }
+.questionnaire .choices label { display: block; padding: 12px 14px; margin-top: 8px; border: 2px solid #C2C3C7; background: #fff; cursor: pointer; }
+.questionnaire .choices input[type=radio], .questionnaire .choices input[type=checkbox] { margin-right: 10px; transform: scale(1.3); }
+.questionnaire .choices label:has(input:checked) { border-color: var(--gold); background: var(--cream); }
+.questionnaire .choices label.autre { display: flex; align-items: center; gap: 10px; cursor: default; }
+.questionnaire .choices label.autre input { flex: 1; margin: 0; min-height: 0; padding: 8px 10px; }
+.questionnaire textarea.field { width: 100%; min-height: 110px; padding: 12px 14px; font-size: 1.05rem; font-family: inherit; border: 2px solid #C2C3C7; }
+.questionnaire textarea.field:focus { border-color: var(--navy); outline: none; }
+.note-echelle { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 4px; margin: 10px 0 0; }
+.note-echelle input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.note-echelle label { text-align: center; padding: 12px 0; border: 2px solid #C2C3C7; background: #fff; cursor: pointer; font-weight: 600; }
+.note-echelle input:checked + label { border-color: var(--gold); background: var(--marque); color: var(--blanc); }
+.note-echelle input:focus-visible + label { outline: 3px solid var(--gold); outline-offset: 2px; }

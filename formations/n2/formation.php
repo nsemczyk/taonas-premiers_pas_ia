@@ -18,6 +18,7 @@ return [
         'speeddating' => 'Speed-dating d\'assistants',
         'bingo'     => 'Bingo de l\'hallucination',
         'tri'       => 'Jeu de tri : qui est quoi ?',
+        'avis'      => 'Votre avis',
     ],
     // Équipes de la séance : clé stable (stockée en base) => nom affiché et couleur.
     // Renommer une équipe ne casse rien ; changer sa clé détache ses membres.
@@ -137,6 +138,8 @@ TEXTE,
              'debat' => 'Prompt (avec rôle) : ça ressemble à une mini-fiche de poste, mais c\'est ponctuel.'],
         ],
     ],
+    // Questionnaire de satisfaction de fin de journée (formulaire, tableau de bord, export PDF)
+    'questionnaire' => require __DIR__ . '/questionnaire.php',
     // Pages de l'animateur proposées sur la télécommande (page => libellé du bouton)
     'outils'      => [
         'equipes.php' => 'Constituer les équipes',

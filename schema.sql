@@ -599,3 +599,20 @@ CREATE TABLE IF NOT EXISTS `tri_copies` (
   CONSTRAINT `fk_tri_participant` FOREIGN KEY (`participant_id`)
     REFERENCES `participants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Questionnaires de satisfaction décrits par la formation : même table que
+-- migration-questionnaire.sql, incluse ici pour une installation neuve.
+--
+
+CREATE TABLE IF NOT EXISTS `satisfaction_reponses` (
+  `id`           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `formation`    VARCHAR(32)  NOT NULL,
+  `session_code` VARCHAR(32)  NOT NULL,               -- journée (date locale), comme `satisfaction`
+  `prenom`       VARCHAR(100) DEFAULT NULL,           -- facultatif
+  `nom`          VARCHAR(100) DEFAULT NULL,           -- facultatif
+  `reponses`     TEXT         NOT NULL,               -- JSON : clé de question => réponse
+  `created_at`   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_formation` (`formation`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -18,3 +18,5 @@
   <?= bloc_bingo('bingo') ?>
 
   <?= bloc_tri('tri') ?>
+
+  <?= bloc_avis('avis') ?>

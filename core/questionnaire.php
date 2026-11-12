@@ -6,9 +6,12 @@
 //
 // Réponses dans la table `satisfaction_reponses` : une ligne par avis, les
 // réponses en JSON (clé de question => clé d'option, liste de clés, texte ou note).
+// Questionnaire nominatif : l'avis porte le participant de la séance (prénom
+// saisi à l'arrivée), un seul avis par participant et par journée.
 //
 // Aucune sortie : ce fichier ne définit que des helpers.
 require_once __DIR__ . '/horodatage.php';
+require_once __DIR__ . '/participants.php';
 
 const QUESTIONNAIRE_MAX_TEXTE = 2000;
 const QUESTIONNAIRE_MAX_AUTRE = 300;
@@ -87,14 +90,22 @@ function questionnaire_lire(array $post): array
     return [$reponses, $manque === null ? '' : 'Il manque une réponse : « ' . $manque . ' »'];
 }
 
-function questionnaire_enregistrer(array $reponses, string $prenom, string $nom): void
+// Avis d'un participant pour la journée : le prénom est celui de son arrivée,
+// conservé dans l'avis même s'il est retiré de la séance ensuite
+function questionnaire_enregistrer(array $reponses, array $participant): void
 {
-    $st = db()->prepare('INSERT INTO satisfaction_reponses (formation, session_code, prenom, nom, reponses)
+    $st = db()->prepare('INSERT INTO satisfaction_reponses (formation, session_code, participant_id, prenom, reponses)
                          VALUES (?, ?, ?, ?, ?)');
-    $st->execute([formation_slug(), aujourdhui_local(),
-                  $prenom !== '' ? mb_substr($prenom, 0, 100) : null,
-                  $nom !== '' ? mb_substr($nom, 0, 100) : null,
+    $st->execute([formation_slug(), aujourdhui_local(), (int)$participant['id'], $participant['prenom'],
                   json_encode($reponses, JSON_UNESCAPED_UNICODE)]);
+}
+
+// Ce participant a-t-il déjà donné son avis aujourd'hui ?
+function questionnaire_deja_rempli(int $participant_id): bool
+{
+    $st = db()->prepare('SELECT 1 FROM satisfaction_reponses WHERE formation = ? AND session_code = ? AND participant_id = ? LIMIT 1');
+    $st->execute([formation_slug(), aujourdhui_local(), $participant_id]);
+    return (bool)$st->fetchColumn();
 }
 
 // Avis de la formation courante, réponses décodées ; entre deux bornes serveur si données

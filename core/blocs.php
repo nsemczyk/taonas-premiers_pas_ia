@@ -56,7 +56,7 @@ function bloc_avis(string $cle = 'avis'): string
     }
     return '<section class="card">' . "\n"
          . '    <h2>Votre avis</h2>' . "\n"
-         . '    <p class="lead">En fin de journée : 2 minutes, anonyme, pour améliorer la prochaine session.</p>' . "\n"
+         . '    <p class="lead">' . e(formation()['questionnaire']['accroche'] ?? 'En fin de journée : 2 minutes, anonyme, pour améliorer la prochaine session.') . '</p>' . "\n"
          . '    <a class="btn btn-ghost" href="' . e(avec_f('satisfaction.php')) . '">Donner mon avis sur la journée</a>' . "\n"
          . '  </section>';
 }

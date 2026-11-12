@@ -18,6 +18,8 @@ return [
     'formation' => 'IA générative – Structurer, personnaliser et construire ses usages',
     'duree'     => '7 heures – Présentiel',
     'formateur' => '',   // nom du formateur, imprimé sur l'export PDF
+    // Texte de la carte « Votre avis » sur l'accueil
+    'accroche'  => 'En fin de journée : 5 minutes pour nous dire ce que vous retenez de la journée.',
     'sections'  => [
         ['titre' => 'Votre appréciation générale', 'questions' => [
             'q1' => ['type' => 'choix', 'intitule' => 'Quel est votre niveau de satisfaction global concernant cette journée ?',

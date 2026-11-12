@@ -618,10 +618,15 @@ les libellés se modifient librement, les clés (q1…, et celles des options) s
 celles enregistrées en base.
 
 Tout suit cette description : le formulaire (`satisfaction.php`, même rendu
-que le niveau 1, prénom et nom facultatifs), le tableau de bord (note moyenne
-/10, répartition de chaque question, verbatims) et l'export PDF. Les réponses
-vont dans la table `satisfaction_reponses` ; le niveau 1 garde la sienne, sans
-aucun changement.
+que le niveau 1), le tableau de bord (note moyenne /10, répartition de chaque
+question, verbatims) et l'export PDF. Les réponses vont dans la table
+`satisfaction_reponses` ; le niveau 1 garde la sienne, sans aucun changement.
+
+Ce questionnaire est **nominatif** : il reprend le prénom saisi à l'arrivée
+(il faut s'être présenté sur l'accueil pour le remplir), un seul avis par
+participant et par journée ; le prénom figure sur l'export PDF. Le questionnaire
+du niveau 1 reste anonyme. La carte « Votre avis » de l'accueil prend le texte
+de `'accroche'`.
 
 ```bash
 mysql --default-character-set=utf8mb4 -u root -p formation_ia < migration-questionnaire.sql
@@ -772,6 +777,8 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 ```
 
 - Suppression à la demande : `DELETE FROM resultats WHERE DATE(created_at)='2026-07-29' AND prenom='...';`
+- Avis nominatifs du questionnaire de satisfaction (niveau 2) :
+  `DELETE FROM satisfaction_reponses WHERE created_at < NOW() - INTERVAL 12 MONTH;`
 - Participants (prénom et équipe du jour) : purge avec le même cron,
   `DELETE FROM participants WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
   Les post-its du mur des objectifs partent avec leur participant. Les parties

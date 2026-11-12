@@ -443,21 +443,17 @@ $pdf->total   = count($avis);
 if ($Q) {
     // Questionnaire décrit par la formation : restitué dans l'ordre du formulaire
     $def = questionnaire();
-    $pdf->mention = 'Questionnaire anonyme — aucune donnée personnelle collectée hormis le prénom et le nom, facultatifs.';
+    $pdf->mention = 'Questionnaire nominatif — prénom saisi à l\'arrivée, aucune autre donnée personnelle collectée.';
     foreach ($avis as $i => $a) {
         $pdf->numero = $i + 1;
         $pdf->AddPage();
         $r = $a['reponses'];
 
-        // Identité facultative, heure de dépôt, formateur
+        // Prénom saisi à l'arrivée, heure de dépôt, formateur
         $pdf->SetFont('Helvetica', '', 9);
         $pdf->Cell(15, 6, $pdf->txt('Prénom :'), 0, 0);
         $pdf->SetFont('Helvetica', 'B', 9);
-        $pdf->Cell(45, 6, $pdf->txt(trim((string)$a['prenom']) !== '' ? $a['prenom'] : 'Anonyme'), 'B', 0);
-        $pdf->SetFont('Helvetica', '', 9);
-        $pdf->Cell(14, 6, $pdf->txt('   Nom :'), 0, 0);
-        $pdf->SetFont('Helvetica', 'B', 9);
-        $pdf->Cell(50, 6, $pdf->txt((string)$a['nom']), 'B', 0);
+        $pdf->Cell(109, 6, $pdf->txt((string)$a['prenom']), 'B', 0);
         $pdf->SetFont('Helvetica', '', 9);
         $pdf->Cell(22, 6, $pdf->txt('   Déposé à :'), 0, 0);
         $pdf->SetFont('Helvetica', 'B', 9);

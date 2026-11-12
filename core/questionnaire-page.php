@@ -2,21 +2,21 @@
 // Formulaire de satisfaction d'une formation qui décrit son questionnaire
 // (clé 'questionnaire' de formation.php). Inclus par satisfaction.php, qui
 // garde son formulaire historique pour les autres formations. Même rendu.
+// Nominatif : il faut s'être présenté à l'arrivée ; un avis par participant et par jour.
 require_once __DIR__ . '/questionnaire.php';
 
 $q_def  = questionnaire();
+$moi    = participant_courant();
+$pret   = questionnaire_table_ok();
+$deja   = $moi && $pret && questionnaire_deja_rempli((int)$moi['id']);
 $erreur = '';
 $merci  = false;
 $saisie = $_POST;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $moi && $pret && !$deja) {
     [$reponses, $erreur] = questionnaire_lire($_POST);
-    if (!$erreur && !questionnaire_table_ok()) {
-        $erreur = 'Le questionnaire n\'est pas encore installé : prévenez le formateur.';
-    }
     if (!$erreur) {
-        questionnaire_enregistrer($reponses,
-            trim((string)($_POST['prenom'] ?? '')), trim((string)($_POST['nom'] ?? '')));
+        questionnaire_enregistrer($reponses, $moi);
         $merci = true;
     }
 }
@@ -76,12 +76,26 @@ function question_html(string $cle, array $q, array $saisie): string
 
 <header class="site-head">
   <h1>Votre avis sur la journée</h1>
-  <p>Anonyme · 5 minutes environ · pour améliorer la prochaine session</p>
+  <p>5 minutes environ · pour améliorer la prochaine session</p>
 </header>
 
 <main class="wrap">
 
-<?php if ($merci): ?>
+<?php if (!$moi): ?>
+  <section class="card">
+    <h2>D'abord, votre prénom</h2>
+    <p class="lead">Indiquez votre prénom sur l'accueil : votre avis y sera rattaché.</p>
+    <a class="btn btn-primary" href="<?= e(avec_f('index.php')) ?>">Retour à l'accueil</a>
+  </section>
+<?php elseif (!$pret): ?>
+  <section class="card"><h2>Bientôt…</h2><p class="lead">Le questionnaire n'est pas encore installé : prévenez le formateur.</p></section>
+<?php elseif ($deja && !$merci): ?>
+  <section class="card" style="text-align:center">
+    <h2>Merci <?= e($moi['prenom']) ?> !</h2>
+    <p>Votre avis sur la journée est déjà enregistré.</p>
+    <a class="btn btn-primary" href="<?= e(avec_f('index.php')) ?>">Retour à l'accueil</a>
+  </section>
+<?php elseif ($merci): ?>
   <section class="card" style="text-align:center">
     <h2>Merci pour votre participation !</h2>
     <p>Vos réponses nous aideront à faire évoluer nos formations et à proposer des contenus toujours plus adaptés à vos besoins.</p>
@@ -96,14 +110,7 @@ function question_html(string $cle, array $q, array $saisie): string
 
     <p class="q-formation"><?= e($q_def['formation'] ?? '') ?><?= !empty($q_def['duree']) ? ' · ' . e($q_def['duree']) : '' ?></p>
 
-    <fieldset>
-      <legend>Prénom <span class="aide">(facultatif)</span></legend>
-      <input class="field" name="prenom" type="text" maxlength="100" value="<?= e($saisie['prenom'] ?? '') ?>">
-    </fieldset>
-    <fieldset>
-      <legend>Nom <span class="aide">(facultatif)</span></legend>
-      <input class="field" name="nom" type="text" maxlength="100" value="<?= e($saisie['nom'] ?? '') ?>">
-    </fieldset>
+    <p class="q-identite">Questionnaire de <strong><?= e($moi['prenom']) ?></strong> · <?= e(date('d/m/Y', strtotime(aujourdhui_local()))) ?></p>
 
     <?php $n = 0; foreach ($q_def['sections'] as $i => $section): ?>
     <p class="section-title"><?= $i + 1 ?>. <?= e($section['titre']) ?></p>
@@ -113,7 +120,7 @@ function question_html(string $cle, array $q, array $saisie): string
     <?php endforeach; ?>
 
     <button class="btn btn-primary">Envoyer mon avis</button>
-    <p class="rgpd">Vos réponses sont anonymes. Le prénom et le nom sont facultatifs : ne les renseignez que si vous acceptez d'être identifiable.</p>
+    <p class="rgpd">Vos réponses sont enregistrées avec votre prénom, pour le suivi de la formation. Suppression sur simple demande auprès du formateur.</p>
   </form>
 
 <?php endif; ?>

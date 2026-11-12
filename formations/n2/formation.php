@@ -18,6 +18,7 @@ return [
         'speeddating' => 'Speed-dating d\'assistants',
         'bingo'     => 'Bingo de l\'hallucination',
         'tri'       => 'Jeu de tri : qui est quoi ?',
+        'workflow'  => 'Atelier workflow',
         'avis'      => 'Votre avis',
     ],
     // Équipes de la séance : clé stable (stockée en base) => nom affiché et couleur.
@@ -149,6 +150,7 @@ TEXTE,
         'bocal-tableau.php' => 'Le bocal à secrets : les copies',
         'bingo-tableau.php' => 'Bingo de l\'hallucination',
         'tri-tableau.php' => 'Jeu de tri',
+        'workflow-tableau.php' => 'Atelier workflow : les schémas',
         'scores.php'  => 'Points et classement',
     ],
 ];

@@ -19,4 +19,6 @@
 
   <?= bloc_tri('tri') ?>
 
+  <?= bloc_workflow('workflow') ?>
+
   <?= bloc_avis('avis') ?>

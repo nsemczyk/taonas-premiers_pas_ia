@@ -795,3 +795,40 @@ body.battle-projete { margin: 0; min-height: 100vh; background: radial-gradient(
 .note-echelle label { text-align: center; padding: 12px 0; border: 2px solid #C2C3C7; background: #fff; cursor: pointer; font-weight: 600; }
 .note-echelle input:checked + label { border-color: var(--gold); background: var(--marque); color: var(--blanc); }
 .note-echelle input:focus-visible + label { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+/* ------------------------------------------------ Atelier workflow */
+.wf-page { max-width: 1400px; }
+.wf-palette { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 8px; }
+.wf-palette .wf-forme { padding: 7px 14px; }
+.wf-aide { color: var(--indigo); font-size: .95rem; }
+.wf-forme {
+  display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px; font: inherit; font-weight: 600;
+  background: var(--blanc); border: 2px solid var(--doux); color: var(--nuit); cursor: grab; touch-action: none; user-select: none;
+}
+.wf-forme:hover { border-color: var(--marque); }
+.wf-forme.fantome { position: fixed; z-index: 1000; pointer-events: none; opacity: .85; box-shadow: 0 8px 20px rgba(21,22,44,.25); }
+.wf-rond { width: 22px; height: 22px; border-radius: 50%; background: #DDF1FB; border: 3px solid #47B4E8; }
+.wf-boite { width: 28px; height: 18px; border-radius: 3px; background: #fff; border: 3px solid #1B3E90; }
+.wf-losange { width: 18px; height: 18px; margin: 0 3px; transform: rotate(45deg); background: #FFF6D6; border: 3px solid #C9A227; }
+.wf-selection { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-height: 46px; margin-bottom: 8px; }
+.wf-selection .field { flex: 1 1 260px; margin: 0; }
+.wf-selection .btn, .wf-bas .btn { width: auto; min-height: 0; margin: 0; padding: 10px 16px; }
+.wf-tableau {
+  display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; margin: 0 auto;
+  max-width: calc((100vh - 150px) * 1.6);   /* palette, barre et tableau entiers dans la fenêtre : on doit pouvoir tirer une flèche d'un bout à l'autre */
+  border: 2px solid var(--gris); touch-action: none; user-select: none; background: #F9FCFF;
+}
+.wf-message { min-height: 1.4em; margin: 8px 0 0; color: var(--brique); font-weight: 600; }
+.wf-bas { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.wf-bas .sauvegarde { flex: 1; margin: 0; }
+.wf-telephone { display: none; color: var(--brique); }
+@media (max-width: 699px) { .wf-telephone { display: block; } .wf-bas #vider { display: none; } }
+.wf-galerie { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 0 18px; }
+.wf-mini { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; border: 1px solid var(--gris); margin: 6px 0 8px; }
+.wf-vignette .btn { margin-bottom: 0; }
+body.wf-projete { margin: 0; min-height: 100vh; background: var(--nuit); }
+.wf-projete-tete { display: flex; align-items: center; padding: 12px 28px; }
+.wf-projete-tete h1 { flex: 1; margin: 0; font-family: var(--font-titre); font-weight: 400; font-size: 2rem; color: var(--blanc); }
+.wf-projete-tete h1 span { color: var(--clair); font-size: .75em; }
+.wf-projete-tete a { color: var(--clair); font-size: .9rem; border: 2px solid var(--clair); padding: 6px 12px; text-decoration: none; opacity: .4; }
+.wf-grand { display: block; width: calc(100vw - 56px); max-height: calc(100vh - 90px); margin: 0 auto; background: #F9FCFF; }

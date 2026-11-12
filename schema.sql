@@ -622,3 +622,21 @@ CREATE TABLE IF NOT EXISTS `satisfaction_reponses` (
 ALTER TABLE `satisfaction_reponses`
   ADD COLUMN IF NOT EXISTS `participant_id` INT UNSIGNED DEFAULT NULL AFTER `session_code`,
   ADD KEY IF NOT EXISTS `idx_participant` (`participant_id`);
+
+--
+-- Atelier workflow : même table que exercices/workflow/migration.sql, incluse
+-- ici pour une installation neuve.
+--
+
+CREATE TABLE IF NOT EXISTS `workflow_schemas` (
+  `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `formation`      VARCHAR(32)  NOT NULL,
+  `seance`         DATE         NOT NULL,
+  `participant_id` INT UNSIGNED NOT NULL,
+  `donnees`        MEDIUMTEXT   NOT NULL,               -- JSON : titre, noeuds (formes), liens (flèches)
+  `updated_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_schema` (`formation`, `seance`, `participant_id`),
+  CONSTRAINT `fk_workflow_participant` FOREIGN KEY (`participant_id`)
+    REFERENCES `participants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

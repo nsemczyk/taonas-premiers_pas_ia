@@ -55,6 +55,7 @@ if (formation()['outils'] ?? []) {
               'assistant_retours' => 'exercices/assistant/migration.sql',
               'bingo_grilles' => 'exercices/bingo/migration.sql',
               'tri_copies' => 'exercices/tri/migration.sql',
+              'workflow_schemas' => 'exercices/workflow/migration.sql',
               'satisfaction_reponses' => 'migration-questionnaire.sql'] as $cible => $script) {
         [$table, $colonne] = explode('.', $cible . '.1');   // table ou table.colonne attendue
         try {

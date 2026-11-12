@@ -171,3 +171,40 @@ function bloc_boule(string $cle = 'boule'): string
               . '  </section>';
 }
 
+
+// Carnet de la journée : le prompt construit par l'équipe, brique par brique.
+// Lecture seule (boule_partie() créerait la partie).
+require_once __DIR__ . '/../../core/carnet.php';
+carnet_section('boule', function (CarnetPdf $pdf, array $p) {
+    if (!equipe_existe($p['equipe'])) {
+        return;
+    }
+    $st = db()->prepare('SELECT id, tache FROM boule_parties WHERE formation = ? AND seance = ? AND equipe = ?');
+    $st->execute([formation_slug(), aujourdhui_local(), $p['equipe']]);
+    $partie = $st->fetch();
+    if (!$partie) {
+        return;
+    }
+    $st = db()->prepare('SELECT etape, prenom, texte FROM boule_briques WHERE partie_id = ? ORDER BY etape');
+    $st->execute([$partie['id']]);
+    $briques = [];
+    foreach ($st as $b) {
+        $briques[(int)$b['etape']] = $b;
+    }
+    if (!$briques) {
+        return;
+    }
+    $pdf->exercice(true, 'Équipe ' . equipes()[$p['equipe']]['nom']);
+    $pdf->texte('La situation : ' . $partie['tache'], 'B');
+    foreach (BOULE_ETAPES as $n => $etape) {
+        if ($n <= BOULE_DERNIERE_BRIQUE && isset($briques[$n])) {
+            $pdf->encadre($briques[$n]['texte'], $n . '. ' . $etape['titre'] . ' · ' . $briques[$n]['prenom']);
+        }
+    }
+    $pdf->titre('Le prompt complet');
+    $pdf->encadre(boule_prompt($briques));
+    if (isset($briques[BOULE_DERNIERE_BRIQUE + 1])) {
+        $pdf->encadre($briques[BOULE_DERNIERE_BRIQUE + 1]['texte'], 'La réponse de l\'IA');
+    }
+    $pdf->note('Chaque brique a enrichi la précédente : tâche, contexte, destinataire, contraintes et format.');
+});

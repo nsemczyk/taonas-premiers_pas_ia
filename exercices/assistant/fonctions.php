@@ -169,3 +169,44 @@ function bloc_assistant(string $cle = 'assistant'): string
               . '    <a class="btn btn-primary" href="' . e(avec_f('assistant.php')) . '">' . ($commencee ? 'Reprendre ma fiche' : 'Écrire la fiche de poste') . '</a>' . "\n"
               . '  </section>';
 }
+
+// Carnet de la journée : la fiche de poste et le prompt à coller ; puis, à
+// l'étape du speed-dating, les retours reçus des testeurs
+require_once __DIR__ . '/../../core/carnet.php';
+carnet_section('assistant', function (CarnetPdf $pdf, array $p) {
+    $fiche = assistant_fiche((int)$p['id']);
+    if (assistant_vide($fiche)) {
+        return;
+    }
+    $pdf->exercice();
+    foreach (ASSISTANT_RUBRIQUES as $cle => [$titre]) {
+        if (trim($fiche[$cle]) !== '') {
+            $pdf->encadre($fiche[$cle], $titre);
+        }
+    }
+    $pdf->titre('Le prompt à coller dans votre outil d\'IA');
+    $pdf->encadre(assistant_prompt($fiche));
+    $pdf->note('Créez-le comme assistant (GPT, Gem, projet…) et joignez-y vos documents de référence, après le test des 3 questions.');
+});
+carnet_section(ASSISTANT_ETAPE_SPEED, function (CarnetPdf $pdf, array $p) {
+    $retours = assistant_retours((int)$p['id']);
+    if (!$retours) {
+        return;
+    }
+    $pdf->exercice();
+    $pdf->texte('Ce que vos testeurs ont constaté sur votre assistant :');
+    $lignes = array_map(function ($r) {
+        $l = [$r['prenom']];
+        foreach (ASSISTANT_GRILLE as $col => [, $alerte]) {
+            $l[] = ($r[$col] ? 'Oui' : 'Non') . ((bool)$r[$col] === $alerte ? ' (!)' : '');
+        }
+        $l[] = $r['remarque'];
+        return $l;
+    }, $retours);
+    $pdf->tableau(array_merge(['Testeur'], array_column(ASSISTANT_GRILLE, 0), ['Remarque']), $lignes, [24, 26, 26, 26, 26, 52]);
+    $pdf->note('(!) : point à corriger dans votre fiche de poste.');
+});
+carnet_memo('assistant', function (CarnetPdf $pdf) {
+    $pdf->titre('Le test des 3 questions, avant de coller une information dans une IA');
+    $pdf->tableau(['Question', 'Ce qu\'on vérifie'], ASSISTANT_TROIS_QUESTIONS, [45, 135]);
+});

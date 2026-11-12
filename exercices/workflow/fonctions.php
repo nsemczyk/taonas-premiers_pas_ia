@@ -140,3 +140,108 @@ function bloc_workflow(string $cle = 'workflow'): string
               . '    <a class="btn btn-primary" href="' . e(avec_f('workflow.php')) . '">Ouvrir mon tableau</a>' . "\n"
               . '  </section>';
 }
+
+// Carnet de la journée : le schéma redessiné, sur une page à l'italienne.
+// Mêmes formes et couleurs que le tableau blanc (schema.js).
+require_once __DIR__ . '/../../core/carnet.php';
+const WORKFLOW_FORMES_PDF = [   // demi-largeur, demi-hauteur (repère du tableau), fond, trait
+    'declencheur' => [62, 62, [221, 241, 251], [71, 180, 232]],
+    'etape'       => [100, 44, [255, 255, 255], [27, 62, 144]],
+    'condition'   => [105, 66, [255, 246, 214], [201, 162, 39]],
+];
+
+// Point du bord d'une forme dans la direction (dx, dy) depuis son centre (comme bord() dans schema.js)
+function workflow_bord(array $n, float $dx, float $dy): array
+{
+    [$rx, $ry] = WORKFLOW_FORMES_PDF[$n['type']];
+    if (!$dx && !$dy) {
+        return [$n['x'], $n['y']];
+    }
+    $t = match ($n['type']) {
+        'declencheur' => $rx / sqrt($dx * $dx + $dy * $dy),
+        'etape'       => min($dx ? $rx / abs($dx) : INF, $dy ? $ry / abs($dy) : INF),
+        default       => 1 / (abs($dx) / $rx + abs($dy) / $ry),
+    };
+    return [$n['x'] + $dx * $t, $n['y'] + $dy * $t];
+}
+
+carnet_section('workflow', function (CarnetPdf $pdf, array $p) {
+    $s = workflow_de((int)$p['id']);
+    if (!$s['noeuds']) {
+        return;
+    }
+    $pdf->exercice(false, '', true);
+    if ($s['titre'] !== '') {
+        $pdf->texte($s['titre'], 'B', 11);
+    }
+    // Cadrage sur les formes, à l'échelle de la place disponible
+    $noeuds = array_column($s['noeuds'], null, 'id');
+    $minX = $minY = INF; $maxX = $maxY = -INF;
+    foreach ($noeuds as $n) {
+        [$rx, $ry] = WORKFLOW_FORMES_PDF[$n['type']];
+        $minX = min($minX, $n['x'] - $rx); $maxX = max($maxX, $n['x'] + $rx);
+        $minY = min($minY, $n['y'] - $ry); $maxY = max($maxY, $n['y'] + $ry);
+    }
+    [$zx, $zl] = $pdf->zone();
+    $zy = $pdf->GetY() + 2;
+    $zh = $pdf->basDePage() - $zy - 2;
+    $k = min($zl / ($maxX - $minX + 40), $zh / ($maxY - $minY + 40), 0.25);
+    $ox = $zx + ($zl - ($maxX - $minX) * $k) / 2 - $minX * $k;
+    $oy = $zy + 20 * $k - $minY * $k;
+    $px = fn($x) => $ox + $x * $k;
+    $py = fn($y) => $oy + $y * $k;
+
+    // Flèches, pointe pleine à l'arrivée
+    $pdf->remplissage([41, 47, 108], [41, 47, 108], 0.5);
+    $etiquettes = [];
+    foreach ($s['liens'] as $l) {
+        if (!isset($noeuds[$l['de']], $noeuds[$l['vers']])) {
+            continue;
+        }
+        $a = $noeuds[$l['de']]; $b = $noeuds[$l['vers']];
+        [$x1, $y1] = workflow_bord($a, $b['x'] - $a['x'], $b['y'] - $a['y']);
+        [$x2, $y2] = workflow_bord($b, $a['x'] - $b['x'], $a['y'] - $b['y']);
+        [$x1, $y1, $x2, $y2] = [$px($x1), $py($y1), $px($x2), $py($y2)];
+        $d = max(0.01, hypot($x2 - $x1, $y2 - $y1));
+        [$ux, $uy] = [($x2 - $x1) / $d, ($y2 - $y1) / $d];
+        $pdf->Line($x1, $y1, $x2 - $ux * 2.5, $y2 - $uy * 2.5);
+        $pdf->polygone([$x2, $y2, $x2 - $ux * 3.2 - $uy * 1.5, $y2 - $uy * 3.2 + $ux * 1.5,
+                        $x2 - $ux * 3.2 + $uy * 1.5, $y2 - $uy * 3.2 - $ux * 1.5], 'DF');
+        if ($l['etiquette']) {
+            $etiquettes[] = [($x1 + $x2) / 2, ($y1 + $y2) / 2, $l['etiquette']];
+        }
+    }
+    // Formes et textes
+    $taille = max(6, min(11, 48 * $k));
+    foreach ($noeuds as $n) {
+        [$rx, $ry, $fond, $trait] = WORKFLOW_FORMES_PDF[$n['type']];
+        [$x, $y, $rx, $ry] = [$px($n['x']), $py($n['y']), $rx * $k, $ry * $k];
+        $pdf->remplissage($fond, $trait, 0.6);
+        if ($n['type'] === 'declencheur') {
+            $pdf->ellipse($x, $y, $rx, $ry);
+            $pdf->SetTextColor(...CarnetPdf::NUIT);
+            $pdf->texteCentre($x - $rx * 0.75, $y - $ry * 0.7, $rx * 1.5, $ry * 1.4, $n['texte'], $taille);
+        } elseif ($n['type'] === 'etape') {
+            $pdf->Rect($x - $rx, $y - $ry, 2 * $rx, 2 * $ry, 'DF');
+            $pdf->SetTextColor(...CarnetPdf::NUIT);
+            $pdf->texteCentre($x - $rx * 0.92, $y - $ry * 0.85, $rx * 1.84, $ry * 1.7, $n['texte'], $taille);
+        } else {
+            $pdf->polygone([$x, $y - $ry, $x + $rx, $y, $x, $y + $ry, $x - $rx, $y], 'DF');
+            $pdf->SetTextColor(...CarnetPdf::NUIT);
+            $pdf->texteCentre($x - $rx * 0.55, $y - $ry * 0.55, $rx * 1.1, $ry * 1.1, $n['texte'], $taille);
+        }
+    }
+    // Oui / Non au milieu des sorties de condition
+    foreach ($etiquettes as [$x, $y, $e]) {
+        $pdf->remplissage([255, 255, 255], [41, 47, 108], 0.3);
+        $pdf->Rect($x - 5, $y - 2.6, 10, 5.2, 'DF');
+        $pdf->SetFont('Helvetica', 'B', 7.5);
+        $pdf->SetTextColor(...($e === 'oui' ? CarnetPdf::OLIVE : CarnetPdf::BRIQUE));
+        $pdf->SetXY($x - 5, $y - 2.6);
+        $pdf->Cell(10, 5.2, $e === 'oui' ? 'Oui' : 'Non', 0, 0, 'C');
+    }
+    $pdf->SetTextColor(...CarnetPdf::NUIT);
+    $pdf->SetDrawColor(...CarnetPdf::NUIT);
+    $pdf->SetLineWidth(0.2);
+    $pdf->SetXY($zx, $py($maxY) + 6);
+});

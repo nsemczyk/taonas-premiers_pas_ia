@@ -119,3 +119,33 @@ function bloc_prompt_mois(string $cle = 'promptmois'): string
               . '    <a class="btn btn-primary" href="' . e(avec_f('prompt-mois.php')) . '">Écrire mon prompt</a>' . "\n"
               . '  </section>';
 }
+
+// Carnet de la journée : la tâche, les deux versions et l'analyse ; et, dans
+// « À retenir », la méthode des 7 blocs
+require_once __DIR__ . '/../../core/carnet.php';
+carnet_section('promptmois', function (CarnetPdf $pdf, array $p) {
+    $f = prompt_mois_fiche((int)$p['id']);
+    $v1 = prompt_mois_assembler($f['v1']);
+    $v2 = prompt_mois_assembler($f['v2']);
+    if ($f['tache'] === '' && $v1 === '' && $v2 === '') {
+        return;
+    }
+    $pdf->exercice();
+    $pdf->texte('Votre tâche récurrente : ' . ($f['tache'] !== '' ? $f['tache'] : '—'), 'B');
+    if ($v2 !== '') {
+        $pdf->encadre($v1, 'Version 1');
+    }
+    if ($f['bon'] !== '' || $f['manque'] !== '') {
+        $pdf->encadre($f['bon'], 'Ce qui était bon');
+        $pdf->encadre($f['manque'], 'Ce qui manquait');
+    }
+    $pdf->titre('Votre prompt final, à ranger dans votre bibliothèque de prompts');
+    $pdf->encadre($v2 !== '' ? $v2 : $v1);
+    $pdf->note('Dans un mois : copiez-le, remplacez les [variables], c\'est prêt.');
+});
+carnet_memo('promptmois', function (CarnetPdf $pdf) {
+    $pdf->titre('Un prompt réutilisable en 7 blocs');
+    $pdf->tableau(['Bloc', 'Ce qu\'on y met', 'Exemple'],
+                  array_map(fn($b) => [$b[0], $b[1], preg_replace('/^Ex\. : /u', '', $b[2])], array_values(PROMPT_MOIS_BLOCS)), [38, 62, 80]);
+    $pdf->note('Ce qui change d\'une fois sur l\'autre devient une variable entre [crochets].');
+});

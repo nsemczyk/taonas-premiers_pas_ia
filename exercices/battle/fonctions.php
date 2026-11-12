@@ -345,3 +345,40 @@ function bloc_battle(string $cle = 'battle'): string
               . '  </section>';
 }
 
+
+// Carnet de la journée : les manches jouées par l'équipe, sa copie et le verdict du vote
+require_once __DIR__ . '/../../core/carnet.php';
+carnet_section('battle', function (CarnetPdf $pdf, array $p) {
+    $eq = $p['equipe'];
+    if (!equipe_existe($eq)) {
+        return;
+    }
+    $st = db()->prepare("SELECT * FROM battle_manches WHERE formation = ? AND seance = ? AND (equipe_a = ? OR equipe_b = ?)
+                         AND etat <> 'preparation' ORDER BY numero");
+    $st->execute([...battle_seance(), $eq, $eq]);
+    foreach ($st->fetchAll() as $m) {
+        $copie = current(array_filter(battle_copies((int)$m['id']), fn($c) => $c['equipe'] === $eq));
+        if (!$copie || trim($copie['prompt'] . $copie['resultat']) === '') {
+            continue;
+        }
+        $pdf->exercice(true, 'Équipe ' . equipes()[$eq]['nom']);
+        $adverse = $m['equipe_a'] === $eq ? $m['equipe_b'] : $m['equipe_a'];
+        $pdf->titre('Manche ' . $m['numero'] . (equipe_existe($adverse) ? ' · contre ' . equipes()[$adverse]['nom'] : ''));
+        $pdf->texte('La tâche : ' . $m['tache'], 'B');
+        $pdf->encadre($copie['prompt'], 'Votre prompt · ' . $copie['prenom']);
+        $pdf->encadre($copie['resultat'], 'Le résultat de l\'IA');
+        if ($m['etat'] === 'revele') {
+            $gagnants = battle_gagnants((int)$m['id']);
+            $voix = battle_decompte((int)$m['id'])[(int)$copie['id']] ?? 0;
+            $bilan = $voix . ' voix';
+            if (!$gagnants) {
+                $pdf->verdict(false, 'Aucun vote : manche sans vainqueur.');
+            } elseif (in_array($eq, $gagnants, true)) {
+                $pdf->verdict(true, (count($gagnants) > 1 ? 'Égalité : manche partagée' : 'Manche gagnée') . ' (' . $bilan . ').');
+            } else {
+                $pdf->verdict(false, 'Manche perdue (' . $bilan . ').');
+            }
+            $pdf->Ln(2);
+        }
+    }
+});

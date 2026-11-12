@@ -215,3 +215,29 @@ function bloc_bocal(string $cle = 'bocal'): string
               . '  </section>';
 }
 
+
+// Carnet de la journée : la correction de la copie, le prompt anonymisé, le corrigé
+require_once __DIR__ . '/../../core/carnet.php';
+carnet_section('bocal', function (CarnetPdf $pdf, array $p) {
+    $cfg = bocal_config();
+    $c = $cfg ? bocal_copie((int)$p['id']) : null;
+    if (!$c || (!$c['surlignes'] && trim($c['prompt']) === '')) {
+        return;
+    }
+    $a = bocal_analyse($c['surlignes']);
+    $pdf->exercice();
+    $pdf->verdict($a['trouves'] === $a['total'], 'Données à protéger repérées : ' . $a['trouves'] . ' sur ' . $a['total'] . '.');
+    if ($a['oublies']) {
+        $pdf->titre('Ce qui vous a échappé');
+        $pdf->liste(array_values(array_unique(array_map(fn($d) => $d['texte'] . ' (' . mb_strtolower($cfg['categories'][$d['cat']][1] ?? '') . ')', $a['oublies']))));
+    }
+    if ($a['faux']) {
+        $pdf->titre('Surligné sans nécessité');
+        $pdf->texte(implode(', ', array_unique($a['faux'])));
+    }
+    $pdf->encadre($c['prompt'], 'Votre version anonymisée');
+    $pdf->titre('Corrigé : ce qui ne devait pas partir');
+    $pdf->tableau(['Donnée', 'Type', 'Pourquoi'],
+                  array_map(fn($cat) => [$cat[0], $cat[1], $cat[2]], array_values($cfg['categories'])), [62, 33, 85]);
+    $pdf->encadre($cfg['reference'], 'Une version anonymisée possible');
+});

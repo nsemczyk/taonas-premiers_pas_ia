@@ -204,3 +204,27 @@ function bloc_tri(string $cle = 'tri'): string
               . '    <a class="btn btn-primary" href="' . e(avec_f('tri.php')) . '">Trier les cartes</a>' . "\n"
               . '  </section>';
 }
+
+// Carnet de la journée : chaque carte, la réponse donnée et la bonne
+require_once __DIR__ . '/../../core/carnet.php';
+carnet_section('tri', function (CarnetPdf $pdf, array $p) {
+    $cfg = tri_config();
+    $reponses = $cfg ? tri_reponses((int)$p['id']) : [];
+    if (!$reponses) {
+        return;
+    }
+    $pdf->exercice();
+    $justes = count(array_filter($reponses, fn($cat, $n) => tri_juste($n, $cat), ARRAY_FILTER_USE_BOTH));
+    $pdf->verdict($justes === count($cfg['cartes']), 'Cartes bien rangées : ' . $justes . ' sur ' . count($cfg['cartes']) . '.');
+    $lignes = [];
+    foreach ($cfg['cartes'] as $n => $carte) {
+        $donnee = $reponses[$n] ?? null;
+        $lignes[] = [
+            $carte['texte'],
+            $donnee ? $cfg['categories'][$donnee] : '—',
+            tri_libelles($carte['reponses']) . (!empty($carte['debat']) ? "\n" . $carte['debat'] : ''),
+            $donnee === null ? '' : (tri_juste($n, $donnee) ? 'Juste' : 'À revoir'),
+        ];
+    }
+    $pdf->tableau(['Carte', 'Votre réponse', 'La bonne réponse', ''], $lignes, [78, 28, 56, 18]);
+});

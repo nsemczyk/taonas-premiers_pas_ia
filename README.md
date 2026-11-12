@@ -41,7 +41,7 @@ Quatre étages :
 - **À la racine** : uniquement des pages (accueil, quiz, pilotage, tableau de
   bord, exports…). Elles sont communes à toutes les formations.
 - **`exercices/<nom>/`** : un dossier par exercice (équipes, scores, mur,
-  boule, battle, bocal, assistant, bingo, tri, workflow, candidat, prompt-mois) avec ses pages, ses helpers (`fonctions.php`, carte
+  boule, battle, bocal, assistant, bingo, tri, workflow, candidat, prompt-mois, carnet) avec ses pages, ses helpers (`fonctions.php`, carte
   d'accueil comprise) et sa migration. Un exercice n'appartient à aucune
   formation : il ne s'anime que là où une formation déclare son étape et son
   contenu. Ses pages restent servies à la racine (`/n2/bocal.php`), jamais par
@@ -141,6 +141,9 @@ les formations (chaque réponse reste rattachée à sa formation).
 4. Pour une formation : son étape et son contenu dans `formation.php`, sa carte
    dans `accueil.php`, sa page formateur dans `'outils'`, sa table dans la liste
    des migrations attendues de `pilotage.php`.
+5. Pour le carnet de fin de journée : déclarer sa section à la fin de
+   `fonctions.php` (voir « Mon carnet de la journée » plus bas). Sans section,
+   l'exercice n'apparaît simplement pas dans le carnet.
 
 Déploiement d'une version antérieure à ce rangement : supprimer à la racine
 les anciens `arrivee.php`, `equipes.php`, `objectif.php`, `mur.php`,
@@ -606,7 +609,44 @@ mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/prompt
 
 À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
 
-## La télécommande
+## Mon carnet de la journée (niveau 2)
+
+Dernière étape de la journée (`carnet`, après « Votre avis ») : chaque
+participant télécharge un PDF de ce qu'il a fait. Page de garde (prénom,
+formation, date, équipe), page « À retenir » (le test des 3 questions, les
+7 blocs d'un prompt réutilisable), puis une section par exercice, dans l'ordre
+des étapes : ses productions, les travaux de son équipe (marqués « Travail
+d'équipe ») et les corrigés. Le schéma de l'atelier workflow est redessiné sur
+une page à l'italienne. Les points ne figurent pas dans le carnet. Un exercice
+auquel le participant n'a pas pris part n'apparaît pas.
+
+Pas de table : le PDF est généré à la demande (`/n2/carnet.php`) à partir des
+données des exercices. On peut donc l'ouvrir, le fermer, le rouvrir : le carnet
+est toujours à jour.
+
+**Ajouter un exercice au carnet** : à la fin de son `fonctions.php`, déclarer
+sa section avec la clé de son étape. Elle ne dessine rien s'il n'y a rien à
+montrer, sinon elle ouvre sa section par `$pdf->exercice()` puis écrit avec les
+helpers de `CarnetPdf` (`texte`, `titre`, `encadre`, `liste`, `tableau`,
+`verdict`, `note`…, voir `core/carnet-pdf.php`) :
+
+```php
+require_once __DIR__ . '/../../core/carnet.php';
+carnet_section('monetape', function (CarnetPdf $pdf, array $participant) {
+    $copie = ma_copie((int)$participant['id']);
+    if (!$copie) {
+        return;
+    }
+    $pdf->exercice();               // exercice(true, 'Équipe …') pour un travail d'équipe
+    $pdf->encadre($copie['texte'], 'Votre réponse');
+});
+```
+
+`carnet_memo('monetape', function (CarnetPdf $pdf) {…})` ajoute un encadré à la
+page « À retenir », pour les formations qui ont cette étape. Une section ne doit
+rien créer en base (lire les tables directement plutôt que les helpers qui
+créent la partie à la première visite).
+
 
 `pilotage.php?cle=VOTRE_CLE` ouvre les sections de l'accueil au rythme du
 groupe, pour éviter que les plus rapides prennent de l'avance sur les
@@ -917,6 +957,9 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `exercices/workflow/` | Atelier workflow : `workflow.php` (tableau blanc du stagiaire), `workflow-tableau.php` (schémas de tous et `?vue=projection`, protégé par clé), `schema.js` (dessin, éditeur, export PNG), `fonctions.php`, `migration.sql` |
 | `exercices/candidat/` | Le candidat qui répond à côté : `candidat.php` (copie d'équipe, vote, résultat), `candidat-tableau.php` (pilotage et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/prompt-mois/` | Un prompt pour dans un mois : `prompt-mois.php` (tâche, version 1 en 7 blocs, analyse, version 2, copie), `prompt-mois-tableau.php` (suivi des fiches, protégé par clé), `fonctions.php`, `migration.sql` |
+| `exercices/carnet/` | Mon carnet de la journée : `carnet.php` (le PDF du participant), `fonctions.php` (carte d'accueil) ; pas de migration |
+| `core/carnet.php`, `core/carnet-pdf.php` | Carnet : registre des sections déclarées par les exercices, mise en page PDF (FPDF) |
+| `assets/logo-carnet.jpg` | Logo de la page de garde du carnet (FPDF ne lit pas les PNG transparents) |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
 | `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |
 | `quiz.php` | Le quiz : prénom → questions une par une → feedback → score |

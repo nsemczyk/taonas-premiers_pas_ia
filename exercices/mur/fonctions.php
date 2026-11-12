@@ -156,3 +156,15 @@ function bloc_objectif(string $cle = 'objectifs'): string
               . '  </section>';
 }
 
+
+// Carnet de la journée : l'objectif du participant
+require_once __DIR__ . '/../../core/carnet.php';
+carnet_section('objectifs', function (CarnetPdf $pdf, array $p) {
+    $o = objectif_de((int)$p['id']);
+    if (!$o) {
+        return;
+    }
+    $pdf->exercice();
+    $pdf->encadre(OBJECTIF_AMORCE . ' ' . $o['texte']);
+    $pdf->note('Relisez-le : la journée vous a-t-elle donné de quoi l\'atteindre ?');
+});

@@ -204,3 +204,56 @@ function bloc_bingo(string $cle = 'bingo'): string
               . '    <a class="btn btn-primary" href="' . e(avec_f('bingo.php')) . '">Ma grille de bingo</a>' . "\n"
               . '  </section>';
 }
+
+// Carnet de la journée : la grille cochée, le texte et le corrigé.
+// Lecture seule (bingo_grille() créerait la grille).
+require_once __DIR__ . '/../../core/carnet.php';
+carnet_section('bingo', function (CarnetPdf $pdf, array $p) {
+    $cfg = bingo_config();
+    $st = db()->prepare('SELECT * FROM bingo_grilles WHERE formation = ? AND seance = ? AND participant_id = ?');
+    $st->execute([formation_slug(), aujourdhui_local(), (int)$p['id']]);
+    $g = $st->fetch();
+    if (!$cfg || !$g) {
+        return;
+    }
+    $g = bingo_decoder($g);
+    $pdf->exercice();
+    if ($pdf->GetY() + 75 > $pdf->basDePage()) {
+        $pdf->AddPage();
+    }
+    // La grille 3 × 3, cases cochées en couleur
+    [$x0, $largeur] = $pdf->zone();
+    $w = 50; $h = 20;
+    $x0 += ($largeur - 3 * $w) / 2;
+    $y0 = $pdf->GetY();
+    foreach ($g['ordre'] as $pos => $case) {
+        $x = $x0 + ($pos % 3) * $w;
+        $y = $y0 + intdiv($pos, 3) * $h;
+        $coche = in_array($pos, $g['coches'], true);
+        $pdf->remplissage($coche ? CarnetPdf::GLACIER : [255, 255, 255], CarnetPdf::MARQUE, 0.3);
+        $pdf->Rect($x, $y, $w, $h, 'DF');
+        $pdf->SetTextColor(...CarnetPdf::NUIT);
+        $pdf->texteCentre($x + 3, $y + 1, $w - 6, $h - 2, $cfg['cases'][$case] ?? '', 8.5);
+        if ($coche) {
+            $pdf->signe(true, $x + $w - 4, $y + 4);
+        }
+    }
+    $pdf->SetLineWidth(0.2);
+    $pdf->SetXY($x0, $y0 + 3 * $h + 3);
+    $gagnant = bingo_gagnant();
+    $bilan = count($g['coches']) . ' case' . (count($g['coches']) > 1 ? 's' : '') . ' cochée' . (count($g['coches']) > 1 ? 's' : '');
+    $pdf->SetX($pdf->zone()[0]);
+    if ($g['statut'] === 'valide') {
+        $pdf->verdict(true, 'Bingo validé : vous avez remporté la partie (' . $bilan . ').');
+    } else {
+        $pdf->texte($bilan . ($gagnant ? ' · bingo remporté par ' . $gagnant['prenom'] : '') . '.');
+    }
+    $pdf->titre('Le texte projeté');
+    $pdf->texte($cfg['texte'], '', 9);
+    $pdf->titre('Corrigé : les hallucinations du texte');
+    $pdf->tableau(['Passage', 'Erreur', 'Case'], array_map(fn($c) => [
+        is_array($c[0]) ? implode(' / ', $c[0]) : $c[0], $c[1], $c[2]], $cfg['corrige']), [55, 75, 50]);
+    if (!empty($cfg['avertissement'])) {
+        $pdf->note($cfg['avertissement']);
+    }
+});

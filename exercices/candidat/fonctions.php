@@ -226,3 +226,39 @@ function bloc_candidat(string $cle = 'candidat'): string
               . '    <a class="btn btn-primary" href="' . e(avec_f('candidat.php')) . '">Relever le défi</a>' . "\n"
               . '  </section>';
 }
+
+// Carnet de la journée : la copie de l'équipe, le verdict du vote et le corrigé.
+// Lecture seule (candidat_partie() créerait la partie).
+require_once __DIR__ . '/../../core/carnet.php';
+carnet_section('candidat', function (CarnetPdf $pdf, array $p) {
+    $cfg = candidat_config();
+    $eq = $p['equipe'];
+    $c = $cfg && equipe_existe($eq) ? candidat_copie($eq) : null;
+    if (!$c || trim($c['manques'] . $c['prompt'] . $c['resultat']) === '') {
+        return;
+    }
+    $pdf->exercice(true, 'Équipe ' . equipes()[$eq]['nom']);
+    $pdf->texte('Le prompt du recruteur : « ' . $cfg['prompt'] . ' »', 'B');
+    $pdf->encadre($cfg['reponse'], 'La réponse du candidat');
+    $pdf->encadre($c['manques'], 'Ce qui manquait, selon votre équipe' . ($c['secretaire'] ? ' · ' . $c['secretaire'] . ' au clavier' : ''));
+    $pdf->encadre($c['prompt'], 'Votre prompt complet');
+    $pdf->encadre($c['resultat'], 'Le résultat de l\'IA');
+    $st = db()->prepare('SELECT etat FROM candidat_parties WHERE formation = ? AND seance = ?');
+    $st->execute([formation_slug(), aujourdhui_local()]);
+    if ($st->fetchColumn() === 'revele') {
+        $gagnants = candidat_gagnants();
+        $voix = candidat_decompte()[(int)$c['id']] ?? 0;
+        if (in_array($eq, $gagnants, true)) {
+            $pdf->verdict(true, (count($gagnants) > 1 ? 'Égalité : vote partagé' : 'Votre réponse a gagné le vote') . ' (' . $voix . ' voix).');
+        } elseif ($gagnants) {
+            $pdf->verdict(false, 'Le vote est allé à une autre équipe (' . $voix . ' voix pour la vôtre).');
+        }
+    }
+    $corrige = $cfg['corrige'] ?? null;
+    if ($corrige) {
+        $pdf->titre('Corrigé : ce qui manquait au prompt du recruteur');
+        $pdf->tableau(['Ce qui manquait', 'Pourquoi'], $corrige['manques'], [42, 138]);
+        $pdf->encadre($corrige['prompt'], 'Un prompt complet');
+        $pdf->encadre($corrige['exemple'], 'Ce qu\'il peut donner');
+    }
+});

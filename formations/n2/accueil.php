@@ -26,3 +26,5 @@
   <?= bloc_prompt_mois('promptmois') ?>
 
   <?= bloc_avis('avis') ?>
+
+  <?= bloc_carnet('carnet') ?>

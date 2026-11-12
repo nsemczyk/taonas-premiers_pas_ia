@@ -22,6 +22,7 @@ return [
         'candidat'  => 'Le candidat qui répond à côté',
         'promptmois' => 'Un prompt pour dans un mois',
         'avis'      => 'Votre avis',
+        'carnet'    => 'Mon carnet de la journée',
     ],
     // Équipes de la séance : clé stable (stockée en base) => nom affiché et couleur.
     // Renommer une équipe ne casse rien ; changer sa clé détache ses membres.

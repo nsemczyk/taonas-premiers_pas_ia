@@ -72,6 +72,38 @@ function prompt_mois_sauver(int $participant_id, array $in): void
                   json_encode(prompt_mois_nettoyer($in), JSON_UNESCAPED_UNICODE)]);
 }
 
+// Toutes les fiches de la séance, avec prénom, équipe et heure de dernière modification
+function prompt_mois_fiches(): array
+{
+    $st = db()->prepare('SELECT f.participant_id, f.donnees, f.updated_at, p.prenom, p.equipe
+                         FROM prompt_mois_fiches f JOIN participants p ON p.id = f.participant_id
+                         WHERE f.formation = ? AND f.seance = ? ORDER BY p.prenom, f.id');
+    $st->execute([formation_slug(), aujourdhui_local()]);
+    return array_map(function ($r) {
+        $r['fiche'] = prompt_mois_nettoyer(json_decode($r['donnees'], true) ?: []);
+        unset($r['donnees']);
+        return $r;
+    }, $st->fetchAll());
+}
+
+// Le prompt assemblé d'une version : un titre par bloc rempli (comme la copie côté stagiaire)
+function prompt_mois_assembler(array $blocs): string
+{
+    $parties = [];
+    foreach (PROMPT_MOIS_BLOCS as $cle => [$titre]) {
+        if (trim($blocs[$cle] ?? '') !== '') {
+            $parties[] = '## ' . $titre . "\n" . trim($blocs[$cle]);
+        }
+    }
+    return implode("\n\n", $parties);
+}
+
+// Nombre de blocs remplis d'une version
+function prompt_mois_remplis(array $blocs): int
+{
+    return count(array_filter($blocs, fn($v) => trim($v) !== ''));
+}
+
 // Un prompt pour dans un mois : le bouton vers prompt-mois.php, derrière l'étape $cle
 function bloc_prompt_mois(string $cle = 'promptmois'): string
 {

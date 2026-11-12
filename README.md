@@ -582,7 +582,7 @@ mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/candid
 Chaque stagiaire écrit un prompt réutilisable pour une tâche récurrente,
 liée si possible à son objectif du jour (rappelé en haut de la page s'il a
 écrit son post-it). Individuel, sans points, ouvert par l'étape « Un prompt
-pour dans un mois » ; pas de page formateur.
+pour dans un mois ».
 
 La page suit la consigne : 1. la tâche ; 2. la version 1 en 7 blocs (objectif,
 contexte, public / destinataire, informations disponibles, contraintes, format
@@ -592,6 +592,13 @@ qui peut repartir de la version 1 ; 5. « Copier mon prompt final » (la
 version 2, sinon la version 1) pour sa bibliothèque de prompts. Tout est
 enregistré au fil de la frappe. Les blocs : `PROMPT_MOIS_BLOCS` dans
 `exercices/prompt-mois/fonctions.php`.
+
+**Côté formateur** : `/n2/prompt-mois-tableau.php?cle=VOTRE_CLE`, aussi sur la
+télécommande. Un tableau d'avancement (tâche, version 1 sur 7 blocs, analyse,
+version 2 : fait, en cours ou pas commencé), la liste de ceux qui n'ont pas
+commencé, puis, pour chacun, son objectif du jour, sa tâche, ses deux versions
+assemblées et son analyse, dépliables, avec un bouton pour copier son prompt
+final. Lecture seule, à jour en direct.
 
 ```bash
 mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/prompt-mois/migration.sql
@@ -909,7 +916,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `exercices/tri/` | Jeu de tri : `tri.php` (cartes du joueur), `tri-tableau.php` (pilotage, correction carte par carte et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/workflow/` | Atelier workflow : `workflow.php` (tableau blanc du stagiaire), `workflow-tableau.php` (schémas de tous et `?vue=projection`, protégé par clé), `schema.js` (dessin, éditeur, export PNG), `fonctions.php`, `migration.sql` |
 | `exercices/candidat/` | Le candidat qui répond à côté : `candidat.php` (copie d'équipe, vote, résultat), `candidat-tableau.php` (pilotage et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
-| `exercices/prompt-mois/` | Un prompt pour dans un mois : `prompt-mois.php` (tâche, version 1 en 7 blocs, analyse, version 2, copie), `fonctions.php`, `migration.sql` |
+| `exercices/prompt-mois/` | Un prompt pour dans un mois : `prompt-mois.php` (tâche, version 1 en 7 blocs, analyse, version 2, copie), `prompt-mois-tableau.php` (suivi des fiches, protégé par clé), `fonctions.php`, `migration.sql` |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
 | `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |
 | `quiz.php` | Le quiz : prénom → questions une par une → feedback → score |

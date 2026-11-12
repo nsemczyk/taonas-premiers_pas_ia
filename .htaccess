@@ -40,7 +40,7 @@
     RewriteRule ^(?:([a-z0-9-]+)/)?(tri|tri-tableau)\.php$         %{ENV:BASE}exercices/tri/$2.php     [E=FORMATION_URL:$1,L]
     RewriteRule ^(?:([a-z0-9-]+)/)?(workflow|workflow-tableau)\.php$ %{ENV:BASE}exercices/workflow/$2.php [E=FORMATION_URL:$1,L]
     RewriteRule ^(?:([a-z0-9-]+)/)?(candidat|candidat-tableau)\.php$ %{ENV:BASE}exercices/candidat/$2.php [E=FORMATION_URL:$1,L]
-    RewriteRule ^(?:([a-z0-9-]+)/)?(prompt-mois)\.php$             %{ENV:BASE}exercices/prompt-mois/$2.php [E=FORMATION_URL:$1,L]
+    RewriteRule ^(?:([a-z0-9-]+)/)?(prompt-mois|prompt-mois-tableau)\.php$ %{ENV:BASE}exercices/prompt-mois/$2.php [E=FORMATION_URL:$1,L]
 
     # /n2 → /n2/ : sans la barre finale, les liens relatifs sortiraient de la formation
     RewriteCond %{REQUEST_FILENAME} !-f

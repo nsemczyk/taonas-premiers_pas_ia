@@ -857,3 +857,8 @@ body.wf-projete { margin: 0; min-height: 100vh; background: var(--nuit); }
 .pm-titre { display: block; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: var(--marque); margin-top: 8px; }
 .pm-aide { margin: 2px 0 6px; color: var(--indigo); font-size: .92rem; font-style: italic; }
 .pm-bloc textarea { margin-bottom: 6px; }
+.pm-etapes { display: flex; flex-wrap: wrap; gap: 4px; }
+.pm-etape { display: inline-block; padding: 2px 8px; font-size: .82rem; border: 1px solid var(--gris); color: var(--indigo); background: #fff; }
+.pm-etape.en-cours { border-color: var(--vif); background: var(--glacier); color: var(--nuit); }
+.pm-etape.faite { border-color: var(--olive); background: var(--leaf-soft); color: var(--olive); font-weight: 600; }
+.pm-legende .pm-etape { margin-right: 4px; }

@@ -185,6 +185,7 @@ TEXTE,
         'tri-tableau.php' => 'Jeu de tri',
         'workflow-tableau.php' => 'Atelier workflow : les schémas',
         'candidat-tableau.php' => 'Le candidat qui répond à côté',
+        'prompt-mois-tableau.php' => 'Un prompt pour dans un mois : les fiches',
         'scores.php'  => 'Points et classement',
     ],
 ];

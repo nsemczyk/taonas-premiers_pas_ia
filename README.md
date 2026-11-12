@@ -41,7 +41,7 @@ Quatre étages :
 - **À la racine** : uniquement des pages (accueil, quiz, pilotage, tableau de
   bord, exports…). Elles sont communes à toutes les formations.
 - **`exercices/<nom>/`** : un dossier par exercice (équipes, scores, mur,
-  boule, battle, bocal, assistant, bingo, tri, workflow) avec ses pages, ses helpers (`fonctions.php`, carte
+  boule, battle, bocal, assistant, bingo, tri, workflow, candidat) avec ses pages, ses helpers (`fonctions.php`, carte
   d'accueil comprise) et sa migration. Un exercice n'appartient à aucune
   formation : il ne s'anime que là où une formation déclare son étape et son
   contenu. Ses pages restent servies à la racine (`/n2/bocal.php`), jamais par
@@ -97,7 +97,7 @@ leur étape `quiz`.
    `core/blocs.php`, `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`,
    `bloc_arrivee()` ; dans chaque `exercices/<nom>/fonctions.php`,
    `bloc_objectif()`, `bloc_boule()`, `bloc_battle()`, `bloc_bocal()`,
-   `bloc_assistant()`, `bloc_bingo()`, `bloc_tri()`, `bloc_workflow()`. Un
+   `bloc_assistant()`, `bloc_bingo()`, `bloc_tri()`, `bloc_workflow()`, `bloc_candidat()`. Un
    dossier préfixé par `_` (brouillon) est ignoré.
 2. Déclarer ses étapes dans `formation.php`, dans l'ordre de la journée :
 
@@ -546,6 +546,37 @@ mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/workfl
 
 À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
 
+## Le candidat qui répond à côté (niveau 2)
+
+Un prompt bâclé (« Fais-moi un mail pour un client. ») et la réponse creuse
+qu'il a produite. Défi en équipe : lister ce qui manquait au recruteur,
+réécrire le prompt en consigne exploitable, le tester dans son IA. Le groupe
+vote ensuite pour la meilleure version : **20 points** à l'équipe gagnante.
+
+**Côté stagiaire** (il faut être placé dans une équipe) : « Relever le défi »
+sur l'accueil. Un membre clique « Je tiens la plume » : il saisit la copie de
+l'équipe (ce qui manquait, le prompt réécrit, la réponse de l'IA), enregistrée
+au fil de la frappe. Ses coéquipiers la suivent en direct et peuvent « Prendre
+la plume » s'il le faut. Au vote, chacun choisit sur son téléphone parmi les
+versions anonymes (A, B…), jamais celle de son équipe, et peut changer d'avis.
+
+**Côté formateur** : `/n2/candidat-tableau.php?cle=VOTRE_CLE`, aussi sur la
+télécommande. Les copies des équipes en direct ; **Clore la rédaction et
+ouvrir le vote** (les copies sans prompt déclarent forfait) ; **Clore le vote
+et révéler** donne les points aux gagnants (ex-aequo : à chacun ; sans vote,
+pas de vainqueur), repris d'un clic si besoin. L'écran de projection montre le
+cas pendant la rédaction, les versions anonymes pendant le vote, puis le
+résultat avec les équipes, ce qui manquait et les voix. Pas de chrono : vous
+clôturez quand vous voulez.
+
+Le cas (prompt et réponse) : `formations/n2/formation.php`, clé `candidat`.
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/candidat/migration.sql
+```
+
+À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
+
 ## La télécommande
 
 `pilotage.php?cle=VOTRE_CLE` ouvre les sections de l'accueil au rythme du
@@ -817,7 +848,9 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
   Les copies du bocal à secrets, les fiches d'assistant et les retours du
   speed-dating partent avec leur participant, comme les grilles du bingo et
   les schémas de l'atelier workflow ;
-  les parties du bingo et du tri :
+  les parties du bingo, du tri et du candidat qui répond à côté
+  (`DELETE FROM candidat_parties WHERE seance < CURDATE() - INTERVAL 12 MONTH;`, puis
+  `DELETE FROM candidat_copies WHERE seance < CURDATE() - INTERVAL 12 MONTH;`) :
   `DELETE FROM bingo_parties WHERE seance < CURDATE() - INTERVAL 12 MONTH;`,
   `DELETE FROM tri_parties WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
 
@@ -853,6 +886,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `exercices/bingo/` | Bingo de l'hallucination : `bingo.php` (grille du joueur), `bingo-tableau.php` (pilotage et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/tri/` | Jeu de tri : `tri.php` (cartes du joueur), `tri-tableau.php` (pilotage, correction carte par carte et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/workflow/` | Atelier workflow : `workflow.php` (tableau blanc du stagiaire), `workflow-tableau.php` (schémas de tous et `?vue=projection`, protégé par clé), `schema.js` (dessin, éditeur, export PNG), `fonctions.php`, `migration.sql` |
+| `exercices/candidat/` | Le candidat qui répond à côté : `candidat.php` (copie d'équipe, vote, résultat), `candidat-tableau.php` (pilotage et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
 | `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |
 | `quiz.php` | Le quiz : prénom → questions une par une → feedback → score |

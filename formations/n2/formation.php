@@ -19,6 +19,7 @@ return [
         'bingo'     => 'Bingo de l\'hallucination',
         'tri'       => 'Jeu de tri : qui est quoi ?',
         'workflow'  => 'Atelier workflow',
+        'candidat'  => 'Le candidat qui répond à côté',
         'avis'      => 'Votre avis',
     ],
     // Équipes de la séance : clé stable (stockée en base) => nom affiché et couleur.
@@ -141,6 +142,11 @@ TEXTE,
     ],
     // Questionnaire de satisfaction de fin de journée (formulaire, tableau de bord, export PDF)
     'questionnaire' => require __DIR__ . '/questionnaire.php',
+    // Le candidat qui répond à côté : le prompt bâclé du recruteur et la réponse creuse du candidat
+    'candidat' => [
+        'prompt'  => 'Fais-moi un mail pour un client.',
+        'reponse' => "Bonjour,\nJ'espère que vous allez bien. Je me permets de vous contacter au sujet de notre collaboration. N'hésitez pas à me faire part de vos besoins, je reste à votre entière disposition.\nCordialement",
+    ],
     // Pages de l'animateur proposées sur la télécommande (page => libellé du bouton)
     'outils'      => [
         'equipes.php' => 'Constituer les équipes',
@@ -151,6 +157,7 @@ TEXTE,
         'bingo-tableau.php' => 'Bingo de l\'hallucination',
         'tri-tableau.php' => 'Jeu de tri',
         'workflow-tableau.php' => 'Atelier workflow : les schémas',
+        'candidat-tableau.php' => 'Le candidat qui répond à côté',
         'scores.php'  => 'Points et classement',
     ],
 ];

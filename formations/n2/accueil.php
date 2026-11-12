@@ -21,4 +21,6 @@
 
   <?= bloc_workflow('workflow') ?>
 
+  <?= bloc_candidat('candidat') ?>
+
   <?= bloc_avis('avis') ?>

@@ -1,16 +1,20 @@
 <?php
 // Étapes de la journée : le contenu de l'accueil s'ouvre depuis pilotage.php.
+// Chaque formation a ses propres étapes (colonne `formation`).
 // Ce fichier ne produit aucune sortie, il ne définit que des helpers.
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/formation.php';
 
 // Toutes les étapes, dans l'ordre du déroulé (volumes minuscules : une requête suffit).
-// null si la table n'existe pas encore : migration-etapes.sql n'a pas été jouée.
+// null si la table n'existe pas encore : migration-etapes.sql (ou
+// migration-formations.sql) n'a pas été jouée.
 function etapes_toutes(): ?array
 {
     static $etapes = false;
     if ($etapes === false) {
         try {
-            $etapes = db()->query('SELECT cle, titre, ouverte FROM etapes ORDER BY ordre')->fetchAll();
+            $st = db()->prepare('SELECT cle, titre, ouverte FROM etapes WHERE formation = ? ORDER BY ordre');
+            $st->execute([formation_slug()]);
+            $etapes = $st->fetchAll();
         } catch (PDOException $e) {
             $etapes = null;
         }
@@ -57,7 +61,30 @@ function etape_titre(string $cle): string
             return $e['titre'];
         }
     }
-    return '';
+    return formation()['etapes'][$cle] ?? '';   // pas encore en base : titre déclaré
+}
+
+// Crée en base les étapes déclarées dans formations/<slug>/formation.php
+// (clé 'etapes' : cle => titre, dans l'ordre de la journée) et aligne titres et
+// ordre sur la déclaration. L'état ouvert/fermé n'est jamais touché, et une
+// étape présente en base mais absente de la déclaration est laissée telle quelle.
+// Appelée par la télécommande : ajouter une étape = une ligne de configuration.
+function etapes_synchroniser(): void
+{
+    $declarees = formation()['etapes'] ?? [];
+    if (!$declarees) {
+        return;
+    }
+    try {
+        $st = db()->prepare('INSERT INTO etapes (formation, cle, titre, ordre, ouverte) VALUES (?, ?, ?, ?, 0)
+                             ON DUPLICATE KEY UPDATE titre = VALUES(titre), ordre = VALUES(ordre)');
+        $ordre = 0;
+        foreach ($declarees as $cle => $titre) {
+            $st->execute([formation_slug(), $cle, $titre, ++$ordre]);
+        }
+    } catch (PDOException $e) {
+        // Table ou colonne absente : la télécommande affiche la migration à jouer
+    }
 }
 
 // Carte affichée à la place d'une section encore fermée : le titre, jamais le contenu

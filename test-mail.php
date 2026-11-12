@@ -13,7 +13,7 @@
 //
 // Ce fichier n'est utile qu'à la mise en place : il peut être supprimé ensuite.
 
-require __DIR__ . '/eval-froide-notification.php';
+require __DIR__ . '/core/eval-froide-notification.php';
 
 $cli = (PHP_SAPI === 'cli');
 

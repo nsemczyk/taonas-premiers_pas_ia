@@ -3,3 +3,6 @@
 
 # Fichiers binaires : jamais touchés
 *.pdf binary
+*.woff2 binary
+*.png binary
+*.otf binary

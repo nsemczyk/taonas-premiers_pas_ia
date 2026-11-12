@@ -1,0 +1,3 @@
+# Socle PHP inclus par les pages : jamais servi directement.
+# (Ignoré si le vhost a AllowOverride None : ces fichiers ne produisent aucune sortie.)
+Require all denied

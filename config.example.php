@@ -10,6 +10,10 @@ define('DB_PASS', 'change-me');
 // Access key for the live results board (resultats.php?cle=...)
 define('CLE_ANIMATEUR', 'change-me-too');
 
+// Formation servie quand l'adresse ne porte pas de ?f= (dossier formations/<slug>/).
+// Facultatif : 'n1' par défaut.
+// define('FORMATION_DEFAUT', 'n1');
+
 // ---------------------------------------------------------------------------
 // Notification par mail des évaluations à froid (facultatif)
 //

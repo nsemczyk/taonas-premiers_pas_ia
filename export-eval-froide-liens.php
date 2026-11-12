@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/horodatage.php';   // -> config.php + helpers de date
+require __DIR__ . '/core/horodatage.php';   // -> config.php + helpers de date
 
 // Accès réservé à l'animateur
 if (!hash_equals(CLE_ANIMATEUR, (string)($_GET['cle'] ?? ''))) {
@@ -15,10 +15,12 @@ $base   = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost')
 
 // Liens « en attente » uniquement : non encore utilisés (used_at IS NULL).
 try {
-    $liens = db()->query(
+    $st = db()->prepare(
         'SELECT token, libelle, created_at FROM eval_froide_tokens
-         WHERE used_at IS NULL ORDER BY id'
-    )->fetchAll();
+         WHERE formation = ? AND used_at IS NULL ORDER BY id'
+    );
+    $st->execute([formation_slug()]);
+    $liens = $st->fetchAll();
 } catch (PDOException $e) {
     http_response_code(500);
     exit('Les tables de l\'évaluation à froid ne sont pas disponibles.');

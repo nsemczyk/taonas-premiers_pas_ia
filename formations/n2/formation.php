@@ -20,6 +20,7 @@ return [
         'tri'       => 'Jeu de tri : qui est quoi ?',
         'workflow'  => 'Atelier workflow',
         'candidat'  => 'Le candidat qui répond à côté',
+        'promptmois' => 'Un prompt pour dans un mois',
         'avis'      => 'Votre avis',
     ],
     // Équipes de la séance : clé stable (stockée en base) => nom affiché et couleur.

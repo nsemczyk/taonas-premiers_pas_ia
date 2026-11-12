@@ -23,4 +23,6 @@
 
   <?= bloc_candidat('candidat') ?>
 
+  <?= bloc_prompt_mois('promptmois') ?>
+
   <?= bloc_avis('avis') ?>

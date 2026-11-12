@@ -682,3 +682,21 @@ CREATE TABLE IF NOT EXISTS `candidat_votes` (
   CONSTRAINT `fk_candidat_vote_participant` FOREIGN KEY (`participant_id`) REFERENCES `participants` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_candidat_vote_copie` FOREIGN KEY (`copie_id`) REFERENCES `candidat_copies` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Un prompt pour dans un mois : même table que exercices/prompt-mois/migration.sql,
+-- incluse ici pour une installation neuve.
+--
+
+CREATE TABLE IF NOT EXISTS `prompt_mois_fiches` (
+  `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `formation`      VARCHAR(32)  NOT NULL,
+  `seance`         DATE         NOT NULL,
+  `participant_id` INT UNSIGNED NOT NULL,
+  `donnees`        MEDIUMTEXT   NOT NULL,               -- JSON : tâche, version 1, analyse, version 2
+  `updated_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_fiche` (`formation`, `seance`, `participant_id`),
+  CONSTRAINT `fk_prompt_mois_participant` FOREIGN KEY (`participant_id`)
+    REFERENCES `participants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

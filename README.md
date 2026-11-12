@@ -41,7 +41,7 @@ Quatre étages :
 - **À la racine** : uniquement des pages (accueil, quiz, pilotage, tableau de
   bord, exports…). Elles sont communes à toutes les formations.
 - **`exercices/<nom>/`** : un dossier par exercice (équipes, scores, mur,
-  boule, battle, bocal, assistant, bingo, tri, workflow, candidat) avec ses pages, ses helpers (`fonctions.php`, carte
+  boule, battle, bocal, assistant, bingo, tri, workflow, candidat, prompt-mois) avec ses pages, ses helpers (`fonctions.php`, carte
   d'accueil comprise) et sa migration. Un exercice n'appartient à aucune
   formation : il ne s'anime que là où une formation déclare son étape et son
   contenu. Ses pages restent servies à la racine (`/n2/bocal.php`), jamais par
@@ -97,7 +97,7 @@ leur étape `quiz`.
    `core/blocs.php`, `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`,
    `bloc_arrivee()` ; dans chaque `exercices/<nom>/fonctions.php`,
    `bloc_objectif()`, `bloc_boule()`, `bloc_battle()`, `bloc_bocal()`,
-   `bloc_assistant()`, `bloc_bingo()`, `bloc_tri()`, `bloc_workflow()`, `bloc_candidat()`. Un
+   `bloc_assistant()`, `bloc_bingo()`, `bloc_tri()`, `bloc_workflow()`, `bloc_candidat()`, `bloc_prompt_mois()`. Un
    dossier préfixé par `_` (brouillon) est ignoré.
 2. Déclarer ses étapes dans `formation.php`, dans l'ordre de la journée :
 
@@ -577,6 +577,28 @@ mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/candid
 
 À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
 
+## Un prompt pour dans un mois (niveau 2)
+
+Chaque stagiaire écrit un prompt réutilisable pour une tâche récurrente,
+liée si possible à son objectif du jour (rappelé en haut de la page s'il a
+écrit son post-it). Individuel, sans points, ouvert par l'étape « Un prompt
+pour dans un mois » ; pas de page formateur.
+
+La page suit la consigne : 1. la tâche ; 2. la version 1 en 7 blocs (objectif,
+contexte, public / destinataire, informations disponibles, contraintes, format
+attendu, critères de réussite), les variables entre [crochets], à copier pour
+la tester ; 3. l'analyse (ce qui est bon, ce qui manque) ; 4. la version 2,
+qui peut repartir de la version 1 ; 5. « Copier mon prompt final » (la
+version 2, sinon la version 1) pour sa bibliothèque de prompts. Tout est
+enregistré au fil de la frappe. Les blocs : `PROMPT_MOIS_BLOCS` dans
+`exercices/prompt-mois/fonctions.php`.
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/prompt-mois/migration.sql
+```
+
+À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
+
 ## La télécommande
 
 `pilotage.php?cle=VOTRE_CLE` ouvre les sections de l'accueil au rythme du
@@ -846,8 +868,8 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
   Les manches de la Prompt Battle (copies et votes compris) :
   `DELETE FROM battle_manches WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
   Les copies du bocal à secrets, les fiches d'assistant et les retours du
-  speed-dating partent avec leur participant, comme les grilles du bingo et
-  les schémas de l'atelier workflow ;
+  speed-dating partent avec leur participant, comme les grilles du bingo,
+  les schémas de l'atelier workflow et les prompts « pour dans un mois » ;
   les parties du bingo, du tri et du candidat qui répond à côté
   (`DELETE FROM candidat_parties WHERE seance < CURDATE() - INTERVAL 12 MONTH;`, puis
   `DELETE FROM candidat_copies WHERE seance < CURDATE() - INTERVAL 12 MONTH;`) :
@@ -887,6 +909,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `exercices/tri/` | Jeu de tri : `tri.php` (cartes du joueur), `tri-tableau.php` (pilotage, correction carte par carte et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/workflow/` | Atelier workflow : `workflow.php` (tableau blanc du stagiaire), `workflow-tableau.php` (schémas de tous et `?vue=projection`, protégé par clé), `schema.js` (dessin, éditeur, export PNG), `fonctions.php`, `migration.sql` |
 | `exercices/candidat/` | Le candidat qui répond à côté : `candidat.php` (copie d'équipe, vote, résultat), `candidat-tableau.php` (pilotage et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
+| `exercices/prompt-mois/` | Un prompt pour dans un mois : `prompt-mois.php` (tâche, version 1 en 7 blocs, analyse, version 2, copie), `fonctions.php`, `migration.sql` |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
 | `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |
 | `quiz.php` | Le quiz : prénom → questions une par une → feedback → score |

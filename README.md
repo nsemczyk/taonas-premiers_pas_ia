@@ -41,7 +41,7 @@ Quatre étages :
 - **À la racine** : uniquement des pages (accueil, quiz, pilotage, tableau de
   bord, exports…). Elles sont communes à toutes les formations.
 - **`exercices/<nom>/`** : un dossier par exercice (équipes, scores, mur,
-  boule, battle, bocal, assistant, bingo, tri) avec ses pages, ses helpers (`fonctions.php`, carte
+  boule, battle, bocal, assistant, bingo, tri, workflow) avec ses pages, ses helpers (`fonctions.php`, carte
   d'accueil comprise) et sa migration. Un exercice n'appartient à aucune
   formation : il ne s'anime que là où une formation déclare son étape et son
   contenu. Ses pages restent servies à la racine (`/n2/bocal.php`), jamais par
@@ -97,7 +97,7 @@ leur étape `quiz`.
    `core/blocs.php`, `texte_a_copier()`, `bloc_quiz()`, `bloc_avis()`,
    `bloc_arrivee()` ; dans chaque `exercices/<nom>/fonctions.php`,
    `bloc_objectif()`, `bloc_boule()`, `bloc_battle()`, `bloc_bocal()`,
-   `bloc_assistant()`, `bloc_bingo()`, `bloc_tri()`. Un
+   `bloc_assistant()`, `bloc_bingo()`, `bloc_tri()`, `bloc_workflow()`. Un
    dossier préfixé par `_` (brouillon) est ignoré.
 2. Déclarer ses étapes dans `formation.php`, dans l'ordre de la journée :
 
@@ -518,6 +518,34 @@ mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/tri/mi
 
 À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
 
+## Atelier workflow (niveau 2)
+
+Chaque stagiaire dessine un processus sur un tableau blanc, à la manière de
+n8n mais sans rien exécuter : des **ronds** pour les déclencheurs, des
+**boîtes** pour les étapes, des **losanges** pour les conditions, reliés par
+des flèches. Individuel, sans points.
+
+**Côté stagiaire** (ordinateur ou tablette ; sur téléphone, lecture seule) :
+« Ouvrir mon tableau » sur l'accueil. On glisse une forme de la palette sur le
+tableau (ou on la touche pour la poser au centre), on la déplace, on la
+sélectionne pour écrire son texte. Pour relier deux formes, on tire la
+pastille bleue de l'une vers l'autre. Une condition a deux sorties, étiquetées
+Oui puis Non (« Inverser Oui / Non » sur la sortie sélectionnée) ; deux
+déclencheurs ne se relient jamais entre eux. Suppression par le bouton ou la
+touche Suppr. Tout est enregistré au fil de l'eau ; « Télécharger en image »
+exporte le schéma en PNG.
+
+**Côté formateur** : `/n2/workflow-tableau.php?cle=VOTRE_CLE`, aussi sur la
+télécommande. Les schémas de tous les stagiaires en vignettes, à jour en
+direct, et **Projeter** pour en afficher un en plein écran au débrief (il suit
+les modifications de son auteur).
+
+```bash
+mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/workflow/migration.sql
+```
+
+À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
+
 ## La télécommande
 
 `pilotage.php?cle=VOTRE_CLE` ouvre les sections de l'accueil au rythme du
@@ -787,7 +815,8 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
   Les manches de la Prompt Battle (copies et votes compris) :
   `DELETE FROM battle_manches WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
   Les copies du bocal à secrets, les fiches d'assistant et les retours du
-  speed-dating partent avec leur participant, comme les grilles du bingo ;
+  speed-dating partent avec leur participant, comme les grilles du bingo et
+  les schémas de l'atelier workflow ;
   les parties du bingo et du tri :
   `DELETE FROM bingo_parties WHERE seance < CURDATE() - INTERVAL 12 MONTH;`,
   `DELETE FROM tri_parties WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
@@ -823,6 +852,7 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `exercices/assistant/` | Fiche de poste de l'assistant : `assistant.php` (rubriques, enregistrement, copie pour son IA, grille du speed-dating et retours reçus), `fonctions.php`, `migration.sql` |
 | `exercices/bingo/` | Bingo de l'hallucination : `bingo.php` (grille du joueur), `bingo-tableau.php` (pilotage et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/tri/` | Jeu de tri : `tri.php` (cartes du joueur), `tri-tableau.php` (pilotage, correction carte par carte et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
+| `exercices/workflow/` | Atelier workflow : `workflow.php` (tableau blanc du stagiaire), `workflow-tableau.php` (schémas de tous et `?vue=projection`, protégé par clé), `schema.js` (dessin, éditeur, export PNG), `fonctions.php`, `migration.sql` |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |
 | `index.php` | Accueil : en-tête commun + cartes de la formation, dévoilées au fur et à mesure |
 | `quiz.php` | Le quiz : prénom → questions une par une → feedback → score |

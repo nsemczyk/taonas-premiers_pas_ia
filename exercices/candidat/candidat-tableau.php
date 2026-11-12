@@ -155,6 +155,24 @@ function bouton(string $moi, string $action, string $libelle, string $classe, ar
     <?php endif; ?>
   </section>
 
+  <?php if ($corrige = candidat_config()['corrige'] ?? null): ?>
+  <section class="card">
+    <details class="doc">
+      <summary>Le corrigé</summary>
+      <p class="brique-titre">1. Ce qui manquait au recruteur</p>
+      <table class="bocal-corrige">
+        <?php foreach ($corrige['manques'] as [$manque, $pourquoi]): ?>
+        <tr><td><strong><?= e($manque) ?></strong></td><td><?= e($pourquoi) ?></td></tr>
+        <?php endforeach; ?>
+      </table>
+      <p class="brique-titre">2. Un prompt complet</p>
+      <div class="brique-texte deja"><?= e($corrige['prompt']) ?></div>
+      <p class="brique-titre">3. Ce qu'on peut en attendre</p>
+      <div class="brique-texte reponse-ia"><?= e($corrige['exemple']) ?></div>
+    </details>
+  </section>
+  <?php endif; ?>
+
   <?php foreach (equipes() as $eq => $def): $c = $copies[$eq] ?? null; ?>
   <section class="card copie">
     <h2><?= badge_equipe($eq) ?> <?= $c && $c['lettre'] ? '<span class="muted">· version ' . e($c['lettre']) . '</span>' : '' ?></h2>

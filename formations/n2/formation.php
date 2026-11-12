@@ -146,6 +146,32 @@ TEXTE,
     'candidat' => [
         'prompt'  => 'Fais-moi un mail pour un client.',
         'reponse' => "Bonjour,\nJ'espère que vous allez bien. Je me permets de vous contacter au sujet de notre collaboration. N'hésitez pas à me faire part de vos besoins, je reste à votre entière disposition.\nCordialement",
+        // Corrigé, affiché au formateur seulement (page de pilotage de l'exercice)
+        'corrige' => [
+            'manques' => [
+                ['Le rôle', 'Qui écrit ? Quel métier, quelle entreprise : l\'IA ne sait pas au nom de qui elle parle.'],
+                ['Le destinataire', 'Quel client : particulier ou entreprise, nouveau ou fidèle, satisfait ou mécontent.'],
+                ['L\'objectif', 'Pourquoi ce mail : relancer un devis, s\'excuser, annoncer, remercier… et quelle action on attend du client.'],
+                ['Le contexte', 'Les faits : l\'historique, la date, le montant, le délai. Sans eux, l\'IA remplit avec des formules creuses.'],
+                ['Le ton', 'Formel ou chaleureux, vouvoiement, ce qu\'il faut éviter (« j\'espère que vous allez bien »).'],
+                ['Le format', 'Un objet, une longueur (8 à 10 lignes), une structure, une signature.'],
+                ['L\'appel à l\'action', 'Ce que le client doit faire : répondre, choisir un créneau, rappeler.'],
+                ['Les garde-fous', 'Ne rien inventer, signaler ce qui manque plutôt que le deviner.'],
+            ],
+            'prompt' => "Tu es conseiller commercial dans une entreprise de rénovation de cuisines.\n"
+                      . "Rédige un mail de relance à un client particulier, [Nom du client], qui nous a demandé un devis pour rénover sa cuisine.\n\n"
+                      . "Contexte : le devis (12 400 € TTC) lui a été envoyé il y a 15 jours, sans réponse depuis. Lors du premier rendez-vous, il tenait à ce que les travaux soient terminés avant l'été.\n\n"
+                      . "Objectif : le relancer sans insister, savoir s'il a des questions sur le devis et lui proposer un appel de 15 minutes.\n\n"
+                      . "Ton : courtois et chaleureux, vouvoiement, phrases simples, aucune formule creuse.\n"
+                      . "Format : un objet clair, 8 à 10 lignes, un seul appel à l'action avec deux créneaux au choix (mardi 10 h ou jeudi 16 h), signature : [Prénom Nom], [téléphone].\n\n"
+                      . "N'invente aucune information absente de ces éléments : s'il en manque une, laisse-la entre crochets.",
+            'exemple' => "Objet : Votre projet de cuisine, avant l'été\n\n"
+                       . "Bonjour [Nom du client],\n\n"
+                       . "Il y a quinze jours, je vous ai transmis le devis pour la rénovation de votre cuisine. Avez-vous eu le temps de le parcourir ?\n\n"
+                       . "Je sais que vous tenez à profiter de votre nouvelle cuisine avant l'été : pour tenir ce délai, mieux vaut caler le planning dans les prochaines semaines. Si certains points du devis appellent des précisions, je vous les détaille volontiers.\n\n"
+                       . "Je vous propose un appel de 15 minutes : mardi à 10 h ou jeudi à 16 h, selon ce qui vous convient le mieux.\n\n"
+                       . "Bien cordialement,\n[Prénom Nom]\n[téléphone]",
+        ],
     ],
     // Pages de l'animateur proposées sur la télécommande (page => libellé du bouton)
     'outils'      => [

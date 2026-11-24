@@ -11,6 +11,8 @@
 
   <?= ''/*bloc_battle('battle')*/ ?>
 
+<?= bloc_prompt_mois('promptmois') ?>
+
   <?= bloc_bocal('bocal') ?>
 
   <?= bloc_assistant('assistant') ?>
@@ -22,8 +24,6 @@
   <?= bloc_workflow('workflow') ?>
 
   <?= bloc_candidat('candidat') ?>
-
-  <?= bloc_prompt_mois('promptmois') ?>
 
   <?= bloc_avis('avis') ?>
 

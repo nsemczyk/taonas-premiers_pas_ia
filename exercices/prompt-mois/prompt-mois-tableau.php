@@ -26,9 +26,11 @@ if ($retours_ok && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'analyser' => $erreur = prompt_mois_analyser($pid),
         'envoyer'  => prompt_mois_repondre($pid, 'envoye', (string)($_POST['analyse'] ?? '')),
         'refuser'  => prompt_mois_repondre($pid, 'refuse', (string)($_POST['message'] ?? '')),
+        'autoriser' => prompt_mois_autoriser($pid),
         default    => null,
     };
-    header('Location: ' . $moi . ($erreur !== '' ? '&erreur=' . rawurlencode($pid . ':' . $erreur) : '') . '#demande-' . $pid, true, 303);
+    $ancre = ($_POST['action'] ?? '') === 'autoriser' ? '#fiche-' : '#demande-';
+    header('Location: ' . $moi . ($erreur !== '' ? '&erreur=' . rawurlencode($pid . ':' . $erreur) : '') . $ancre . $pid, true, 303);
     exit;
 }
 
@@ -100,7 +102,7 @@ function avancement(array $f, int $nb_blocs): array
   <section class="card pm-demande" id="demande-<?= (int)$pid ?>">
     <h2>Demande de retour : <?= e($prenoms[$pid] ?? '?') ?></h2>
     <p class="muted">Demandée à <?= e(substr($r['demande_at'], 11, 5)) ?> · tâche : <?= $r['tache'] !== '' ? e($r['tache']) : '—' ?></p>
-    <details class="doc"><summary>Son prompt (version 1)</summary><pre><?= e($r['prompt']) ?></pre></details>
+    <details class="doc"><summary>Son prompt (version <?= (int)$r['version'] ?>)</summary><pre><?= e($r['prompt']) ?></pre></details>
     <details class="doc"><summary>Le résultat obtenu</summary><pre><?= e($r['resultat']) ?></pre></details>
     <details class="doc"><summary>Son analyse</summary>
       <p class="brique-titre">Ce qui est bon</p><div class="brique-texte deja"><?= $r['bon'] !== '' ? e($r['bon']) : '<em>—</em>' ?></div>
@@ -154,7 +156,7 @@ function avancement(array $f, int $nb_blocs): array
               <?php if (isset($demandes[$f['participant_id']])): ?>
                 <a class="pm-etape demande" href="#demande-<?= (int)$f['participant_id'] ?>">Retour demandé</a>
               <?php else: ?>
-                <span class="pm-etape <?= $r['etat'] === 'envoye' ? 'faite' : '' ?>"><?= $r['etat'] === 'envoye' ? 'Retour envoyé' : 'Retour refusé' ?></span>
+                <span class="pm-etape <?= $r['etat'] === 'envoye' ? 'faite' : '' ?>"><?= $r['etat'] === 'envoye' ? 'Retour envoyé' . ($r['supplement'] ? ' · nouvelle demande permise' : '') : 'Retour refusé' ?></span>
               <?php endif; ?>
             <?php endif; ?>
           </td>
@@ -198,9 +200,17 @@ function avancement(array $f, int $nb_blocs): array
     </details>
     <?php if (($r = $retours[$pid] ?? null) && $r['etat'] === 'envoye'): ?>
     <details class="doc" data-memo="retour-<?= $pid ?>">
-      <summary>Retour envoyé</summary>
+      <summary>Retour envoyé (version <?= (int)$r['version'] ?>)</summary>
       <pre><?= e($r['analyse']) ?></pre>
     </details>
+    <?php if ($r['supplement']): ?>
+      <p class="muted">Nouvelle demande permise : <?= e($f['prenom']) ?> peut redemander un retour.</p>
+    <?php else: ?>
+      <form method="post" action="<?= e($moi) ?>">
+        <input type="hidden" name="participant" value="<?= $pid ?>">
+        <button class="btn btn-ghost" name="action" value="autoriser">Lui permettre une nouvelle demande</button>
+      </form>
+    <?php endif; ?>
     <?php endif; ?>
     <?php if ($final !== ''): ?>
       <pre id="final-<?= $pid ?>" hidden><?= e($final) ?></pre>

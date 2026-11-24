@@ -113,7 +113,7 @@ function blocs_html(string $version, array $valeurs): string
 
   <section class="card">
     <h2>3. Analysez le résultat</h2>
-    <label class="field" for="resultat">Collez ici le résultat obtenu avec votre version 1</label>
+    <label class="field" for="resultat">Collez ici le résultat obtenu avec votre prompt</label>
     <textarea class="field saisie" id="resultat" rows="6" maxlength="<?= PROMPT_MOIS_MAX_RESULTAT ?>"><?= e($fiche['resultat']) ?></textarea>
     <label class="field" for="bon">Qu'est-ce qui est bon ?</label>
     <textarea class="field saisie" id="bon" rows="3" maxlength="<?= PROMPT_MOIS_MAX ?>"><?= e($fiche['bon']) ?></textarea>
@@ -126,6 +126,7 @@ function blocs_html(string $version, array $valeurs): string
       <p class="pm-retour-note" id="retour-note" hidden>Analyse préparée avec Claude, relue par votre formateur.</p>
     </div>
     <button type="button" class="btn btn-ghost" id="demander">Demander un retour au formateur</button>
+    <p class="pm-retour-note" id="retour-limite" hidden>Un retour par personne. S'il vous en faut un autre, demandez-le à votre formateur.</p>
     <?php endif; ?>
   </section>
 
@@ -226,8 +227,10 @@ function blocs_html(string $version, array $valeurs): string
       t.textContent = r.texte || '';
       document.getElementById('retour-note').hidden = r.etat !== 'envoye';
       boutonDemander.disabled = r.etat === 'attente';
-      boutonDemander.textContent = r.etat === 'envoye' || r.etat === 'refuse'
-        ? 'Demander un nouveau retour' : 'Demander un retour au formateur';
+      boutonDemander.hidden = !r.peut && r.etat !== 'attente';
+      document.getElementById('retour-limite').hidden = r.peut || r.etat !== 'envoye';
+      boutonDemander.textContent = r.etat === 'envoye' ? 'Demander un second retour (sur ma version la plus récente)'
+        : r.etat === 'refuse' ? 'Refaire ma demande' : 'Demander un retour au formateur';
     }
     afficherRetour(etatCourant);
     boutonDemander.addEventListener('click', function () {
@@ -245,11 +248,11 @@ function blocs_html(string $version, array $valeurs): string
         if (!d.erreur) { note.textContent = 'Travail enregistré.'; }
       }).catch(function () { boutonDemander.disabled = false; alert('Connexion perdue : réessayez.'); });
     });
-    // Suivi : seulement pendant l'attente
+    // Suivi : pendant l'attente, et après un retour (le formateur peut accorder une demande de plus)
     setInterval(function () {
-      if (!etatCourant || etatCourant.etat !== 'attente') { return; }
+      if (!etatCourant || (etatCourant.etat !== 'attente' && !(etatCourant.etat === 'envoye' && !etatCourant.peut))) { return; }
       fetch(URL_RETOUR).then(function (r) { return r.json(); }).then(function (d) {
-        if (d.retour && d.retour.etat !== 'attente') { afficherRetour(d.retour); }
+        if (d.retour && (d.retour.etat !== etatCourant.etat || d.retour.peut !== etatCourant.peut)) { afficherRetour(d.retour); }
       }).catch(function () {});
     }, 5000);
   }

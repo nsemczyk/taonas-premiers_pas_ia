@@ -117,6 +117,9 @@ function prompt_mois_remplis(array $blocs): int
 // Une demande par participant et par séance (la dernière) :
 //   etat attente (demandée) → brouillon (analysée par Claude, en relecture)
 //        → envoye (le stagiaire la voit) | refuse (avec le mot du formateur)
+// Un retour par stagiaire : après un envoi, il ne peut redemander que si le
+// formateur lui accorde une demande de plus (supplement). Un refus ne compte pas.
+// La demande porte sur la version la plus récente (la 2 si elle est commencée).
 // La demande garde une copie de ce que le stagiaire a envoyé : la fiche peut
 // continuer de bouger pendant l'analyse.
 
@@ -149,20 +152,21 @@ function prompt_mois_retours(): array
 function prompt_mois_retour_public(?array $r): array
 {
     if (!$r) {
-        return ['etat' => ''];
+        return ['etat' => '', 'peut' => true];
     }
     return match ($r['etat']) {
-        'envoye' => ['etat' => 'envoye', 'texte' => $r['analyse']],
-        'refuse' => ['etat' => 'refuse', 'texte' => $r['message']],
-        default  => ['etat' => 'attente'],
+        'envoye' => ['etat' => 'envoye', 'texte' => $r['analyse'], 'peut' => (bool)$r['supplement']],
+        'refuse' => ['etat' => 'refuse', 'texte' => $r['message'], 'peut' => true],
+        default  => ['etat' => 'attente', 'peut' => false],
     };
 }
 
 // Nouvelle demande, ou demande remplacée tant que le formateur ne l'a pas en relecture.
-// Refusée sans version 1 ni résultat collé.
+// Refusée sans prompt ni résultat collé, ou si le retour a déjà été envoyé (sauf supplément).
 function prompt_mois_demander(int $participant_id, array $fiche): string
 {
-    $prompt = prompt_mois_assembler($fiche['v1']);
+    $version = prompt_mois_assembler($fiche['v2']) !== '' ? 2 : 1;
+    $prompt = prompt_mois_assembler($fiche['v' . $version]);
     if ($prompt === '' || $fiche['resultat'] === '') {
         return 'Remplissez votre version 1 et collez le résultat obtenu avant de demander un retour.';
     }
@@ -170,18 +174,21 @@ function prompt_mois_demander(int $participant_id, array $fiche): string
     if ($r && $r['etat'] === 'brouillon') {
         return 'Votre formateur est en train de relire votre demande.';
     }
-    $st = db()->prepare("INSERT INTO prompt_mois_retours (formation, seance, participant_id, etat, tache, prompt, resultat, bon, manque, analyse, message, demande_at)
-                         VALUES (?, ?, ?, 'attente', ?, ?, ?, ?, ?, '', '', NOW())
-                         ON DUPLICATE KEY UPDATE etat = 'attente', tache = VALUES(tache), prompt = VALUES(prompt), resultat = VALUES(resultat),
-                           bon = VALUES(bon), manque = VALUES(manque), analyse = '', message = '', demande_at = NOW()");
+    if ($r && $r['etat'] === 'envoye' && !$r['supplement']) {
+        return 'Vous avez déjà reçu votre retour. S\'il vous en faut un autre, demandez-le à votre formateur.';
+    }
+    $st = db()->prepare("INSERT INTO prompt_mois_retours (formation, seance, participant_id, etat, tache, prompt, version, resultat, bon, manque, analyse, message, supplement, demande_at)
+                         VALUES (?, ?, ?, 'attente', ?, ?, ?, ?, ?, ?, '', '', 0, NOW())
+                         ON DUPLICATE KEY UPDATE etat = 'attente', tache = VALUES(tache), prompt = VALUES(prompt), version = VALUES(version),
+                           resultat = VALUES(resultat), bon = VALUES(bon), manque = VALUES(manque), analyse = '', message = '', supplement = 0, demande_at = NOW()");
     $st->execute([formation_slug(), aujourdhui_local(), $participant_id,
-                  $fiche['tache'], $prompt, $fiche['resultat'], $fiche['bon'], $fiche['manque']]);
+                  $fiche['tache'], $prompt, $version, $fiche['resultat'], $fiche['bon'], $fiche['manque']]);
     return '';
 }
 
 // Consignes données à Claude pour l'analyse
 const PROMPT_MOIS_CONSIGNES_CLAUDE = <<<'TXT'
-Tu es formateur en IA générative et tu relis l'exercice « Un prompt pour dans un mois » d'un stagiaire débutant. Le stagiaire a choisi une tâche qui revient souvent dans son travail et a écrit un prompt réutilisable en 7 blocs (objectif, contexte, public, informations disponibles, contraintes, format attendu, critères de réussite), où ce qui change d'une fois sur l'autre est une variable entre [crochets]. Il l'a testé dans son outil d'IA, a collé le résultat obtenu et a noté lui-même ce qui était bon et ce qui manquait.
+Tu es formateur en IA générative et tu relis l'exercice « Un prompt pour dans un mois » d'un stagiaire débutant. Le stagiaire a choisi une tâche qui revient souvent dans son travail et a écrit un prompt réutilisable en 7 blocs (objectif, contexte, public, informations disponibles, contraintes, format attendu, critères de réussite), où ce qui change d'une fois sur l'autre est une variable entre [crochets]. Il l'a testé dans son outil d'IA, a collé le résultat obtenu et a noté lui-même ce qui était bon et ce qui manquait. S'il s'agit de sa version 2, aide-le à aller plus loin plutôt que de reprendre les bases.
 
 Rédige le retour qui l'aidera à écrire sa version 2, en trois parties dans cet ordre, chacune avec son titre seul sur sa ligne : « Ce qui est bon », « Ce qui manque », « Ce qui pourrait être amélioré ». Sous chaque titre, 2 à 4 points courts commençant par un tiret, concrets et rattachés à son texte : cite le bloc ou le passage concerné. Pour les améliorations, propose des formulations prêtes à reprendre dans son prompt. Si son auto-analyse est juste, dis-le ; si elle passe à côté de quelque chose, signale-le avec tact. Juge le résultat sur la tâche demandée, sans commenter l'outil d'IA utilisé. Si le prompt contient des données personnelles ou confidentielles (noms, coordonnées, données de santé, chiffres internes), signale-le en premier dans « Ce qui manque » et propose une variable à la place.
 
@@ -197,7 +204,7 @@ function prompt_mois_analyser(int $participant_id): string
     if (!$r || !in_array($r['etat'], ['attente', 'brouillon'], true)) {
         return 'Cette demande n\'est plus en attente.';
     }
-    $texte = '<tache>' . $r['tache'] . "</tache>\n\n<prompt>\n" . $r['prompt'] . "\n</prompt>\n\n<resultat>\n" . $r['resultat']
+    $texte = '<tache>' . $r['tache'] . "</tache>\n\n<prompt version=\"" . (int)$r['version'] . "\">\n" . $r['prompt'] . "\n</prompt>\n\n<resultat>\n" . $r['resultat']
            . "\n</resultat>\n\n<analyse_du_stagiaire>\n<ce_qui_est_bon>" . $r['bon'] . "</ce_qui_est_bon>\n<ce_qui_manque>"
            . $r['manque'] . "</ce_qui_manque>\n</analyse_du_stagiaire>";
     $reponse = claude_message(PROMPT_MOIS_CONSIGNES_CLAUDE, $texte);
@@ -207,6 +214,13 @@ function prompt_mois_analyser(int $participant_id): string
     $st = db()->prepare("UPDATE prompt_mois_retours SET etat = 'brouillon', analyse = ? WHERE id = ? AND etat IN ('attente', 'brouillon')");
     $st->execute([$reponse['texte'], $r['id']]);
     return '';
+}
+
+// Le formateur accorde une demande de plus à un stagiaire qui a déjà reçu son retour
+function prompt_mois_autoriser(int $participant_id): void
+{
+    $st = db()->prepare("UPDATE prompt_mois_retours SET supplement = 1 WHERE formation = ? AND seance = ? AND participant_id = ? AND etat = 'envoye'");
+    $st->execute([formation_slug(), aujourdhui_local(), $participant_id]);
 }
 
 // Le formateur envoie le retour relu (ou refuse, avec un mot)

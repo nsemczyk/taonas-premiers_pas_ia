@@ -36,6 +36,8 @@ CREATE TABLE IF NOT EXISTS `prompt_mois_retours` (
   `manque`         TEXT         NOT NULL,
   `analyse`        TEXT         NOT NULL,                     -- proposée par Claude, relue par le formateur
   `message`        VARCHAR(500) NOT NULL DEFAULT '',          -- mot du formateur en cas de refus
+  `version`        TINYINT UNSIGNED NOT NULL DEFAULT 1,       -- version du prompt envoyée (la plus récente)
+  `supplement`     TINYINT(1)   NOT NULL DEFAULT 0,           -- 1 : le formateur autorise une demande de plus
   `demande_at`     DATETIME     NOT NULL,
   `updated_at`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -43,3 +45,8 @@ CREATE TABLE IF NOT EXISTS `prompt_mois_retours` (
   CONSTRAINT `fk_prompt_mois_retour_participant` FOREIGN KEY (`participant_id`)
     REFERENCES `participants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table créée par une version précédente de ce script : colonnes ajoutées depuis
+ALTER TABLE `prompt_mois_retours`
+  ADD COLUMN IF NOT EXISTS `version` TINYINT UNSIGNED NOT NULL DEFAULT 1 AFTER `message`,
+  ADD COLUMN IF NOT EXISTS `supplement` TINYINT(1) NOT NULL DEFAULT 0 AFTER `version`;

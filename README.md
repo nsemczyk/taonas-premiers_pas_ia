@@ -625,9 +625,14 @@ demandes en attente s'affiche aussi dans le titre de l'onglet). Pour chacune :
 « Analyser avec Claude » prépare un retour en trois parties (ce qui est bon, ce
 qui manque, ce qui pourrait être amélioré), à relire et corriger avant
 « Envoyer au stagiaire » ; ou « Refuser », avec un mot facultatif. Le stagiaire
-reçoit la réponse sur sa page sans recharger, et peut redemander ensuite. Rien
-ne part chez le stagiaire sans votre envoi. Le retour envoyé figure dans le
-carnet de la journée.
+reçoit la réponse sur sa page sans recharger. Rien ne part chez le stagiaire
+sans votre envoi. Le retour envoyé figure dans le carnet de la journée.
+
+Un retour par stagiaire : un refus ne compte pas (il peut corriger et
+redemander), mais une fois le retour envoyé, le bouton disparaît. Pour lui en
+accorder un autre, « Lui permettre une nouvelle demande » sur sa fiche. La
+demande porte toujours sur sa version la plus récente : la version 2 si elle
+est commencée, avec le résultat qu'il a collé.
 
 L'analyse demande une clé API Anthropic dans `config.php` :
 
@@ -636,14 +641,15 @@ define('ANTHROPIC_API_KEY', 'sk-ant-…');   // https://platform.claude.com, Cl�
 ```
 
 Sans clé, le bouton « Analyser avec Claude » est remplacé par un rappel et vous
-pouvez écrire le retour vous-même. Modèle, version d'API et délai sont dans
+pouvez écrire le retour vous-même. Le modèle par défaut est Claude Sonnet 5.5
+(rapide, assez fin pour un brouillon que vous relisez). Modèle, version d'API et délai sont dans
 `core/claude.php` ; les consignes données à Claude dans
 `PROMPT_MOIS_CONSIGNES_CLAUDE` (`exercices/prompt-mois/fonctions.php`). Ce que
 le stagiaire a écrit (tâche, prompt, résultat, analyse) est envoyé à l'API
 d'Anthropic au moment où vous lancez l'analyse, et seulement à ce moment-là.
 
 Base existante : rejouer `exercices/prompt-mois/migration.sql` (table
-`prompt_mois_retours`), sans effet sur les fiches déjà saisies.
+`prompt_mois_retours` et ses colonnes), sans effet sur les fiches déjà saisies.
 
 ## Mon carnet de la journée (niveau 2)
 

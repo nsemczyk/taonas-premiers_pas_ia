@@ -6,7 +6,7 @@
 //
 // Aucune sortie : ce fichier ne définit que des helpers.
 
-const CLAUDE_MODELE  = 'claude-opus-5-5';
+const CLAUDE_MODELE  = 'claude-sonnet-5-5';   // plus rapide qu'Opus, assez fin pour un retour relu
 const CLAUDE_VERSION = '2026-10-21';   // en-tête anthropic-version
 const CLAUDE_DELAI   = 120;            // secondes
 

@@ -99,6 +99,13 @@ function avancement(array $f, int $nb_blocs): array
   </section>
   <?php endif; ?>
 
+  <?php if ($retours_ok && !prompt_mois_retour_actif()): ?>
+  <section class="card">
+    <p class="muted">Retours du formateur désactivés : les stagiaires ne voient pas le bouton de demande.
+      Pour les activer, ouvrez l'étape « <?= e(etape_titre(PROMPT_MOIS_ETAPE_RETOUR)) ?> » dans la télécommande.</p>
+  </section>
+  <?php endif; ?>
+
   <?php foreach ($demandes as $pid => $r): ?>
   <section class="card pm-demande" id="demande-<?= (int)$pid ?>">
     <h2>Demande de retour : <?= e($prenoms[$pid] ?? '?') ?></h2>

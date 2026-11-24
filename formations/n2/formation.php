@@ -13,6 +13,7 @@ return [
         'objectifs' => 'Mon objectif du jour',
         'boule'     => 'Le prompt boule de neige',
         'promptmois' => 'Un prompt pour dans un mois',
+        'promptmoisretour' => 'Un prompt pour dans un mois : retours du formateur',
 //        'battle'    => 'Prompt Battle',
         'bocal'     => 'Le bocal à secrets',
         'assistant' => 'La fiche de poste de votre assistant',

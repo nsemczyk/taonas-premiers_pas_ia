@@ -45,7 +45,11 @@ if (($_GET['json'] ?? '') === 'retour') {
 }
 
 $fiche    = $pret ? prompt_mois_fiche((int)$moi['id']) : prompt_mois_vide();
+$actif    = $retours && prompt_mois_retour_actif();
 $retour   = $retours ? prompt_mois_retour_public(prompt_mois_retour((int)$moi['id'])) : null;
+if ($retour !== null && !$actif && $retour['etat'] === '') {
+    $retour = null;   // interrupteur fermé et jamais demandé : rien à montrer
+}
 $objectif = $pret ? objectif_de((int)$moi['id']) : null;
 
 // Les 7 blocs d'une version, champs nommés v1[objectif]…
@@ -128,7 +132,9 @@ function blocs_html(string $version, array $valeurs): string
       <div class="pm-retour-texte" id="retour-texte" hidden></div>
       <p class="pm-retour-note" id="retour-note" hidden>Analyse préparée avec Claude, relue par votre formateur.</p>
     </div>
+    <?php if ($actif): ?>
     <button type="button" class="btn btn-ghost" id="demander">Demander un retour au formateur</button>
+    <?php endif; ?>
     <p class="pm-retour-note" id="retour-limite" hidden>Un retour par personne. S'il vous en faut un autre, demandez-le à votre formateur.</p>
     <?php endif; ?>
   </section>
@@ -243,6 +249,7 @@ function blocs_html(string $version, array $valeurs): string
       t.hidden = !r.texte;
       t.textContent = r.texte || '';
       document.getElementById('retour-note').hidden = r.etat !== 'envoye';
+      if (!boutonDemander) { return; }
       boutonDemander.disabled = r.etat === 'attente';
       boutonDemander.hidden = !r.peut && r.etat !== 'attente';
       document.getElementById('retour-limite').hidden = r.peut || r.etat !== 'envoye';
@@ -250,7 +257,7 @@ function blocs_html(string $version, array $valeurs): string
         : r.etat === 'refuse' ? 'Refaire ma demande' : 'Demander un retour au formateur';
     }
     afficherRetour(etatCourant);
-    boutonDemander.addEventListener('click', function () {
+    if (boutonDemander) boutonDemander.addEventListener('click', function () {
       if (!prompt('v1') || !document.getElementById('resultat').value.trim()) {
         alert('Remplissez votre version 1 et collez le résultat obtenu avant de demander un retour.');
         return;

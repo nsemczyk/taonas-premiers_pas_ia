@@ -621,7 +621,11 @@ mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/prompt
 
 À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
 
-**Retour du formateur (avec Claude)** : à l'étape d'analyse, le stagiaire colle
+**Retour du formateur (avec Claude)**, optionnel : il s'active en ouvrant l'étape
+« Un prompt pour dans un mois : retours du formateur » dans la télécommande
+(fermée par défaut, sans carte sur l'accueil). Fermée, le bouton de demande
+n'apparaît pas ; les retours déjà envoyés restent visibles. Ouverte : à
+l'étape d'analyse, le stagiaire colle
 le résultat obtenu avec sa version 1 et touche « Demander un retour au
 formateur ». La demande apparaît en tête de l'écran de suivi (le nombre de
 demandes en attente s'affiche aussi dans le titre de l'onglet). Pour chacune :

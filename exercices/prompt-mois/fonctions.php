@@ -10,7 +10,9 @@
 // Retour du formateur : le stagiaire colle le résultat obtenu et demande un
 // retour ; le formateur le voit dans prompt-mois-tableau.php, fait analyser la
 // demande par Claude (core/claude.php), relit, corrige, puis envoie (ou refuse
-// avec un mot). Le stagiaire le reçoit sur sa page.
+// avec un mot). Le stagiaire le reçoit sur sa page. Interrupteur : l'étape
+// PROMPT_MOIS_ETAPE_RETOUR de la télécommande, fermée par défaut ; fermée, le
+// bouton de demande disparaît (les retours déjà envoyés restent visibles).
 //
 // Aucune sortie : ce fichier ne définit que des helpers.
 require_once __DIR__ . '/../../core/etapes.php';
@@ -21,6 +23,7 @@ require_once __DIR__ . '/../../core/claude.php';
 const PROMPT_MOIS_MAX = 2000;            // caractères par champ
 const PROMPT_MOIS_MAX_RESULTAT = 10000;  // le résultat collé : les réponses d'IA sont longues
 const PROMPT_MOIS_MAX_MESSAGE = 500;     // mot du formateur en cas de refus
+const PROMPT_MOIS_ETAPE_RETOUR = 'promptmoisretour';   // interrupteur des demandes de retour
 
 // Les 7 blocs : clé => titre, aide, exemple pour un cas concret (version 1),
 // exemple en modèle avec [variables] (version 2)
@@ -150,6 +153,12 @@ function prompt_mois_retours_ok(): bool
     }
 }
 
+// Les stagiaires peuvent-ils demander un retour ? (étape ouverte dans la télécommande)
+function prompt_mois_retour_actif(): bool
+{
+    return etape_ouverte(PROMPT_MOIS_ETAPE_RETOUR);
+}
+
 function prompt_mois_retour(int $participant_id): ?array
 {
     $st = db()->prepare('SELECT * FROM prompt_mois_retours WHERE formation = ? AND seance = ? AND participant_id = ?');
@@ -182,6 +191,9 @@ function prompt_mois_retour_public(?array $r): array
 // Refusée sans prompt ni résultat collé, ou si le retour a déjà été envoyé (sauf supplément).
 function prompt_mois_demander(int $participant_id, array $fiche): string
 {
+    if (!prompt_mois_retour_actif()) {
+        return 'Les retours du formateur ne sont pas ouverts.';
+    }
     $version = 1;
     $prompt = prompt_mois_assembler($fiche['v1']);
     if ($prompt === '' || $fiche['resultat'] === '') {

@@ -75,6 +75,21 @@ function participant_courant(): ?array
     return $p;
 }
 
+// Participant de la séance qui porte ce prénom (casse et accents ignorés par la
+// collation), ou null. S'il y en a plusieurs (séance antérieure à l'unicité), le
+// premier arrivé : c'est lui qui a le travail.
+function participant_par_prenom(string $prenom): ?array
+{
+    $prenom = trim(preg_replace('/\s+/u', ' ', $prenom));
+    if ($prenom === '') {
+        return null;
+    }
+    $st = db()->prepare('SELECT id, prenom, equipe, jeton FROM participants
+                         WHERE formation = ? AND seance = ? AND prenom = ? ORDER BY id LIMIT 1');
+    $st->execute([formation_slug(), aujourdhui_local(), $prenom]);
+    return $st->fetch() ?: null;
+}
+
 // Cookie de séance : il suffit qu'il tienne la journée
 function cookie_participant(string $jeton, int $duree): void
 {

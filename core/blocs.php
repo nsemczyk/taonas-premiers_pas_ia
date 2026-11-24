@@ -70,6 +70,27 @@ function bloc_arrivee(): string
     }
     $p = participant_courant();
 
+    // Prénom déjà pris : c'est lui qui revient, ou un homonyme
+    $reprise = !$p && is_string($_GET['reprise'] ?? null) ? participant_par_prenom($_GET['reprise']) : null;
+    if ($reprise) {
+        $action = e(avec_f('arrivee.php'));
+        return '<section class="card">' . "\n"
+             . '    <h2>Re-bonjour ?</h2>' . "\n"
+             . '    <p class="lead">Il y a déjà un ou une « ' . e($reprise['prenom']) . ' » aujourd\'hui. C\'est vous ?</p>' . "\n"
+             . '    <form method="post" action="' . $action . '">' . "\n"
+             . '      <input type="hidden" name="action" value="reprendre">' . "\n"
+             . '      <input type="hidden" name="prenom" value="' . e($reprise['prenom']) . '">' . "\n"
+             . '      <button class="btn btn-primary">Oui, je reprends ma session</button>' . "\n"
+             . '    </form>' . "\n"
+             . '    <form method="post" action="' . $action . '" style="margin-top:1.75rem">' . "\n"
+             . '      <input type="hidden" name="action" value="arriver">' . "\n"
+             . '      <label class="field" for="prenom-arrivee">Non ? Ajoutez l\'initiale de votre nom</label>' . "\n"
+             . '      <input class="field" id="prenom-arrivee" name="prenom" type="text" maxlength="40" required' . "\n"
+             . '             value="' . e($reprise['prenom']) . ' " placeholder="Par exemple : ' . e($reprise['prenom']) . ' D.">' . "\n"
+             . '      <button class="btn btn-ghost">C\'est moi !</button>' . "\n"
+             . '    </form>' . "\n"
+             . '  </section>';
+    }
     if (!$p) {
         return '<section class="card">' . "\n"
              . '    <h2>Bienvenue !</h2>' . "\n"

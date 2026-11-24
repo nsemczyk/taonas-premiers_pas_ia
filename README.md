@@ -172,6 +172,15 @@ relie à lui pour la journée : pas de compte, pas de mot de passe, et le lien
 tombe de lui-même le lendemain. Ce même lien servira aux exercices individuels
 et d'équipe.
 
+Les prénoms sont uniques dans la séance (majuscules et accents ignorés). Un
+participant qui a perdu son cookie (navigation privée, navigateur intégré d'une
+appli de scan ou de messagerie, autre appareil) retape son prénom : l'accueil
+lui demande « C'est vous ? » et le relie à sa ligne, travail compris. Un
+homonyme répond non et ajoute l'initiale de son nom (« Marie D. »). Les deux
+appareils restent reliés : pratique pour passer du téléphone à l'ordinateur
+(atelier workflow). Contrepartie assumée : en salle, n'importe qui peut
+reprendre la session d'un prénom déjà inscrit.
+
 `/n2/equipes.php?cle=VOTRE_CLE`, accessible aussi depuis la télécommande, liste
 les arrivées en direct. Toucher une équipe y place la personne, toucher de
 nouveau son équipe l'en retire. Une équipe complète refuse un membre de plus.

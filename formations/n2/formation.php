@@ -12,6 +12,7 @@ return [
     'etapes'      => [
         'objectifs' => 'Mon objectif du jour',
         'boule'     => 'Le prompt boule de neige',
+        'promptmois' => 'Un prompt pour dans un mois',
 //        'battle'    => 'Prompt Battle',
         'bocal'     => 'Le bocal à secrets',
         'assistant' => 'La fiche de poste de votre assistant',
@@ -20,7 +21,6 @@ return [
         'tri'       => 'Jeu de tri : qui est quoi ?',
         'workflow'  => 'Atelier workflow',
         'candidat'  => 'Le candidat qui répond à côté',
-        'promptmois' => 'Un prompt pour dans un mois',
         'avis'      => 'Votre avis',
         'carnet'    => 'Mon carnet de la journée',
     ],

@@ -11,7 +11,7 @@
 
   <?= ''/*bloc_battle('battle')*/ ?>
 
-<?= bloc_prompt_mois('promptmois') ?>
+  <?= bloc_prompt_mois('promptmois') ?>
 
   <?= bloc_bocal('bocal') ?>
 

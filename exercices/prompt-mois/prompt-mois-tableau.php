@@ -62,7 +62,8 @@ function avancement(array $f, int $nb_blocs): array
         ['Tâche', $f['tache'] !== ''],
         ['Version 1 : ' . $v1 . ' / ' . $nb_blocs, $v1 === $nb_blocs, $v1 > 0],
         ['Analyse', $f['bon'] !== '' && $f['manque'] !== '', $f['bon'] !== '' || $f['manque'] !== ''],
-        ['Version 2' . ($v2 ? ' : ' . $v2 . ' / ' . $nb_blocs : ''), $v2 === $nb_blocs && $f['v2'] != $f['v1'], $v2 > 0],
+        ['Version 2' . ($v2 ? ' : ' . $v2 . ' / ' . $nb_blocs : ''),
+         $v2 === $nb_blocs && $f['v2'] != $f['v1'] && preg_match('/\[[^\[\]\n]{1,60}\]/u', prompt_mois_assembler($f['v2'])), $v2 > 0],
     ];
 }
 ?><!DOCTYPE html>
@@ -166,7 +167,7 @@ function avancement(array $f, int $nb_blocs): array
       </tbody>
     </table>
     <p class="muted pm-legende"><span class="pm-etape faite">fait</span> <span class="pm-etape en-cours">en cours</span> <span class="pm-etape">pas commencé</span>
-      · Version 2 « faite » : 7 blocs remplis et différente de la version 1.</p>
+      · Version 1 : le cas concret testé. Version 2 « faite » : le modèle, 7 blocs remplis, différent de la version 1 et avec au moins une [variable].</p>
     <?php endif; ?>
   </section>
 

@@ -596,14 +596,17 @@ liée si possible à son objectif du jour (rappelé en haut de la page s'il a
 écrit son post-it). Individuel, sans points, ouvert par l'étape « Un prompt
 pour dans un mois ».
 
-La page suit la consigne : 1. la tâche ; 2. la version 1 en 7 blocs (objectif,
-contexte, public / destinataire, informations disponibles, contraintes, format
-attendu, critères de réussite), les variables entre [crochets], à copier pour
-la tester ; 3. l'analyse (ce qui est bon, ce qui manque) ; 4. la version 2,
-qui peut repartir de la version 1 ; 5. « Copier mon prompt final » (la
-version 2, sinon la version 1) pour sa bibliothèque de prompts. Tout est
-enregistré au fil de la frappe. Les blocs : `PROMPT_MOIS_BLOCS` dans
-`exercices/prompt-mois/fonctions.php`.
+La page suit la consigne, du concret vers le modèle : 1. la tâche ; 2. la
+version 1 en 7 blocs (objectif, contexte, public / destinataire, informations
+disponibles, contraintes, format attendu, critères de réussite), écrite pour
+un cas réel, sans variables, à copier pour la tester telle quelle ; 3.
+l'analyse (résultat collé, ce qui est bon, ce qui manque, demande de retour) ;
+4. la version 2, le modèle réutilisable : repartie de la version 1, corrigée,
+avec ce qui change d'une fois sur l'autre en [variables] (la page les repère et
+les compte en direct) ; 5. « Copier mon prompt final » (la version 2, sinon la
+version 1) pour sa bibliothèque de prompts. Tout est enregistré au fil de la
+frappe. Les blocs et leurs deux exemples (cas concret, modèle) :
+`PROMPT_MOIS_BLOCS` dans `exercices/prompt-mois/fonctions.php`.
 
 **Côté formateur** : `/n2/prompt-mois-tableau.php?cle=VOTRE_CLE`, aussi sur la
 télécommande. Un tableau d'avancement (tâche, version 1 sur 7 blocs, analyse,
@@ -631,8 +634,9 @@ sans votre envoi. Le retour envoyé figure dans le carnet de la journée.
 Un retour par stagiaire : un refus ne compte pas (il peut corriger et
 redemander), mais une fois le retour envoyé, le bouton disparaît. Pour lui en
 accorder un autre, « Lui permettre une nouvelle demande » sur sa fiche. La
-demande porte toujours sur sa version la plus récente : la version 2 si elle
-est commencée, avec le résultat qu'il a collé.
+demande porte toujours sur la version 1, le cas concret testé, avec le
+résultat qu'il a collé ; le retour se termine par les éléments à transformer
+en variables dans la version 2.
 
 L'analyse demande une clé API Anthropic dans `config.php` :
 

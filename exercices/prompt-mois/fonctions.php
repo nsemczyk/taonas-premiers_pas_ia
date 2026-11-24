@@ -1,9 +1,11 @@
 <?php
 // Un prompt pour dans un mois : chaque stagiaire choisit une tâche récurrente
-// (liée si possible à son objectif du jour), écrit un prompt en 7 blocs avec
-// ses variables entre [crochets], le teste, l'analyse (ce qui est bon, ce qui
-// manque), en écrit une version 2, puis le copie dans sa bibliothèque de
-// prompts. Individuel, sans points. Enregistré au fil de la frappe.
+// (liée si possible à son objectif du jour), écrit un prompt en 7 blocs pour un
+// cas concret (version 1, testable telle quelle), le teste, l'analyse (ce qui
+// est bon, ce qui manque), puis en tire son modèle réutilisable (version 2) :
+// corrigé, avec ce qui change d'une fois sur l'autre en [variables]. Il le
+// copie dans sa bibliothèque de prompts. Individuel, sans points. Enregistré
+// au fil de la frappe.
 //
 // Retour du formateur : le stagiaire colle le résultat obtenu et demande un
 // retour ; le formateur le voit dans prompt-mois-tableau.php, fait analyser la
@@ -20,15 +22,30 @@ const PROMPT_MOIS_MAX = 2000;            // caractères par champ
 const PROMPT_MOIS_MAX_RESULTAT = 10000;  // le résultat collé : les réponses d'IA sont longues
 const PROMPT_MOIS_MAX_MESSAGE = 500;     // mot du formateur en cas de refus
 
-// Les 7 blocs : clé => titre, aide, exemple
+// Les 7 blocs : clé => titre, aide, exemple pour un cas concret (version 1),
+// exemple en modèle avec [variables] (version 2)
 const PROMPT_MOIS_BLOCS = [
-    'objectif'     => ['Objectif', 'Ce que je veux obtenir, concrètement.', 'Ex. : un compte rendu de réunion prêt à envoyer'],
-    'contexte'     => ['Contexte', 'Qui je suis, dans quelle situation.', 'Ex. : je suis assistante de direction dans une PME de [effectif] personnes'],
-    'public'       => ['Public / destinataire', 'À qui s\'adresse le résultat.', 'Ex. : les participants de la réunion [nom de la réunion]'],
-    'informations' => ['Informations disponibles', 'Ce que je fournis : faits, documents, chiffres.', 'Ex. : mes notes brutes ci-dessous : [notes]'],
-    'contraintes'  => ['Contraintes', 'Longueur, ton, interdits, délais.', 'Ex. : une page maximum, ton neutre, ne rien inventer'],
-    'format'       => ['Format attendu', 'E-mail, tableau, liste, plan, script…', 'Ex. : trois parties : décisions, actions (qui, quoi, quand), points ouverts'],
-    'criteres'     => ['Critères de réussite', 'À quoi je reconnais un bon résultat.', 'Ex. : chaque action a un responsable et une date'],
+    'objectif'     => ['Objectif', 'Ce que je veux obtenir, concrètement.',
+                       'Ex. : le compte rendu de la réunion d\'équipe du lundi 3 mars, prêt à envoyer',
+                       'Ex. : le compte rendu de la réunion [nom de la réunion] du [date], prêt à envoyer'],
+    'contexte'     => ['Contexte', 'Qui je suis, dans quelle situation.',
+                       'Ex. : je suis assistante de direction dans une PME de 60 personnes',
+                       'Ex. : je suis assistante de direction dans une PME de 60 personnes'],
+    'public'       => ['Public / destinataire', 'À qui s\'adresse le résultat.',
+                       'Ex. : les 8 participants de la réunion, dont deux nouveaux arrivants',
+                       'Ex. : les participants de la réunion [nom de la réunion]'],
+    'informations' => ['Informations disponibles', 'Ce que je fournis : faits, documents, chiffres.',
+                       'Ex. : mes notes brutes ci-dessous : (collez vos notes)',
+                       'Ex. : mes notes brutes ci-dessous : [notes]'],
+    'contraintes'  => ['Contraintes', 'Longueur, ton, interdits, délais.',
+                       'Ex. : une page maximum, ton neutre, ne rien inventer',
+                       'Ex. : une page maximum, ton neutre, ne rien inventer'],
+    'format'       => ['Format attendu', 'E-mail, tableau, liste, plan, script…',
+                       'Ex. : trois parties : décisions, actions (qui, quoi, quand), points ouverts',
+                       'Ex. : trois parties : décisions, actions (qui, quoi, quand), points ouverts'],
+    'criteres'     => ['Critères de réussite', 'À quoi je reconnais un bon résultat.',
+                       'Ex. : chaque action a un responsable et une date',
+                       'Ex. : chaque action a un responsable et une date'],
 ];
 
 function prompt_mois_table_ok(): bool
@@ -119,7 +136,7 @@ function prompt_mois_remplis(array $blocs): int
 //        → envoye (le stagiaire la voit) | refuse (avec le mot du formateur)
 // Un retour par stagiaire : après un envoi, il ne peut redemander que si le
 // formateur lui accorde une demande de plus (supplement). Un refus ne compte pas.
-// La demande porte sur la version la plus récente (la 2 si elle est commencée).
+// La demande porte sur la version 1 : le cas concret, le seul qui se teste tel quel.
 // La demande garde une copie de ce que le stagiaire a envoyé : la fiche peut
 // continuer de bouger pendant l'analyse.
 
@@ -165,8 +182,8 @@ function prompt_mois_retour_public(?array $r): array
 // Refusée sans prompt ni résultat collé, ou si le retour a déjà été envoyé (sauf supplément).
 function prompt_mois_demander(int $participant_id, array $fiche): string
 {
-    $version = prompt_mois_assembler($fiche['v2']) !== '' ? 2 : 1;
-    $prompt = prompt_mois_assembler($fiche['v' . $version]);
+    $version = 1;
+    $prompt = prompt_mois_assembler($fiche['v1']);
     if ($prompt === '' || $fiche['resultat'] === '') {
         return 'Remplissez votre version 1 et collez le résultat obtenu avant de demander un retour.';
     }
@@ -188,9 +205,9 @@ function prompt_mois_demander(int $participant_id, array $fiche): string
 
 // Consignes données à Claude pour l'analyse
 const PROMPT_MOIS_CONSIGNES_CLAUDE = <<<'TXT'
-Tu es formateur en IA générative et tu relis l'exercice « Un prompt pour dans un mois » d'un stagiaire débutant. Le stagiaire a choisi une tâche qui revient souvent dans son travail et a écrit un prompt réutilisable en 7 blocs (objectif, contexte, public, informations disponibles, contraintes, format attendu, critères de réussite), où ce qui change d'une fois sur l'autre est une variable entre [crochets]. Il l'a testé dans son outil d'IA, a collé le résultat obtenu et a noté lui-même ce qui était bon et ce qui manquait. S'il s'agit de sa version 2, aide-le à aller plus loin plutôt que de reprendre les bases.
+Tu es formateur en IA générative et tu relis l'exercice « Un prompt pour dans un mois » d'un stagiaire débutant. Le stagiaire a choisi une tâche qui revient souvent dans son travail et a écrit, pour un cas concret de cette tâche, un prompt en 7 blocs (objectif, contexte, public, informations disponibles, contraintes, format attendu, critères de réussite). Il l'a testé dans son outil d'IA, a collé le résultat obtenu et a noté lui-même ce qui était bon et ce qui manquait. Ensuite, il corrigera ce prompt et en fera un modèle réutilisable, où ce qui change d'une fois sur l'autre deviendra une variable entre [crochets] : il est donc normal que ce prompt n'en contienne pas encore.
 
-Rédige le retour qui l'aidera à écrire sa version 2, en trois parties dans cet ordre, chacune avec son titre seul sur sa ligne : « Ce qui est bon », « Ce qui manque », « Ce qui pourrait être amélioré ». Sous chaque titre, 2 à 4 points courts commençant par un tiret, concrets et rattachés à son texte : cite le bloc ou le passage concerné. Pour les améliorations, propose des formulations prêtes à reprendre dans son prompt. Si son auto-analyse est juste, dis-le ; si elle passe à côté de quelque chose, signale-le avec tact. Juge le résultat sur la tâche demandée, sans commenter l'outil d'IA utilisé. Si le prompt contient des données personnelles ou confidentielles (noms, coordonnées, données de santé, chiffres internes), signale-le en premier dans « Ce qui manque » et propose une variable à la place.
+Rédige le retour qui l'aidera à écrire sa version 2, en trois parties dans cet ordre, chacune avec son titre seul sur sa ligne : « Ce qui est bon », « Ce qui manque », « Ce qui pourrait être amélioré ». Sous chaque titre, 2 à 4 points courts commençant par un tiret, concrets et rattachés à son texte : cite le bloc ou le passage concerné. Pour les améliorations, propose des formulations prêtes à reprendre dans son prompt, et termine par une ligne « À transformer en variables : » qui liste les éléments propres à ce cas qui changeront la prochaine fois (par exemple [date], [notes]). Si son auto-analyse est juste, dis-le ; si elle passe à côté de quelque chose, signale-le avec tact. Juge le résultat sur la tâche demandée, sans commenter l'outil d'IA utilisé. Si le prompt contient des données personnelles ou confidentielles (noms, coordonnées, données de santé, chiffres internes), signale-le en premier dans « Ce qui manque » et propose une variable à la place.
 
 Vouvoie le stagiaire, ton bienveillant et direct, sans jargon. Texte brut, sans Markdown (ni #, ni **). 250 mots maximum.
 
@@ -267,7 +284,7 @@ carnet_section('promptmois', function (CarnetPdf $pdf, array $p) {
     $pdf->exercice();
     $pdf->texte('Votre tâche récurrente : ' . ($f['tache'] !== '' ? $f['tache'] : '—'), 'B');
     if ($v2 !== '') {
-        $pdf->encadre($v1, 'Version 1');
+        $pdf->encadre($v1, 'Version 1 : le cas concret testé');
     }
     if ($f['resultat'] !== '') {
         $pdf->encadre($f['resultat'], 'Le résultat obtenu avec la version 1');
@@ -280,13 +297,14 @@ carnet_section('promptmois', function (CarnetPdf $pdf, array $p) {
     if ($retour && $retour['etat'] === 'envoye') {
         $pdf->encadre($retour['analyse'], 'Le retour du formateur');
     }
-    $pdf->titre('Votre prompt final, à ranger dans votre bibliothèque de prompts');
+    $pdf->titre($v2 !== '' ? 'Votre modèle réutilisable, à ranger dans votre bibliothèque de prompts'
+                           : 'Votre prompt, à ranger dans votre bibliothèque de prompts');
     $pdf->encadre($v2 !== '' ? $v2 : $v1);
     $pdf->note('Dans un mois : copiez-le, remplacez les [variables], c\'est prêt.');
 });
 carnet_memo('promptmois', function (CarnetPdf $pdf) {
     $pdf->titre('Un prompt réutilisable en 7 blocs');
     $pdf->tableau(['Bloc', 'Ce qu\'on y met', 'Exemple'],
-                  array_map(fn($b) => [$b[0], $b[1], preg_replace('/^Ex\. : /u', '', $b[2])], array_values(PROMPT_MOIS_BLOCS)), [38, 62, 80]);
-    $pdf->note('Ce qui change d\'une fois sur l\'autre devient une variable entre [crochets].');
+                  array_map(fn($b) => [$b[0], $b[1], preg_replace('/^Ex\. : /u', '', $b[3])], array_values(PROMPT_MOIS_BLOCS)), [38, 62, 80]);
+    $pdf->note('Écrivez-le d\'abord pour un cas réel et testez-le ; puis ce qui change d\'une fois sur l\'autre devient une variable entre [crochets].');
 });

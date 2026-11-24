@@ -1,9 +1,10 @@
 <?php
 // Un prompt pour dans un mois, côté stagiaire, dans l'ordre de la consigne :
-// la tâche récurrente (objectif du jour rappelé), la version 1 en 7 blocs à
-// copier pour la tester, l'analyse (résultat collé, demande de retour au
-// formateur), la version 2 (repartie de la version 1), puis la copie du prompt
-// final pour sa bibliothèque. Enregistré au fil de la frappe.
+// la tâche récurrente (objectif du jour rappelé), la version 1 en 7 blocs pour
+// un cas concret, à copier pour la tester, l'analyse (résultat collé, demande
+// de retour au formateur), la version 2 : le modèle réutilisable, corrigé, avec
+// ses [variables] (repérées en direct), puis la copie du prompt final pour sa
+// bibliothèque. Enregistré au fil de la frappe.
 require __DIR__ . '/fonctions.php';
 
 const ETAPE_PROMPT_MOIS = 'promptmois';
@@ -51,7 +52,8 @@ $objectif = $pret ? objectif_de((int)$moi['id']) : null;
 function blocs_html(string $version, array $valeurs): string
 {
     $h = '<div class="pm-blocs">';
-    foreach (PROMPT_MOIS_BLOCS as $cle => [$titre, $aide, $exemple]) {
+    foreach (PROMPT_MOIS_BLOCS as $cle => [$titre, $aide, $exemple_cas, $exemple_modele]) {
+        $exemple = $version === 'v1' ? $exemple_cas : $exemple_modele;
         $id = $version . '-' . $cle;
         $h .= '<div class="pm-bloc">'
             . '<label class="pm-titre" for="' . e($id) . '">' . e($titre) . '</label>'
@@ -102,9 +104,10 @@ function blocs_html(string $version, array $valeurs): string
   </section>
 
   <section class="card">
-    <h2>2. Votre prompt, version 1</h2>
-    <p class="consigne">Remplissez les 7 blocs. Ce qui change d'une fois sur l'autre devient une variable entre <strong>[crochets]</strong> :
-      [date], [nom du client], [notes]… Puis copiez le prompt et testez-le dans votre outil d'IA.</p>
+    <h2>2. Votre prompt, version 1 : un cas concret</h2>
+    <p class="consigne">Remplissez les 7 blocs pour un cas réel de cette tâche (la dernière fois que vous l'avez faite, ou la prochaine) :
+      vraies dates, vrais éléments, sans crochets. Puis copiez le prompt et testez-le tel quel dans votre outil d'IA.
+      Données sensibles : inventez ou anonymisez.</p>
     <?= blocs_html('v1', $fiche['v1']) ?>
     <button type="button" class="btn btn-gold" data-copier="v1">Copier la version 1 pour la tester</button>
     <div class="copied-note" id="note-v1">Copiée : collez-la dans votre outil d'IA.</div>
@@ -131,18 +134,18 @@ function blocs_html(string $version, array $valeurs): string
   </section>
 
   <section class="card">
-    <h2>4. Version 2 : améliorez, retestez</h2>
-    <p class="consigne">Repartez de votre version 1 et corrigez ce qui manquait.</p>
+    <h2>4. Version 2 : votre modèle réutilisable</h2>
+    <p class="consigne">Repartez de votre version 1, en deux temps : <strong>corrigez</strong> ce qui manquait, puis remplacez tout ce qui
+      changera la prochaine fois par une variable entre <strong>[crochets]</strong> : [date], [nom du client], [notes]…</p>
     <button type="button" class="btn btn-ghost" id="reprendre">Reprendre ma version 1 ici</button>
     <?= blocs_html('v2', $fiche['v2']) ?>
-    <button type="button" class="btn btn-gold" data-copier="v2">Copier la version 2 pour la tester</button>
-    <div class="copied-note" id="note-v2">Copiée : collez-la dans votre outil d'IA.</div>
+    <p class="pm-variables" id="variables-v2"></p>
     <details class="doc"><summary>Voir le prompt assemblé</summary><pre id="apercu-v2"></pre></details>
   </section>
 
   <section class="card a-toi">
     <h2>5. Enregistrez-le dans votre bibliothèque de prompts</h2>
-    <p class="consigne">Copiez votre prompt final (la version 2, ou la version 1 si vous n'en avez pas fait d'autre) et collez-le là où vous rangez vos prompts : notes, document, outil d'IA. Dans un mois, il suffira de remplacer les [variables].</p>
+    <p class="consigne">Copiez votre modèle (la version 2, ou la version 1 si vous n'en avez pas fait d'autre) et collez-le là où vous rangez vos prompts : notes, document, outil d'IA. Dans un mois, il suffira de remplacer les [variables] par le cas du jour.</p>
     <button type="button" class="btn btn-primary" data-copier="final">Copier mon prompt final</button>
     <div class="copied-note" id="note-final">Copié : rangez-le dans votre bibliothèque.</div>
     <p class="sauvegarde" id="sauvegarde"><?= $fiche['tache'] !== '' || implode('', $fiche['v1']) !== '' ? 'Travail enregistré.' : 'Rien d\'enregistré pour l\'instant.' ?></p>
@@ -177,9 +180,23 @@ function blocs_html(string $version, array $valeurs): string
     }).filter(Boolean).join('\n\n');
   }
   function vide(v) { return prompt(v) === ''; }
+  // Les [variables] du modèle, repérées au fil de la frappe
+  function variables() {
+    var p = prompt('v2'), vues = {}, liste = [];
+    (p.match(/\[[^\[\]\n]{1,60}\]/g) || []).forEach(function (v) {
+      var k = v.toLowerCase();
+      if (!vues[k]) { vues[k] = true; liste.push(v); }
+    });
+    var el = document.getElementById('variables-v2');
+    el.className = 'pm-variables' + (p && !liste.length ? ' aucune' : '');
+    el.textContent = !p ? '' : liste.length
+      ? (liste.length > 1 ? liste.length + ' variables : ' : '1 variable : ') + liste.join(', ')
+      : 'Aucune [variable] pour l\'instant : qu\'est-ce qui changera la prochaine fois ?';
+  }
   function apercus() {
     document.getElementById('apercu-v1').textContent = prompt('v1') || '(vide)';
     document.getElementById('apercu-v2').textContent = prompt('v2') || '(vide)';
+    variables();
   }
   apercus();
 
@@ -229,7 +246,7 @@ function blocs_html(string $version, array $valeurs): string
       boutonDemander.disabled = r.etat === 'attente';
       boutonDemander.hidden = !r.peut && r.etat !== 'attente';
       document.getElementById('retour-limite').hidden = r.peut || r.etat !== 'envoye';
-      boutonDemander.textContent = r.etat === 'envoye' ? 'Demander un second retour (sur ma version la plus récente)'
+      boutonDemander.textContent = r.etat === 'envoye' ? 'Demander un second retour'
         : r.etat === 'refuse' ? 'Refaire ma demande' : 'Demander un retour au formateur';
     }
     afficherRetour(etatCourant);

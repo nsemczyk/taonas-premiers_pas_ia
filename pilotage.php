@@ -58,6 +58,7 @@ if (formation()['outils'] ?? []) {
               'workflow_schemas' => 'exercices/workflow/migration.sql',
               'candidat_votes' => 'exercices/candidat/migration.sql',
               'prompt_mois_fiches' => 'exercices/prompt-mois/migration.sql',
+              'prompt_mois_retours' => 'exercices/prompt-mois/migration.sql',
               'satisfaction_reponses' => 'migration-questionnaire.sql'] as $cible => $script) {
         [$table, $colonne] = explode('.', $cible . '.1');   // table ou table.colonne attendue
         try {

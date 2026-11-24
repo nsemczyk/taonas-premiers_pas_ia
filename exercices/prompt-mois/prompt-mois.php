@@ -1,8 +1,9 @@
 <?php
 // Un prompt pour dans un mois, côté stagiaire, dans l'ordre de la consigne :
 // la tâche récurrente (objectif du jour rappelé), la version 1 en 7 blocs à
-// copier pour la tester, l'analyse, la version 2 (repartie de la version 1),
-// puis la copie du prompt final pour sa bibliothèque. Enregistré au fil de la frappe.
+// copier pour la tester, l'analyse (résultat collé, demande de retour au
+// formateur), la version 2 (repartie de la version 1), puis la copie du prompt
+// final pour sa bibliothèque. Enregistré au fil de la frappe.
 require __DIR__ . '/fonctions.php';
 
 const ETAPE_PROMPT_MOIS = 'promptmois';
@@ -23,7 +24,27 @@ if (($_GET['json'] ?? '') === 'sauver' && $_SERVER['REQUEST_METHOD'] === 'POST')
     exit;
 }
 
+// Retour du formateur : demande (la fiche envoyée est enregistrée d'abord), puis suivi
+$retours = $pret && prompt_mois_retours_ok();
+if (($_GET['json'] ?? '') === 'demander' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $in = json_decode(file_get_contents('php://input'), true);
+    $erreur = 'L\'exercice est fermé.';
+    if ($retours && is_array($in)) {
+        prompt_mois_sauver((int)$moi['id'], $in);
+        $erreur = prompt_mois_demander((int)$moi['id'], prompt_mois_fiche((int)$moi['id']));
+    }
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['erreur' => $erreur, 'retour' => $retours ? prompt_mois_retour_public(prompt_mois_retour((int)$moi['id'])) : null]);
+    exit;
+}
+if (($_GET['json'] ?? '') === 'retour') {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['retour' => $retours ? prompt_mois_retour_public(prompt_mois_retour((int)$moi['id'])) : null]);
+    exit;
+}
+
 $fiche    = $pret ? prompt_mois_fiche((int)$moi['id']) : prompt_mois_vide();
+$retour   = $retours ? prompt_mois_retour_public(prompt_mois_retour((int)$moi['id'])) : null;
 $objectif = $pret ? objectif_de((int)$moi['id']) : null;
 
 // Les 7 blocs d'une version, champs nommés v1[objectif]…
@@ -92,10 +113,20 @@ function blocs_html(string $version, array $valeurs): string
 
   <section class="card">
     <h2>3. Analysez le résultat</h2>
+    <label class="field" for="resultat">Collez ici le résultat obtenu avec votre version 1</label>
+    <textarea class="field saisie" id="resultat" rows="6" maxlength="<?= PROMPT_MOIS_MAX_RESULTAT ?>"><?= e($fiche['resultat']) ?></textarea>
     <label class="field" for="bon">Qu'est-ce qui est bon ?</label>
     <textarea class="field saisie" id="bon" rows="3" maxlength="<?= PROMPT_MOIS_MAX ?>"><?= e($fiche['bon']) ?></textarea>
     <label class="field" for="manque">Qu'est-ce qui manque ?</label>
     <textarea class="field saisie" id="manque" rows="3" maxlength="<?= PROMPT_MOIS_MAX ?>"><?= e($fiche['manque']) ?></textarea>
+    <?php if ($retour !== null): ?>
+    <div class="pm-retour" id="retour" data-etat="<?= e($retour['etat']) ?>">
+      <p class="pm-retour-etat" id="retour-etat"></p>
+      <div class="pm-retour-texte" id="retour-texte" hidden></div>
+      <p class="pm-retour-note" id="retour-note" hidden>Analyse préparée avec Claude, relue par votre formateur.</p>
+    </div>
+    <button type="button" class="btn btn-ghost" id="demander">Demander un retour au formateur</button>
+    <?php endif; ?>
   </section>
 
   <section class="card">
@@ -133,7 +164,7 @@ function blocs_html(string $version, array $valeurs): string
 
   function fiche() {
     var f = { tache: document.getElementById('tache').value, bon: document.getElementById('bon').value,
-              manque: document.getElementById('manque').value, v1: {}, v2: {} };
+              manque: document.getElementById('manque').value, resultat: document.getElementById('resultat').value, v1: {}, v2: {} };
     Object.keys(TITRES).forEach(function (b) { f.v1[b] = champ('v1', b).value; f.v2[b] = champ('v2', b).value; });
     return f;
   }
@@ -171,6 +202,57 @@ function blocs_html(string $version, array $valeurs): string
   window.addEventListener('pagehide', function () {
     if (attente) { navigator.sendBeacon(URL_SAUVER, new Blob([JSON.stringify(fiche())], { type: 'application/json' })); }
   });
+
+  // Retour du formateur : demande, puis suivi tant qu'il n'est pas arrivé
+  var blocRetour = document.getElementById('retour');
+  if (blocRetour) {
+    var URL_DEMANDER = <?= json_encode(avec_f('prompt-mois.php?json=demander')) ?>;
+    var URL_RETOUR = <?= json_encode(avec_f('prompt-mois.php?json=retour')) ?>;
+    var boutonDemander = document.getElementById('demander');
+    var ETATS = {
+      '': '',
+      attente: 'Demande envoyée : votre formateur vous répond dans un instant.',
+      envoye: 'Le retour de votre formateur :',
+      refuse: 'Votre formateur n\'a pas retenu la demande :'
+    };
+    var etatCourant = <?= json_encode($retour, JSON_UNESCAPED_UNICODE) ?>;
+    function afficherRetour(r) {
+      if (!r) { return; }
+      etatCourant = r;
+      blocRetour.dataset.etat = r.etat;
+      document.getElementById('retour-etat').textContent = ETATS[r.etat] || '';
+      var t = document.getElementById('retour-texte');
+      t.hidden = !r.texte;
+      t.textContent = r.texte || '';
+      document.getElementById('retour-note').hidden = r.etat !== 'envoye';
+      boutonDemander.disabled = r.etat === 'attente';
+      boutonDemander.textContent = r.etat === 'envoye' || r.etat === 'refuse'
+        ? 'Demander un nouveau retour' : 'Demander un retour au formateur';
+    }
+    afficherRetour(etatCourant);
+    boutonDemander.addEventListener('click', function () {
+      if (!prompt('v1') || !document.getElementById('resultat').value.trim()) {
+        alert('Remplissez votre version 1 et collez le résultat obtenu avant de demander un retour.');
+        return;
+      }
+      clearTimeout(attente); attente = null;
+      boutonDemander.disabled = true;
+      fetch(URL_DEMANDER, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fiche())
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (d.erreur) { alert(d.erreur); }
+        afficherRetour(d.retour);
+        if (!d.erreur) { note.textContent = 'Travail enregistré.'; }
+      }).catch(function () { boutonDemander.disabled = false; alert('Connexion perdue : réessayez.'); });
+    });
+    // Suivi : seulement pendant l'attente
+    setInterval(function () {
+      if (!etatCourant || etatCourant.etat !== 'attente') { return; }
+      fetch(URL_RETOUR).then(function (r) { return r.json(); }).then(function (d) {
+        if (d.retour && d.retour.etat !== 'attente') { afficherRetour(d.retour); }
+      }).catch(function () {});
+    }, 5000);
+  }
 
   // La version 2 repart de la version 1
   document.getElementById('reprendre').addEventListener('click', function () {

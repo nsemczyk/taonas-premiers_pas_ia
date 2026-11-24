@@ -51,6 +51,14 @@ define('MAIL_EXPEDITEUR_NOM', 'Formation IA générative');
 // contient un lien direct vers le bilan des évaluations à froid.
 // define('SITE_URL', 'https://exemple.fr/formation');
 
+// ---------------------------------------------------------------------------
+// Claude (facultatif) : « Un prompt pour dans un mois » propose au formateur
+// de faire analyser les demandes de retour par Claude avant de les relire.
+// Clé à créer sur https://platform.claude.com (Clés API). Vide : la fonction
+// est masquée, le reste du site fonctionne à l'identique.
+// ---------------------------------------------------------------------------
+define('ANTHROPIC_API_KEY', '');
+
 function db(): PDO {
     static $pdo = null;
     if ($pdo === null) {

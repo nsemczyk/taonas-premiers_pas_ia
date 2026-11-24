@@ -861,4 +861,17 @@ body.wf-projete { margin: 0; min-height: 100vh; background: var(--nuit); }
 .pm-etape { display: inline-block; padding: 2px 8px; font-size: .82rem; border: 1px solid var(--gris); color: var(--indigo); background: #fff; }
 .pm-etape.en-cours { border-color: var(--vif); background: var(--glacier); color: var(--nuit); }
 .pm-etape.faite { border-color: var(--olive); background: var(--leaf-soft); color: var(--olive); font-weight: 600; }
+.pm-retour { margin: 14px 0 10px; }
+.pm-retour[data-etat=""] { display: none; }
+.pm-retour-etat { font-weight: 700; color: var(--marque); margin: 0 0 6px; }
+.pm-retour-texte { white-space: pre-wrap; background: var(--glacier); border-left: 6px solid var(--vif); padding: 10px 14px; }
+.pm-retour[data-etat="refuse"] .pm-retour-texte { background: #fff; border-left-color: var(--gris); }
+.pm-retour-note { margin: 6px 0 0; font-size: .85rem; font-style: italic; color: var(--indigo); }
+.pm-demande { border-left: 6px solid var(--vif); }
+.pm-demande textarea { display: block; width: 100%; box-sizing: border-box; min-height: 14rem; font: inherit; line-height: 1.45; }
+.pm-demande .pm-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.pm-demande .pm-refus { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.pm-demande .pm-refus input { flex: 1 1 16rem; }
+.pm-erreur { color: var(--brique); font-weight: 600; }
+.pm-etape.demande { border-color: var(--vif); background: var(--vif); color: #fff; font-weight: 700; }
 .pm-legende .pm-etape { margin-right: 4px; }

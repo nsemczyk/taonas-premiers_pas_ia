@@ -618,6 +618,33 @@ mysql --default-character-set=utf8mb4 -u root -p formation_ia < exercices/prompt
 
 À jouer une seule fois après `exercices/equipes/migration.sql`. Sans effet s'il est rejoué.
 
+**Retour du formateur (avec Claude)** : à l'étape d'analyse, le stagiaire colle
+le résultat obtenu avec sa version 1 et touche « Demander un retour au
+formateur ». La demande apparaît en tête de l'écran de suivi (le nombre de
+demandes en attente s'affiche aussi dans le titre de l'onglet). Pour chacune :
+« Analyser avec Claude » prépare un retour en trois parties (ce qui est bon, ce
+qui manque, ce qui pourrait être amélioré), à relire et corriger avant
+« Envoyer au stagiaire » ; ou « Refuser », avec un mot facultatif. Le stagiaire
+reçoit la réponse sur sa page sans recharger, et peut redemander ensuite. Rien
+ne part chez le stagiaire sans votre envoi. Le retour envoyé figure dans le
+carnet de la journée.
+
+L'analyse demande une clé API Anthropic dans `config.php` :
+
+```php
+define('ANTHROPIC_API_KEY', 'sk-ant-…');   // https://platform.claude.com, Clés API
+```
+
+Sans clé, le bouton « Analyser avec Claude » est remplacé par un rappel et vous
+pouvez écrire le retour vous-même. Modèle, version d'API et délai sont dans
+`core/claude.php` ; les consignes données à Claude dans
+`PROMPT_MOIS_CONSIGNES_CLAUDE` (`exercices/prompt-mois/fonctions.php`). Ce que
+le stagiaire a écrit (tâche, prompt, résultat, analyse) est envoyé à l'API
+d'Anthropic au moment où vous lancez l'analyse, et seulement à ce moment-là.
+
+Base existante : rejouer `exercices/prompt-mois/migration.sql` (table
+`prompt_mois_retours`), sans effet sur les fiches déjà saisies.
+
 ## Mon carnet de la journée (niveau 2)
 
 Dernière étape de la journée (`carnet`, après « Votre avis ») : chaque
@@ -906,6 +933,9 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 ## RGPD
 
 - Collecte minimale : prénom, réponses, score, horodatage. Ni nom, ni IP, ni cookie.
+- Retour du formateur (« Un prompt pour dans un mois ») : la demande du
+  stagiaire est envoyée à l'API d'Anthropic quand le formateur lance l'analyse.
+  Rappeler aux stagiaires de ne pas y mettre de données personnelles.
 - Mention d'information affichée sur l'accueil et avant chaque quiz.
 - Purge (cron mensuel conseillé) :
 
@@ -925,7 +955,8 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
   `DELETE FROM battle_manches WHERE seance < CURDATE() - INTERVAL 12 MONTH;`
   Les copies du bocal à secrets, les fiches d'assistant et les retours du
   speed-dating partent avec leur participant, comme les grilles du bingo,
-  les schémas de l'atelier workflow et les prompts « pour dans un mois » ;
+  les schémas de l'atelier workflow et les prompts « pour dans un mois »
+  (demandes de retour comprises) ;
   les parties du bingo, du tri et du candidat qui répond à côté
   (`DELETE FROM candidat_parties WHERE seance < CURDATE() - INTERVAL 12 MONTH;`, puis
   `DELETE FROM candidat_copies WHERE seance < CURDATE() - INTERVAL 12 MONTH;`) :
@@ -965,8 +996,9 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `exercices/tri/` | Jeu de tri : `tri.php` (cartes du joueur), `tri-tableau.php` (pilotage, correction carte par carte et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/workflow/` | Atelier workflow : `workflow.php` (tableau blanc du stagiaire), `workflow-tableau.php` (schémas de tous et `?vue=projection`, protégé par clé), `schema.js` (dessin, éditeur, export PNG), `fonctions.php`, `migration.sql` |
 | `exercices/candidat/` | Le candidat qui répond à côté : `candidat.php` (copie d'équipe, vote, résultat), `candidat-tableau.php` (pilotage et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
-| `exercices/prompt-mois/` | Un prompt pour dans un mois : `prompt-mois.php` (tâche, version 1 en 7 blocs, analyse, version 2, copie), `prompt-mois-tableau.php` (suivi des fiches, protégé par clé), `fonctions.php`, `migration.sql` |
+| `exercices/prompt-mois/` | Un prompt pour dans un mois : `prompt-mois.php` (tâche, version 1 en 7 blocs, analyse et demande de retour, version 2, copie), `prompt-mois-tableau.php` (suivi des fiches, demandes de retour analysées avec Claude, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/carnet/` | Mon carnet de la journée : `carnet.php` (le PDF du participant), `fonctions.php` (carte d'accueil) ; pas de migration |
+| `core/claude.php` | Appel à l'API Claude (HTTPS par curl, sans dépendance), clé dans `config.php` |
 | `core/carnet.php`, `core/carnet-pdf.php` | Carnet : registre des sections déclarées par les exercices, mise en page PDF (FPDF) |
 | `assets/logo-carnet.jpg` | Logo de la page de garde du carnet (FPDF ne lit pas les PNG transparents) |
 | `pilotage.php` | Télécommande animateur : ouvre les étapes et les quiz (protégée par clé) |

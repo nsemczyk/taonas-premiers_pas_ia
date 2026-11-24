@@ -9,7 +9,7 @@
 
   <?= bloc_boule('boule') ?>
 
-  <?= bloc_battle('battle') ?>
+  <?= ''/*bloc_battle('battle')*/ ?>
 
   <?= bloc_bocal('bocal') ?>
 

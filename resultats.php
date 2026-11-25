@@ -1,5 +1,6 @@
 <?php
-require __DIR__ . '/horodatage.php';
+require __DIR__ . '/core/horodatage.php';
+require __DIR__ . '/core/questionnaire.php';
 
 // Accès réservé à l'animateur
 if (($_GET['cle'] ?? '') !== CLE_ANIMATEUR) {
@@ -237,15 +238,24 @@ function repondre(array $data): void
 }
 
 // ---------------------------------------------------------------- API JSON --
+// Tout le tableau de bord porte sur la formation courante (?f=…)
 $api = $_GET['json'] ?? '';
+$F   = formation_slug();
+
+// Une formation qui décrit son questionnaire (clé 'questionnaire') a ses avis à part,
+// synthétisés dans la même forme que ceux du questionnaire historique
+$Q = questionnaire() && questionnaire_table_ok();
+$agreger_avis = $Q ? 'questionnaire_agreger' : 'agreger_satisfaction';
 
 // Liste des journées de formation, de la plus récente à la plus ancienne
 if ($api === 'jours') {
     // Regroupement en PHP et non en SQL : la journée est celle de l'heure
     // locale, que le serveur soit en UTC ou non (volumes minuscules).
     $jours = [];
-    $collecte = function (string $table, string $cle) use (&$jours) {
-        foreach (db()->query("SELECT session_code, created_at FROM $table") as $r) {
+    $collecte = function (string $sql, string $cle) use (&$jours, $F) {
+        $st = db()->prepare($sql);
+        $st->execute([$F]);
+        foreach ($st as $r) {
             $d = jour_local($r['created_at']);
             $jours[$d] ??= ['date' => $d, 'quiz' => 0, 'avis' => 0, 'sessions' => []];
             $jours[$d][$cle]++;
@@ -254,8 +264,9 @@ if ($api === 'jours') {
             }
         }
     };
-    $collecte('resultats', 'quiz');
-    $collecte('satisfaction', 'avis');
+    $collecte('SELECT r.session_code, r.created_at FROM resultats r
+               JOIN quizzes z ON z.id = r.quiz_id WHERE z.formation = ?', 'quiz');
+    $collecte('SELECT session_code, created_at FROM ' . ($Q ? 'satisfaction_reponses' : 'satisfaction') . ' WHERE formation = ?', 'avis');
 
     krsort($jours);
     repondre(['jours' => array_values(array_map(fn($j) => [
@@ -280,14 +291,20 @@ if ($api === 'jour') {
 
     $st = db()->prepare('SELECT ' . CHAMPS_RES . ' FROM resultats r
                          JOIN quizzes z ON z.id = r.quiz_id
-                         WHERE r.created_at >= ? AND r.created_at < ? ORDER BY r.created_at DESC');
-    $st->execute([$debut, $fin]);
+                         WHERE z.formation = ? AND r.created_at >= ? AND r.created_at < ?
+                         ORDER BY r.created_at DESC');
+    $st->execute([$F, $debut, $fin]);
     $rows = $st->fetchAll();
 
-    $st = db()->prepare('SELECT ' . CHAMPS_SAT . ' FROM satisfaction
-                         WHERE created_at >= ? AND created_at < ? ORDER BY created_at DESC');
-    $st->execute([$debut, $fin]);
-    $avis = $st->fetchAll();
+    if ($Q) {
+        $avis = array_reverse(questionnaire_avis($debut, $fin));
+    } else {
+        $st = db()->prepare('SELECT ' . CHAMPS_SAT . ' FROM satisfaction
+                             WHERE formation = ? AND created_at >= ? AND created_at < ?
+                             ORDER BY created_at DESC');
+        $st->execute([$F, $debut, $fin]);
+        $avis = $st->fetchAll();
+    }
 
     // Codes historiques uniquement : depuis la suppression de la saisie,
     // session_code vaut la date du jour et n'apprend rien de plus que la
@@ -306,15 +323,23 @@ if ($api === 'jour') {
         'date'         => $d,
         'libelle'      => jour_libelle($d),
         'sessions'     => $sessions,
-        'satisfaction' => agreger_satisfaction($avis),
+        'satisfaction' => $agreger_avis($avis),
     ]);
 }
 
 // Statistiques cumulées sur toutes les sessions
 if ($api === 'global') {
-    $rows = db()->query('SELECT ' . CHAMPS_RES . ' FROM resultats r
-                         JOIN quizzes z ON z.id = r.quiz_id')->fetchAll();
-    $avis = db()->query('SELECT ' . CHAMPS_SAT . ' FROM satisfaction')->fetchAll();
+    $st = db()->prepare('SELECT ' . CHAMPS_RES . ' FROM resultats r
+                         JOIN quizzes z ON z.id = r.quiz_id WHERE z.formation = ?');
+    $st->execute([$F]);
+    $rows = $st->fetchAll();
+    if ($Q) {
+        $avis = questionnaire_avis();
+    } else {
+        $st = db()->prepare('SELECT ' . CHAMPS_SAT . ' FROM satisfaction WHERE formation = ?');
+        $st->execute([$F]);
+        $avis = $st->fetchAll();
+    }
 
     $agr = agreger_resultats($rows);
     unset($agr['participants']); // inutile ici : on ne liste pas 12 mois de prénoms
@@ -332,8 +357,8 @@ if ($api === 'global') {
     $evolution = [];
     foreach (array_keys($resParJour + $satParJour) as $d) {
         $lignes = $resParJour[$d] ?? [];
-        $sat    = agreger_satisfaction($satParJour[$d] ?? []);
-        $evolution[] = [
+        $sat    = $agreger_avis($satParJour[$d] ?? []);
+        $evolution[] = ($Q ? ['base' => $sat['base']] : []) + [
             'date'         => $d,
             'court'        => jour_court($d),
             'libelle'      => jour_libelle($d),
@@ -350,7 +375,7 @@ if ($api === 'global') {
         'nb_prenoms'   => count(array_unique(array_map(
             fn($r) => mb_strtolower($r['prenom']) . '|' . jour_local($r['created_at']), $rows))),
         'evolution'    => $evolution,
-        'satisfaction' => agreger_satisfaction($avis),
+        'satisfaction' => $agreger_avis($avis),
     ]);
 }
 
@@ -381,6 +406,8 @@ if ($dateInitiale === '' && ($code = session_code_clean($_GET['s'] ?? '')) !== '
 
 <main class="wrap wrap-large">
 
+  <?= selecteur_formation('resultats.php?cle=' . rawurlencode(CLE_ANIMATEUR)) ?>
+
   <div class="dash">
 
     <aside class="card dash-side">
@@ -392,7 +419,7 @@ if ($dateInitiale === '' && ($code = session_code_clean($_GET['s'] ?? '')) !== '
       <button type="button" class="btn btn-ghost" id="btn-global" style="margin-top:14px">
         Bilan toutes sessions
       </button>
-      <a class="btn btn-ghost" style="margin-top:10px" href="eval-froide-resultats.php?cle=<?= rawurlencode(CLE_ANIMATEUR) ?>">
+      <a class="btn btn-ghost" style="margin-top:10px" href="<?= e(avec_f('eval-froide-resultats.php?cle=' . rawurlencode(CLE_ANIMATEUR))) ?>">
         Évaluation à froid
       </a>
     </aside>
@@ -467,12 +494,13 @@ if ($dateInitiale === '' && ($code = session_code_clean($_GET['s'] ?? '')) !== '
 
 <script>
 var CLE  = '<?= rawurlencode(CLE_ANIMATEUR) ?>';
+var F    = '<?= param_f() ?>';   // formation affichée, vide pour la formation par défaut
 var JOUR_INITIAL = '<?= e($dateInitiale) ?>';
 var AUJOURDHUI   = '<?= aujourdhui_local() ?>';
 var timerLive = null;
 
 function api(params, ok) {
-  fetch('resultats.php?cle=' + CLE + '&' + params)
+  fetch('resultats.php?cle=' + CLE + F + '&' + params)
     .then(function (r) { return r.json(); })
     .then(ok)
     .catch(function () {});
@@ -513,9 +541,9 @@ function blocSatisfaction(s) {
   }
   var html = '<div class="stat-row">' +
     '<div><div class="stat-big">' + (s.moyenne_generale === null ? '–' : s.moyenne_generale) +
-    '</div><div>satisfaction /4</div></div>' +
-    '<div><div class="stat-big">' + (s.moyenne_capacites === null ? '–' : s.moyenne_capacites) +
-    '</div><div>capacités /3</div></div>' +
+    '</div><div>' + (s.base ? 'note /' + s.base : 'satisfaction /4') + '</div></div>' +
+    (s.moyenne_capacites === undefined ? '' : '<div><div class="stat-big">' + (s.moyenne_capacites === null ? '–' : s.moyenne_capacites) +
+    '</div><div>capacités /3</div></div>') +
     '<div><div class="stat-big">' + s.nb + '</div><div>avis</div></div></div>';
 
   if (s.nb_notes === 0) {
@@ -574,7 +602,7 @@ function chargerJour(d) {
     document.getElementById('jour-satisfaction').innerHTML = blocSatisfaction(j.satisfaction);
 
     var exporter = document.getElementById('jour-export');
-    exporter.href = 'export-satisfaction.php?cle=' + CLE + '&d=' + encodeURIComponent(j.date);
+    exporter.href = 'export-satisfaction.php?cle=' + CLE + F + '&d=' + encodeURIComponent(j.date);
     exporter.hidden = !j.satisfaction.nb;
   });
 }
@@ -594,7 +622,7 @@ function chargerGlobal() {
       return '<tr><td><a href="#" data-jour="' + esc(e.date) + '">' + esc(e.libelle) + '</a></td>' +
              '<td>' + e.nb + '</td>' +
              '<td><div class="bar"><i style="width:' + e.moyenne + '%"></i></div>' + e.moyenne + ' %</td>' +
-             '<td>' + (e.satisfaction === null ? '–' : e.satisfaction + ' / 4') +
+             '<td>' + (e.satisfaction === null ? '–' : e.satisfaction + ' / ' + (e.base || 4)) +
              ' <span class="muted">(' + e.avis + ')</span></td></tr>';
     }).join('') || '<tr><td colspan="4" class="muted">Aucune donnée.</td></tr>';
 

@@ -1,6 +1,6 @@
 <?php
-require __DIR__ . '/horodatage.php';            // -> config.php + dates
-require __DIR__ . '/eval-froide-questions.php'; // définitions + helpers
+require __DIR__ . '/core/horodatage.php';            // -> config.php, formation + dates
+require __DIR__ . '/core/eval-froide-questions.php'; // définitions + helpers
 
 // Accès réservé à l'animateur
 if (!hash_equals(CLE_ANIMATEUR, (string)($_GET['cle'] ?? ''))) {
@@ -12,11 +12,14 @@ $cle = rawurlencode(CLE_ANIMATEUR);
 $table_ok = true;
 $reponses = [];
 try {
-    $reponses = db()->query(
+    $st = db()->prepare(
         'SELECT r.*, t.libelle FROM eval_froide r
          JOIN eval_froide_tokens t ON t.id = r.token_id
+         WHERE t.formation = ?
          ORDER BY r.created_at DESC'
-    )->fetchAll();
+    );
+    $st->execute([formation_slug()]);
+    $reponses = $st->fetchAll();
 } catch (PDOException $e) {
     $table_ok = false;
 }
@@ -109,6 +112,8 @@ details.resp > summary { cursor:pointer; font-weight:700; color:var(--navy); }
 
 <main class="wrap">
 
+<?= selecteur_formation('eval-froide-resultats.php?cle=' . rawurlencode(CLE_ANIMATEUR)) ?>
+
 <?php if (!$table_ok): ?>
   <section class="card">
     <h2>Migration à jouer</h2>
@@ -118,9 +123,9 @@ details.resp > summary { cursor:pointer; font-weight:700; color:var(--navy); }
 <?php else: ?>
 
   <div class="nav">
-    <a class="btn btn-ghost" href="eval-froide-liens.php?cle=<?= $cle ?>">Gérer les liens</a>
+    <a class="btn btn-ghost" href="<?= e(avec_f('eval-froide-liens.php?cle=' . $cle)) ?>">Gérer les liens</a>
     <?php if ($reponses): ?>
-      <a class="btn btn-primary" href="export-eval-froide.php?cle=<?= $cle ?>">Exporter en PDF</a>
+      <a class="btn btn-primary" href="<?= e(avec_f('export-eval-froide.php?cle=' . $cle)) ?>">Exporter en PDF</a>
     <?php endif; ?>
   </div>
 

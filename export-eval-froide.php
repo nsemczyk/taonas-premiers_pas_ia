@@ -3,7 +3,7 @@
 // La mise en page vit dans eval-froide-pdf.php, partagée avec la notification
 // par mail qui n'en tire qu'une page.
 
-require __DIR__ . '/config.php';
+require __DIR__ . '/core/formation.php';
 
 // Accès réservé à l'animateur
 if (!hash_equals(CLE_ANIMATEUR, (string)($_GET['cle'] ?? ''))) {
@@ -12,18 +12,21 @@ if (!hash_equals(CLE_ANIMATEUR, (string)($_GET['cle'] ?? ''))) {
 }
 
 try {
-    require __DIR__ . '/eval-froide-pdf.php';   // -> dates, questions, FPDF
+    require __DIR__ . '/core/eval-froide-pdf.php';   // -> dates, questions, FPDF
 } catch (RuntimeException $e) {
     http_response_code(500);
     exit($e->getMessage());
 }
 
 try {
-    $reponses = db()->query(
-        'SELECT r.*, t.libelle FROM eval_froide r
+    $st = db()->prepare(
+        'SELECT r.*, t.libelle, t.formation FROM eval_froide r
          JOIN eval_froide_tokens t ON t.id = r.token_id
+         WHERE t.formation = ?
          ORDER BY r.created_at'
-    )->fetchAll();
+    );
+    $st->execute([formation_slug()]);
+    $reponses = $st->fetchAll();
 } catch (PDOException $e) {
     http_response_code(500);
     exit('Tables absentes : jouez migration-eval-froide.sql.');

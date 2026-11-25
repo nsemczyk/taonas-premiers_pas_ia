@@ -10,6 +10,10 @@ define('DB_PASS', 'change-me');
 // Access key for the live results board (resultats.php?cle=...)
 define('CLE_ANIMATEUR', 'change-me-too');
 
+// Formation servie quand l'adresse ne porte pas de ?f= (dossier formations/<slug>/).
+// Facultatif : 'n1' par défaut.
+// define('FORMATION_DEFAUT', 'n1');
+
 // ---------------------------------------------------------------------------
 // Notification par mail des évaluations à froid (facultatif)
 //
@@ -46,6 +50,14 @@ define('MAIL_EXPEDITEUR_NOM', 'Formation IA générative');
 // Adresse publique du site, sans slash final. Si elle est renseignée, le mail
 // contient un lien direct vers le bilan des évaluations à froid.
 // define('SITE_URL', 'https://exemple.fr/formation');
+
+// ---------------------------------------------------------------------------
+// Claude (facultatif) : « Un prompt pour dans un mois » propose au formateur
+// de faire analyser les demandes de retour par Claude avant de les relire.
+// Clé à créer sur https://platform.claude.com (Clés API). Vide : la fonction
+// est masquée, le reste du site fonctionne à l'identique.
+// ---------------------------------------------------------------------------
+define('ANTHROPIC_API_KEY', '');
 
 function db(): PDO {
     static $pdo = null;

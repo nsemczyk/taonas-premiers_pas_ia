@@ -1,10 +1,10 @@
 <?php
-require __DIR__ . '/config.php';
+require __DIR__ . '/core/formation.php';
 
 $slug = preg_replace('/[^a-z0-9-]/', '', $_GET['slug'] ?? '');
 
-$st = db()->prepare('SELECT id, titre FROM quizzes WHERE slug = ? AND actif = 1');
-$st->execute([$slug]);
+$st = db()->prepare('SELECT id, titre FROM quizzes WHERE formation = ? AND slug = ? AND actif = 1');
+$st->execute([formation_slug(), $slug]);
 $quiz = $st->fetch();
 
 if (!$quiz) {
@@ -16,8 +16,9 @@ $st = db()->prepare('SELECT id, ordre, texte, bonne_reponse, explication FROM qu
 $st->execute([$quiz['id']]);
 $questions = $st->fetchAll();
 
-$BONUS_SLUG = 'quiz-bonus';
-$estBonus   = ($slug === $BONUS_SLUG);
+// Quiz bonus proposé en fin de quiz, s'il y en a un pour cette formation
+$BONUS_SLUG = formation()['quiz_bonus'] ?? null;
+$estBonus   = ($BONUS_SLUG === null || $slug === $BONUS_SLUG);
 ?><!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -69,11 +70,11 @@ $estBonus   = ($slug === $BONUS_SLUG);
     <?php if (!$estBonus): ?>
     <div style="text-align:center;margin-top:24px">
       <p>Envie d'aller plus loin ?</p>
-      <a class="btn btn-ghost" href="quiz.php?slug=<?= e($BONUS_SLUG) ?>">Tenter le quiz bonus (facultatif)</a>
+      <a class="btn btn-ghost" href="<?= e(avec_f('quiz.php?slug=' . $BONUS_SLUG)) ?>">Tenter le quiz bonus (facultatif)</a>
     </div>
     <?php endif; ?>
     <div style="text-align:center;margin-top:16px">
-      <a class="btn btn-primary" href="index.php">Retour à l'accueil</a>
+      <a class="btn btn-primary" href="<?= e(avec_f('index.php')) ?>">Retour à l'accueil</a>
     </div>
   </section>
 

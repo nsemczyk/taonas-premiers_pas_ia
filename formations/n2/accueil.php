@@ -1,0 +1,32 @@
+<?php
+// Accueil du niveau 2 : les cartes de la journée, dans l'ordre du déroulé.
+// Inclus par index.php, dans <main> ; les clés d'étape (objectifs…) sont
+// celles de la table `etapes` pour cette formation.
+?>
+  <?= bloc_arrivee() ?>
+
+  <?= bloc_candidat('candidat') ?>
+
+  <?= bloc_objectif('objectifs') ?>
+
+  <?= bloc_boule('boule') ?>
+
+  <?= bloc_document('guideprompt') ?>
+
+  <?= ''/*bloc_battle('battle')*/ ?>
+
+  <?= bloc_prompt_mois('promptmois') ?>
+
+  <?= bloc_bocal('bocal') ?>
+
+  <?= bloc_assistant('assistant') ?>
+
+  <?= bloc_bingo('bingo') ?>
+
+  <?= bloc_tri('tri') ?>
+
+  <?= bloc_workflow('workflow') ?>
+
+  <?= bloc_avis('avis') ?>
+
+  <?= bloc_carnet('carnet') ?>

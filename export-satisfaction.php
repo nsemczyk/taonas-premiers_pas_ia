@@ -1,5 +1,6 @@
 <?php
-require __DIR__ . '/horodatage.php';
+require __DIR__ . '/core/horodatage.php';
+require __DIR__ . '/core/questionnaire.php';
 
 // Accès réservé à l'animateur
 if (($_GET['cle'] ?? '') !== CLE_ANIMATEUR) {
@@ -54,11 +55,16 @@ function jour_en_toutes_lettres(string $d): string
 
 $jour = jour_valide($_GET['d'] ?? '');
 
+// Une formation qui décrit son questionnaire (clé 'questionnaire') a ses avis à part
+$Q = questionnaire() && questionnaire_table_ok();
+
 // ------------------------------------------------- écran de choix de journée --
 if ($jour === '') {
     // Regroupement en PHP : la journée est celle de l'heure locale
     $compte = [];
-    foreach (db()->query('SELECT created_at FROM satisfaction') as $r) {
+    $st = db()->prepare('SELECT created_at FROM ' . ($Q ? 'satisfaction_reponses' : 'satisfaction') . ' WHERE formation = ?');
+    $st->execute([formation_slug()]);
+    foreach ($st as $r) {
         $d = jour_local($r['created_at']);
         $compte[$d] = ($compte[$d] ?? 0) + 1;
     }
@@ -88,7 +94,7 @@ if ($jour === '') {
     <?php if ($jours): ?>
       <?php foreach ($jours as $j): ?>
         <a class="btn btn-primary"
-           href="export-satisfaction.php?cle=<?= rawurlencode(CLE_ANIMATEUR) ?>&amp;d=<?= e($j['d']) ?>">
+           href="<?= e(avec_f('export-satisfaction.php?cle=' . rawurlencode(CLE_ANIMATEUR) . '&d=' . $j['d'])) ?>">
           <?= e(jour_en_toutes_lettres($j['d'])) ?> — <?= (int)$j['n'] ?> avis
         </a>
       <?php endforeach; ?>
@@ -97,7 +103,7 @@ if ($jour === '') {
     <?php endif; ?>
   </section>
   <section class="card">
-    <a class="btn btn-ghost" href="resultats.php?cle=<?= rawurlencode(CLE_ANIMATEUR) ?>">Retour aux résultats</a>
+    <a class="btn btn-ghost" href="<?= e(avec_f('resultats.php?cle=' . rawurlencode(CLE_ANIMATEUR))) ?>">Retour aux résultats</a>
   </section>
 </main>
 </body>
@@ -115,10 +121,14 @@ require_once $chemin_fpdf;
 
 // Bornes de la journée locale traduites dans le fuseau du serveur
 [$debut, $fin] = bornes_journee($jour);
-$st = db()->prepare('SELECT * FROM satisfaction
-                     WHERE created_at >= ? AND created_at < ? ORDER BY created_at');
-$st->execute([$debut, $fin]);
-$avis = $st->fetchAll();
+if ($Q) {
+    $avis = questionnaire_avis($debut, $fin);
+} else {
+    $st = db()->prepare('SELECT * FROM satisfaction
+                         WHERE formation = ? AND created_at >= ? AND created_at < ? ORDER BY created_at');
+    $st->execute([formation_slug(), $debut, $fin]);
+    $avis = $st->fetchAll();
+}
 
 if (!$avis) {
     http_response_code(404);
@@ -132,8 +142,10 @@ if (!$avis) {
 class QuestionnairePdf extends FPDF
 {
     public string $journee = '';
+    public string $formation = '';
     public int $numero = 0;
     public int $total = 0;
+    public string $mention = 'Questionnaire anonyme — aucune donnée personnelle collectée hormis le prénom, facultatif.';
 
     private const L_UTILE  = 180;   // 210 - 2 × 15 mm de marge
     private const L_INTITULE = 66;  // colonne de gauche des grilles
@@ -155,7 +167,7 @@ class QuestionnairePdf extends FPDF
         $this->Cell(0, 7, $this->txt('Questionnaire de satisfaction'), 0, 1);
 
         $this->SetFont('Helvetica', '', 9);
-        $this->Cell(120, 5, $this->txt('Premiers pas avec l\'IA générative — ' . $this->journee), 0, 0);
+        $this->Cell(120, 5, $this->txt($this->formation . ' — ' . $this->journee), 0, 0);
         $this->Cell(0, 5, $this->txt('Avis ' . $this->numero . ' / ' . $this->total), 0, 1, 'R');
 
         $this->SetLineWidth(0.4);
@@ -171,9 +183,7 @@ class QuestionnairePdf extends FPDF
         $this->Line(15, $this->GetY(), 195, $this->GetY());
         $this->SetFont('Helvetica', 'I', 7.5);
         $this->SetTextColor(80);
-        $this->Cell(0, 8, $this->txt(
-            'Questionnaire anonyme — aucune donnée personnelle collectée hormis le prénom, facultatif.'
-        ), 0, 0);
+        $this->Cell(0, 8, $this->txt($this->mention), 0, 0);
         $this->Cell(0, 8, $this->txt('Page ' . $this->PageNo()), 0, 0, 'R');
         $this->SetTextColor(0);
     }
@@ -259,7 +269,7 @@ class QuestionnairePdf extends FPDF
     }
 
     // Nombre de lignes qu'occupera un MultiCell : sert à cadrer la zone de texte
-    private function nbLignes(float $w, string $txt): int
+    public function nbLignes(float $w, string $txt): int
     {
         $cw = $this->CurrentFont['cw'];
         $wmax = ($w - 2 * $this->cMargin) * 1000 / $this->FontSize;
@@ -320,6 +330,91 @@ class QuestionnairePdf extends FPDF
         $this->Ln(2.5);
     }
 
+    // Une question ne se coupe pas entre deux pages : nouvelle page si elle ne tient plus
+    public function garderEnsemble(float $hauteur): void
+    {
+        if ($this->GetY() + $hauteur > $this->PageBreakTrigger) {
+            $this->AddPage();
+        }
+    }
+
+    // Hauteur approximative d'une question du questionnaire décrit par la formation
+    public function hauteurQuestion(array $q, $reponse): float
+    {
+        $this->SetFont('Helvetica', 'B', 8.5);
+        $titre = 5 * max(1, ceil($this->GetStringWidth($this->txt($q['intitule'])) / (self::L_UTILE - 4)));
+        switch ($q['type']) {
+            case 'choix':
+                if ($this->tientSurUneLigne($q['options'])) {
+                    return 12.5;
+                }
+                // fall through
+            case 'multi':
+                return $titre + 5 * ceil(count($q['options']) / 2) + (empty($q['autre']) ? 0 : 5) + 1.5;
+            case 'texte':
+                $this->SetFont('Helvetica', '', 9);
+                return 5.5 + max(12, $this->nbLignes(self::L_UTILE, $this->txt((string)$reponse)) * 4.4 + 3) + 2.5;
+            default:
+                return 12.5;
+        }
+    }
+
+    // Les cases d'une échelle tiennent-elles sur une ligne (questionEnLigne) ?
+    public function tientSurUneLigne(array $echelle): bool
+    {
+        $this->SetFont('Helvetica', '', 8.5);
+        $total = 0;
+        foreach ($echelle as $libelle) {
+            $total += $this->GetStringWidth($this->txt($libelle)) + 10;
+        }
+        return $total <= self::L_UTILE;
+    }
+
+    // Question en liste de cases, une option par ligne, sur deux colonnes quand
+    // les libellés sont courts ; $cochees : les options retenues ; $autre : « Autres : … »
+    public function questionListe(string $intitule, array $echelle, array $cochees, ?string $autre = null, bool $avecAutre = false): void
+    {
+        $this->SetFont('Helvetica', 'B', 8.5);
+        $this->MultiCell(0, 5, $this->txt($intitule), 0, 'L');
+
+        $this->SetFont('Helvetica', '', 8.5);
+        $colonnes = 2;
+        foreach ($echelle as $libelle) {
+            if ($this->GetStringWidth($this->txt($libelle)) > self::L_UTILE / 2 - 8) {
+                $colonnes = 1;
+                break;
+            }
+        }
+        $largeur = self::L_UTILE / $colonnes;
+        $h = 5;
+        $i = 0;
+        foreach ($echelle as $valeur => $libelle) {
+            if ($i % $colonnes === 0 && $this->GetY() + $h > $this->PageBreakTrigger) {
+                $this->AddPage();
+            }
+            $x = 15 + ($i % $colonnes) * $largeur;
+            $y = $this->GetY();
+            $this->caseACocher($x, $y + 0.8, in_array((string)$valeur, array_map('strval', $cochees), true));
+            $this->SetXY($x + 5, $y);
+            $this->Cell($largeur - 5, $h, $this->txt($libelle), 0, 0);
+            $i++;
+            $this->SetXY(15, $i % $colonnes === 0 ? $y + $h : $y);
+        }
+        if ($i % $colonnes !== 0) {
+            $this->SetXY(15, $this->GetY() + $h);
+        }
+        if ($avecAutre) {
+            $autre = trim((string)$autre);
+            $y = $this->GetY();
+            $this->caseACocher(15, $y + 0.8, $autre !== '');
+            $this->SetXY(20, $y);
+            $this->Cell(16, $h, $this->txt('Autres :'), 0, 0);
+            $this->SetFont('Helvetica', 'I', 8.5);
+            $this->Cell(0, $h, $this->txt($autre), 'B', 1);
+        }
+        $this->Ln(1.5);
+    }
+
     // Bandeau signalant un avis issu de l'ancien questionnaire, sans grilles de notes
     public function avertissement(string $texte): void
     {
@@ -342,63 +437,121 @@ $pdf->SetAuthor('Formation IA générative');
 $pdf->SetMargins(15, 15, 15);
 $pdf->SetAutoPageBreak(true, 18);
 $pdf->journee = jour_en_toutes_lettres($jour);
+$pdf->formation = $Q ? (questionnaire()['formation'] ?? formation()['titre']) : formation()['titre'];
 $pdf->total   = count($avis);
 
-foreach ($avis as $i => $a) {
-    $pdf->numero = $i + 1;
-    $pdf->AddPage();
+if ($Q) {
+    // Questionnaire décrit par la formation : restitué dans l'ordre du formulaire
+    $def = questionnaire();
+    $pdf->mention = 'Questionnaire nominatif — prénom saisi à l\'arrivée, aucune autre donnée personnelle collectée.';
+    foreach ($avis as $i => $a) {
+        $pdf->numero = $i + 1;
+        $pdf->AddPage();
+        $r = $a['reponses'];
 
-    // Identité : prénom facultatif, heure de dépôt
-    $prenom = trim((string)($a['prenom'] ?? ''));
-    $pdf->SetFont('Helvetica', '', 9);
-    $pdf->Cell(18, 6, $pdf->txt('Prénom :'), 0, 0);
-    $pdf->SetFont('Helvetica', 'B', 9);
-    $pdf->Cell(70, 6, $pdf->txt($prenom !== '' ? $prenom : 'Anonyme'), 'B', 0);
-    $pdf->SetFont('Helvetica', '', 9);
-    $pdf->Cell(22, 6, $pdf->txt('   Déposé à :'), 0, 0);
-    $pdf->SetFont('Helvetica', 'B', 9);
-    $pdf->Cell(0, 6, $pdf->txt(heure_locale($a['created_at'])), 'B', 1);
-    $pdf->Ln(2);
+        // Prénom saisi à l'arrivée, heure de dépôt, formateur
+        $pdf->SetFont('Helvetica', '', 9);
+        $pdf->Cell(15, 6, $pdf->txt('Prénom :'), 0, 0);
+        $pdf->SetFont('Helvetica', 'B', 9);
+        $pdf->Cell(109, 6, $pdf->txt((string)$a['prenom']), 'B', 0);
+        $pdf->SetFont('Helvetica', '', 9);
+        $pdf->Cell(22, 6, $pdf->txt('   Déposé à :'), 0, 0);
+        $pdf->SetFont('Helvetica', 'B', 9);
+        $pdf->Cell(0, 6, $pdf->txt(heure_locale($a['created_at'])), 'B', 1);
+        if (($def['formateur'] ?? '') !== '' || ($def['duree'] ?? '') !== '') {
+            $pdf->SetFont('Helvetica', '', 8.5);
+            $pdf->Cell(0, 6, $pdf->txt(trim(($def['duree'] ?? '') . (($def['formateur'] ?? '') !== '' ? ' · Formateur : ' . $def['formateur'] : ''), ' ·')), 0, 1);
+        }
+        $pdf->Ln(1);
 
-    // Les avis migrés de l'ancien questionnaire n'ont aucune note chiffrée
-    $sansNotes = true;
-    foreach (array_keys(EXPORT_CRITERES) as $k) {
-        if ((int)$a[$k] > 0) { $sansNotes = false; break; }
+        $n = 0;
+        foreach ($def['sections'] as $k => $section) {
+            $premiere = reset($section['questions']);
+            $pdf->garderEnsemble(10 + $pdf->hauteurQuestion($premiere, $a['reponses'][array_key_first($section['questions'])] ?? null));
+            $pdf->titreSection(($k + 1) . '. ' . $section['titre']);
+            foreach ($section['questions'] as $cle => $q) {
+                $intitule = ++$n . '. ' . $q['intitule'];
+                $reponse = $r[$cle] ?? null;
+                $pdf->garderEnsemble($pdf->hauteurQuestion($q, $reponse));
+                switch ($q['type']) {
+                    case 'choix':
+                        if ($pdf->tientSurUneLigne($q['options'])) {
+                            $pdf->questionEnLigne($intitule, $q['options'], $reponse);
+                        } else {
+                            $pdf->questionListe($intitule, $q['options'], $reponse === null ? [] : [$reponse]);
+                        }
+                        break;
+                    case 'multi':
+                        $pdf->questionListe($intitule . ' (plusieurs réponses possibles)', $q['options'], (array)$reponse,
+                                            $r[$cle . '_autre'] ?? null, !empty($q['autre']));
+                        break;
+                    case 'texte':
+                        $pdf->zoneTexte($intitule, $reponse, 12);
+                        break;
+                    case 'note':
+                        $pdf->questionEnLigne($intitule . ' (sur ' . $q['max'] . ')', array_combine(range(0, $q['max']), array_map('strval', range(0, $q['max']))), $reponse);
+                        break;
+                }
+            }
+        }
     }
-    if ($sansNotes) {
-        $pdf->avertissement(
-            'Avis issu de l\'ancien questionnaire : les grilles de notation n\'y figuraient pas. '
-            . 'Seuls le rythme, les commentaires et les deux dernières questions ont été renseignés.'
+} else {
+    foreach ($avis as $i => $a) {
+        $pdf->numero = $i + 1;
+        $pdf->AddPage();
+
+        // Identité : prénom facultatif, heure de dépôt
+        $prenom = trim((string)($a['prenom'] ?? ''));
+        $pdf->SetFont('Helvetica', '', 9);
+        $pdf->Cell(18, 6, $pdf->txt('Prénom :'), 0, 0);
+        $pdf->SetFont('Helvetica', 'B', 9);
+        $pdf->Cell(70, 6, $pdf->txt($prenom !== '' ? $prenom : 'Anonyme'), 'B', 0);
+        $pdf->SetFont('Helvetica', '', 9);
+        $pdf->Cell(22, 6, $pdf->txt('   Déposé à :'), 0, 0);
+        $pdf->SetFont('Helvetica', 'B', 9);
+        $pdf->Cell(0, 6, $pdf->txt(heure_locale($a['created_at'])), 'B', 1);
+        $pdf->Ln(2);
+
+        // Les avis migrés de l'ancien questionnaire n'ont aucune note chiffrée
+        $sansNotes = true;
+        foreach (array_keys(EXPORT_CRITERES) as $k) {
+            if ((int)$a[$k] > 0) { $sansNotes = false; break; }
+        }
+        if ($sansNotes) {
+            $pdf->avertissement(
+                'Avis issu de l\'ancien questionnaire : les grilles de notation n\'y figuraient pas. '
+                . 'Seuls le rythme, les commentaires et les deux dernières questions ont été renseignés.'
+            );
+        }
+
+        $pdf->titreSection('Votre satisfaction');
+        $pdf->enteteGrille(ECHELLE_SATISFACTION);
+        foreach (EXPORT_CRITERES as $cle => $libelle) {
+            $pdf->ligneGrille($libelle, ECHELLE_SATISFACTION, $a[$cle]);
+        }
+
+        $pdf->titreSection('À l\'issue de cette formation, je me sens capable de');
+        $pdf->enteteGrille(ECHELLE_CAPACITE);
+        foreach (EXPORT_CAPACITES as $cle => $libelle) {
+            $pdf->ligneGrille($libelle, ECHELLE_CAPACITE, $a[$cle]);
+        }
+
+        $pdf->titreSection('La journée');
+        $pdf->questionEnLigne('Le rythme de la journée ?', ECHELLE_RYTHME, $a['rythme']);
+        $pdf->zoneTexte('Ce que vous avez le plus apprécié', $a['apprecie']);
+        $pdf->zoneTexte('Ce qui pourrait être amélioré', $a['ameliore']);
+        $pdf->questionEnLigne(
+            'Vous recommanderiez cette formation à un autre demandeur d\'emploi ?',
+            ECHELLE_RECOMMANDE,
+            $a['recommande']
         );
+        $pdf->questionEnLigne(
+            'Souhaitez-vous suivre d\'autres formations sur l\'intelligence artificielle ?',
+            ECHELLE_INTERESSE,
+            $a['interesse_formations']
+        );
+        $pdf->zoneTexte('Si oui, lesquelles ?', $a['autres_formations_lesquelles'], 12);
     }
-
-    $pdf->titreSection('Votre satisfaction');
-    $pdf->enteteGrille(ECHELLE_SATISFACTION);
-    foreach (EXPORT_CRITERES as $cle => $libelle) {
-        $pdf->ligneGrille($libelle, ECHELLE_SATISFACTION, $a[$cle]);
-    }
-
-    $pdf->titreSection('À l\'issue de cette formation, je me sens capable de');
-    $pdf->enteteGrille(ECHELLE_CAPACITE);
-    foreach (EXPORT_CAPACITES as $cle => $libelle) {
-        $pdf->ligneGrille($libelle, ECHELLE_CAPACITE, $a[$cle]);
-    }
-
-    $pdf->titreSection('La journée');
-    $pdf->questionEnLigne('Le rythme de la journée ?', ECHELLE_RYTHME, $a['rythme']);
-    $pdf->zoneTexte('Ce que vous avez le plus apprécié', $a['apprecie']);
-    $pdf->zoneTexte('Ce qui pourrait être amélioré', $a['ameliore']);
-    $pdf->questionEnLigne(
-        'Vous recommanderiez cette formation à un autre demandeur d\'emploi ?',
-        ECHELLE_RECOMMANDE,
-        $a['recommande']
-    );
-    $pdf->questionEnLigne(
-        'Souhaitez-vous suivre d\'autres formations sur l\'intelligence artificielle ?',
-        ECHELLE_INTERESSE,
-        $a['interesse_formations']
-    );
-    $pdf->zoneTexte('Si oui, lesquelles ?', $a['autres_formations_lesquelles'], 12);
 }
 
 $pdf->Output('D', 'questionnaires-satisfaction-' . $jour . '.pdf');

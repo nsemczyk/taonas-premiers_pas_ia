@@ -9,6 +9,8 @@
 
   <?= bloc_boule('boule') ?>
 
+  <?= bloc_document('guideprompt') ?>
+
   <?= ''/*bloc_battle('battle')*/ ?>
 
   <?= bloc_prompt_mois('promptmois') ?>

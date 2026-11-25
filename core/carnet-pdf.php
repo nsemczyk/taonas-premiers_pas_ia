@@ -124,6 +124,31 @@ class CarnetPdf extends FPDF
         }
     }
 
+    // Page « Vos guides » : titre, description et lien cliquable de chaque document
+    public function guides(array $docs): void
+    {
+        $this->AddPage('P');
+        $this->bandeau('Vos guides');
+        $this->texte('Les guides de la formation, à télécharger quand vous voulez : touchez un lien pour ouvrir le PDF.');
+        $this->Ln(2);
+        foreach ($docs as $d) {
+            if ($this->GetY() > $this->PageBreakTrigger - 25) {
+                $this->AddPage();
+            }
+            $this->SetFont('Helvetica', 'B', 11);
+            $this->couleur(self::MARQUE);
+            $this->Cell(0, 6, $this->txt($d['titre']), 0, 1, 'L', false, $d['url']);
+            $this->couleur(self::NUIT);
+            $this->SetFont('Helvetica', '', 9.5);
+            $this->MultiCell(0, 4.8, $this->txt($d['description']), 0, 'L');
+            $this->SetFont('Helvetica', 'U', 8.5);
+            $this->couleur(self::VIF);
+            $this->Cell(0, 5, $this->txt($d['url']), 0, 1, 'L', false, $d['url']);
+            $this->couleur(self::NUIT);
+            $this->Ln(4);
+        }
+    }
+
     // ------------------------------------------------------------ sections
 
     // Le moteur prépare la section d'une étape ; l'exercice l'ouvre s'il a du contenu
@@ -433,6 +458,9 @@ function carnet_pdf(array $participant): CarnetPdf
     }
     if ($pdf->GetY() < 40 && $pdf->PageNo() === $debut) {
         $pdf->texte('Rien à montrer pour l\'instant : vos productions apparaîtront ici au fil des exercices.', 'I');
+    }
+    if (function_exists('documents') && documents()) {
+        $pdf->guides(array_map(fn($d) => $d + ['url' => document_url($d)], array_values(documents())));
     }
     return $pdf;
 }

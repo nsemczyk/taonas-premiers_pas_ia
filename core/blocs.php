@@ -5,6 +5,7 @@
 require_once __DIR__ . '/etapes.php';
 require_once __DIR__ . '/participants.php';
 require_once __DIR__ . '/points.php';
+require_once __DIR__ . '/documents.php';
 
 // Les exercices (exercices/<nom>/fonctions.php) : helpers et carte d'accueil de chacun
 foreach (glob(__DIR__ . '/../exercices/*/fonctions.php') as $exercice) {

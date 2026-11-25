@@ -12,6 +12,7 @@ return [
     'etapes'      => [
         'objectifs' => 'Mon objectif du jour',
         'boule'     => 'Le prompt boule de neige',
+        'guideprompt' => 'Guide du prompting',
         'promptmois' => 'Un prompt pour dans un mois',
         'promptmoisretour' => 'Un prompt pour dans un mois : retours du formateur',
 //        'battle'    => 'Prompt Battle',
@@ -175,6 +176,20 @@ TEXTE,
                        . "Je vous propose un appel de 15 minutes : mardi à 10 h ou jeudi à 16 h, selon ce qui vous convient le mieux.\n\n"
                        . "Bien cordialement,\n[Prénom Nom]\n[téléphone]",
         ],
+    ],
+    // Guides PDF (assets/documents/, accès direct). Avec 'etape' : une carte sur
+    // l'accueil, dévoilée avec l'étape. Tous figurent, en lien, dans le carnet.
+    'documents' => [
+        'prompting' => ['titre' => 'Guide du prompting', 'fichier' => 'guide-du-prompting.pdf', 'etape' => 'guideprompt',
+                        'description' => 'Techniques éprouvées pour Claude, ChatGPT, Gemini, Mistral et consorts.'],
+        'prompting-image' => ['titre' => 'Guide du prompting image', 'fichier' => 'guide-du-prompting-image.pdf',
+                        'description' => 'Techniques éprouvées pour Midjourney, GPT Image, Nano Banana, Flux, Stable Diffusion et les modèles locaux.'],
+        'prompting-video' => ['titre' => 'Guide du prompting vidéo', 'fichier' => 'guide-du-prompting-video.pdf',
+                        'description' => 'Techniques éprouvées pour Veo, Kling, Seedance, Runway, Wan et les modèles locaux.'],
+        'life-os-chatgpt' => ['titre' => 'LIFE OS, version ChatGPT', 'fichier' => 'life-os-chatgpt.pdf',
+                        'description' => 'Construire un assistant personnel organisé, utile et progressivement autonome, de l\'offre gratuite à l\'agent autonome.'],
+        'life-os-claude' => ['titre' => 'LIFE OS, version Claude', 'fichier' => 'life-os-claude.pdf',
+                        'description' => 'Le même parcours avec Claude, de l\'offre gratuite à l\'agent autonome.'],
     ],
     // Pages de l'animateur proposées sur la télécommande (page => libellé du bouton)
     'outils'      => [

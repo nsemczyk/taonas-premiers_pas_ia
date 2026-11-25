@@ -659,6 +659,24 @@ d'Anthropic au moment où vous lancez l'analyse, et seulement à ce moment-là.
 Base existante : rejouer `exercices/prompt-mois/migration.sql` (table
 `prompt_mois_retours` et ses colonnes), sans effet sur les fiches déjà saisies.
 
+## Guides PDF (niveau 2)
+
+Les guides remis aux participants sont dans `assets/documents/`, en accès
+direct (les liens restent valables après la formation), et déclarés dans
+`formations/n2/formation.php`, clé `'documents'` (titre, fichier,
+description). Un guide qui porte une `'etape'` a sa carte sur l'accueil,
+dévoilée quand vous ouvrez l'étape : c'est le cas du « Guide du prompting »,
+avant « Un prompt pour dans un mois ». Tous les guides (prompting, prompting
+image, prompting vidéo, LIFE OS ChatGPT et Claude) figurent avec un lien
+cliquable sur la dernière page du carnet de la journée.
+
+Ajouter un guide : déposer le PDF dans `assets/documents/` (lisible par le
+serveur web) et ajouter sa ligne dans `'documents'` ; avec une carte
+d'accueil, déclarer aussi son étape et appeler `bloc_document('<étape>')`
+dans `accueil.php`. Les liens du carnet sont absolus : en production,
+déclarez `SITE_URL` dans `config.php` (`https://…`, sans barre finale) pour
+qu'ils pointent toujours vers la bonne adresse.
+
 ## Mon carnet de la journée (niveau 2)
 
 Dernière étape de la journée (`carnet`, après « Votre avis ») : chaque
@@ -1012,6 +1030,8 @@ ne peut pas créer de table). Sans effet s'il est rejoué. Le questionnaire lui-
 | `exercices/candidat/` | Le candidat qui répond à côté : `candidat.php` (copie d'équipe, vote, résultat), `candidat-tableau.php` (pilotage et `?vue=projection`, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/prompt-mois/` | Un prompt pour dans un mois : `prompt-mois.php` (tâche, version 1 en 7 blocs, analyse et demande de retour, version 2, copie), `prompt-mois-tableau.php` (suivi des fiches, demandes de retour analysées avec Claude, protégé par clé), `fonctions.php`, `migration.sql` |
 | `exercices/carnet/` | Mon carnet de la journée : `carnet.php` (le PDF du participant), `fonctions.php` (carte d'accueil) ; pas de migration |
+| `assets/documents/` | Guides PDF remis aux participants (accès direct), déclarés dans `'documents'` de la formation |
+| `core/documents.php` | Guides : liens, adresse absolue pour le carnet, carte d'accueil `bloc_document()` |
 | `core/claude.php` | Appel à l'API Claude (HTTPS par curl, sans dépendance), clé dans `config.php` |
 | `core/carnet.php`, `core/carnet-pdf.php` | Carnet : registre des sections déclarées par les exercices, mise en page PDF (FPDF) |
 | `assets/logo-carnet.jpg` | Logo de la page de garde du carnet (FPDF ne lit pas les PNG transparents) |

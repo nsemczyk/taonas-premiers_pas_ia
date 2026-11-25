@@ -333,12 +333,13 @@ function action(string $moi, array $m, string $action, string $libelle, string $
 
   var enSaisie = function () { var a = document.activeElement; return a && a.tagName === 'SELECT'; };
   setInterval(function () {
+    if (document.hidden) { return; }   // onglet caché : pas de requête
     if (enSaisie()) { return; }
     fetch(URL_ETAT).then(function (r) { return r.json(); }).then(function (d) {
       if (chrono && d.reste > 0) { fin = Date.now() + 1000 * d.reste; }
       if (d.empreinte !== EMPREINTE) { location.reload(); }
     }).catch(function () {});
-  }, 2000);
+  }, 5000 + Math.floor(Math.random() * 1000));
 })();
 </script>
 <?php endif; ?>

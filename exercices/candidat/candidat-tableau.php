@@ -204,10 +204,11 @@ function bouton(string $moi, string $action, string $libelle, string $classe, ar
   var EMPREINTE = <?= json_encode($empreinte) ?>;
   var URL_ETAT = <?= json_encode($moi . '&json=etat') ?>;
   setInterval(function () {
+    if (document.hidden) { return; }   // onglet caché : pas de requête
     fetch(URL_ETAT).then(function (r) { return r.json(); }).then(function (d) {
       if (d.empreinte !== EMPREINTE) { location.reload(); }
     }).catch(function () {});
-  }, 3000);
+  }, 5000 + Math.floor(Math.random() * 1000));
 })();
 </script>
 <?php endif; ?>

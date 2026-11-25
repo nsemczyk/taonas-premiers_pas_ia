@@ -190,12 +190,13 @@ function bouton_points(string $moi, string $cible, int $valeur): string
   var EMPREINTE = <?= json_encode($empreinte) ?>;
   var enSaisie = function () { var a = document.activeElement; return a && /INPUT|SELECT/.test(a.tagName); };
   setInterval(function () {
+    if (document.hidden) { return; }   // onglet caché : pas de requête
     if (enSaisie()) { return; }
     fetch(<?= json_encode($moi . '&json=etat') ?>)
       .then(function (r) { return r.json(); })
       .then(function (d) { if (d.empreinte !== EMPREINTE) { location.reload(); } })
       .catch(function () {});
-  }, 3000);
+  }, 5000 + Math.floor(Math.random() * 1000));
 })();
 </script>
 <?php endif; ?>

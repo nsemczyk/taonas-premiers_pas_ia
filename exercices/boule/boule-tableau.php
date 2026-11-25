@@ -209,6 +209,7 @@ body.boule-tableau { background: var(--blanc); margin: 0; }
     if (y) { window.scrollTo(0, +y); sessionStorage.removeItem('boule-defilement'); }
   } catch (e) {}
   setInterval(function () {
+    if (document.hidden) { return; }   // onglet caché : pas de requête
     fetch(<?= json_encode($moi . '&json=etat') ?>)
       .then(function (r) { return r.json(); })
       .then(function (d) {
@@ -218,7 +219,7 @@ body.boule-tableau { background: var(--blanc); margin: 0; }
         }
       })
       .catch(function () {});
-  }, 3000);
+  }, 5000 + Math.floor(Math.random() * 1000));
 })();
 </script>
 

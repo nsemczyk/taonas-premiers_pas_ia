@@ -274,11 +274,12 @@ function blocs_html(string $version, array $valeurs): string
     });
     // Suivi : pendant l'attente, et après un retour (le formateur peut accorder une demande de plus)
     setInterval(function () {
+      if (document.hidden) { return; }   // onglet caché : pas de requête
       if (!etatCourant || (etatCourant.etat !== 'attente' && !(etatCourant.etat === 'envoye' && !etatCourant.peut))) { return; }
       fetch(URL_RETOUR).then(function (r) { return r.json(); }).then(function (d) {
         if (d.retour && (d.retour.etat !== etatCourant.etat || d.retour.peut !== etatCourant.peut)) { afficherRetour(d.retour); }
       }).catch(function () {});
-    }, 5000);
+    }, 5000 + Math.floor(Math.random() * 1000));
   }
 
   // La version 2 repart de la version 1

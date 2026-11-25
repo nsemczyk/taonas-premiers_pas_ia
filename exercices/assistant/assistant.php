@@ -283,10 +283,11 @@ function ligne_grille(string $col, bool $oui): string
     (attente ? sauver() : Promise.resolve()).then(function () { location.reload(); });
   });
   setInterval(function () {
+    if (document.hidden) { return; }   // onglet caché : pas de requête
     fetch(URL_ETAT).then(function (r) { return r.json(); }).then(function (d) {
       if (d.empreinte !== EMPREINTE) { bandeau.hidden = false; }
     }).catch(function () {});
-  }, 10000);
+  }, 10000 + Math.floor(Math.random() * 1000));
 })();
 </script>
 <?php endif; ?>

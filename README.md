@@ -735,6 +735,29 @@ Les étapes vivent dans la table `etapes` (`cle`, `titre`, `ordre`, `ouverte`).
 Si la table est absente, l'accueil affiche tout comme avant et la télécommande
 le signale — le site ne tombe jamais à cause d'une migration oubliée.
 
+## Rafraîchissement et protection anti-flood (mod_evasive)
+
+Les pages se mettent à jour seules en interrogeant le serveur : toutes les 5 à
+6 secondes (décalage aléatoire pour que les onglets ne tombent pas ensemble),
+et jamais depuis un onglet caché, qui se remet à jour dès qu'on y revient.
+Exception : la page joueur de la Prompt Battle (2 secondes, même cachée, pour
+le dernier enregistrement avant la fin du chrono).
+
+Si le serveur utilise mod_evasive, un formateur avec plusieurs onglets
+ouverts, ou une salle entière derrière une seule adresse IP, peut encore
+déclencher le blocage (« Forbidden » Apache, `evasive20:error` dans
+`error.log`). Relever les seuils, par exemple dans la configuration de
+mod_evasive :
+
+```apache
+DOSPageCount      20     # requêtes sur une même page par intervalle
+DOSPageInterval   1
+DOSSiteCount      200    # requêtes sur tout le site par intervalle
+DOSSiteInterval   1
+DOSBlockingPeriod 10
+# DOSWhitelist 203.0.113.*   # l'IP du centre de formation, si elle est fixe
+```
+
 ## Heure locale
 
 Le serveur stocke les horodatages dans son propre fuseau, souvent UTC. Rien

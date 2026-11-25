@@ -504,11 +504,12 @@ body.mur {
   var attente;
   window.addEventListener('resize', function () { clearTimeout(attente); attente = setTimeout(toutAjuster, 150); });
   setInterval(function () {
+    if (document.hidden) { return; }   // onglet caché : pas de requête
     fetch(API + '&json=liste')
       .then(function (r) { return r.json(); })
       .then(function (d) { synchroniser(d.postits, true); })
       .catch(function () {});
-  }, 4000);
+  }, 5000 + Math.floor(Math.random() * 1000));
 
   // ---- exports ----
   var jour = <?= json_encode(aujourdhui_local()) ?>;

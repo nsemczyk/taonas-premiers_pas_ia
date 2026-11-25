@@ -212,11 +212,12 @@ foreach ($participants as $p) {
 (function () {
   var EMPREINTE = <?= json_encode(empreinte($participants)) ?>;
   setInterval(function () {
+    if (document.hidden) { return; }   // onglet caché : pas de requête
     fetch(<?= json_encode($moi . '&json=etat') ?>)
       .then(function (r) { return r.json(); })
       .then(function (d) { if (d.empreinte !== EMPREINTE) { location.reload(); } })
       .catch(function () {});
-  }, 5000);
+  }, 5000 + Math.floor(Math.random() * 1000));
 })();
 </script>
 <?php endif; ?>

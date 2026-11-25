@@ -222,12 +222,13 @@ if (($_GET['json'] ?? '') === 'etat') {
   });
 
   setInterval(function () {
+    if (document.hidden) { return; }   // onglet caché : pas de requête
     fetch(URL_ETAT).then(function (r) { return r.json(); }).then(function (d) {
       if (d.empreinte === EMPREINTE || envoi) { return; }
       // le secrétaire enregistre ce qu'il tapait avant que la page change
       (attente ? sauver() : Promise.resolve()).then(function () { location.reload(); });
     }).catch(function () {});
-  }, 3000);
+  }, 5000 + Math.floor(Math.random() * 1000));
 })();
 </script>
 <?php endif; ?>

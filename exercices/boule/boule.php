@@ -162,6 +162,7 @@ $mesBriques = $etat ? array_filter($etat['briques'], fn($b) => (int)$b['particip
   var EMPREINTE = <?= json_encode(boule_empreinte($etat)) ?>, OUVERTE = <?= json_encode($ouverte) ?>;
   var enSaisie = !!document.getElementById('texte');
   setInterval(function () {
+    if (document.hidden) { return; }   // onglet caché : pas de requête
     fetch(<?= json_encode(avec_f('boule.php?json=etat')) ?>)
       .then(function (r) { return r.json(); })
       .then(function (d) {
@@ -173,7 +174,7 @@ $mesBriques = $etat ? array_filter($etat['briques'], fn($b) => (int)$b['particip
         location.reload();
       })
       .catch(function () {});
-  }, 3000);
+  }, 5000 + Math.floor(Math.random() * 1000));
 
   var copier = document.getElementById('btn-copier');
   if (copier) {

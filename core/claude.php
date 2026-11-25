@@ -10,9 +10,17 @@ const CLAUDE_MODELE  = 'claude-sonnet-5-5';   // plus rapide qu'Opus, assez fin 
 const CLAUDE_VERSION = '2026-10-21';   // en-tête anthropic-version
 const CLAUDE_DELAI   = 120;            // secondes
 
+// La clé, sans espace ni retour à la ligne (un copier-coller en ajoute souvent).
+// Coupée en deux, elle casse l'en-tête : en HTTP/2, curl échoue alors avec
+// « Failed sending HTTP POST request » (erreur 43).
+function claude_cle(): string
+{
+    return defined('ANTHROPIC_API_KEY') ? preg_replace('/\s+/', '', (string)ANTHROPIC_API_KEY) : '';
+}
+
 function claude_disponible(): bool
 {
-    return defined('ANTHROPIC_API_KEY') && ANTHROPIC_API_KEY !== '' && function_exists('curl_init');
+    return claude_cle() !== '' && function_exists('curl_init');
 }
 
 // Un message, une réponse texte. Renvoie ['texte' => …] ou ['erreur' => …].
@@ -37,13 +45,12 @@ function claude_message(string $systeme, string $texte, int $max_tokens = 16000)
         CURLOPT_POSTFIELDS     => json_encode($corps, JSON_UNESCAPED_UNICODE),
         CURLOPT_HTTPHEADER     => [
             'content-type: application/json',
-            'x-api-key: ' . ANTHROPIC_API_KEY,
+            'x-api-key: ' . claude_cle(),
             'anthropic-version: ' . CLAUDE_VERSION,
             'anthropic-beta: server-side-fallback-2026-07-01',
         ],
         CURLOPT_RETURNTRANSFER => true,
-        // IPv4 seulement : un serveur à l'IPv6 sortante cassée échoue sinon
-        // (« Failed sending HTTP POST request ») au lieu de se rabattre sur l'IPv4
+        // IPv4 seulement : un serveur dont l'IPv6 sortante est cassée ne s'y perd pas
         CURLOPT_IPRESOLVE      => CURL_IPRESOLVE_V4,
         CURLOPT_CONNECTTIMEOUT => 10,
         CURLOPT_TIMEOUT        => CLAUDE_DELAI,

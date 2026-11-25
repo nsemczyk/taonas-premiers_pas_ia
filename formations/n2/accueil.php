@@ -5,6 +5,8 @@
 ?>
   <?= bloc_arrivee() ?>
 
+  <?= bloc_candidat('candidat') ?>
+
   <?= bloc_objectif('objectifs') ?>
 
   <?= bloc_boule('boule') ?>
@@ -24,8 +26,6 @@
   <?= bloc_tri('tri') ?>
 
   <?= bloc_workflow('workflow') ?>
-
-  <?= bloc_candidat('candidat') ?>
 
   <?= bloc_avis('avis') ?>
 

@@ -10,6 +10,7 @@ return [
     // (clé utilisée dans accueil.php => titre affiché), dans l'ordre de la journée.
     // La télécommande les crée en base d'elle-même.
     'etapes'      => [
+        'candidat'  => 'Le candidat qui répond à côté',
         'objectifs' => 'Mon objectif du jour',
         'boule'     => 'Le prompt boule de neige',
         'guideprompt' => 'Guide du prompting',
@@ -22,7 +23,6 @@ return [
 //        'bingo'     => 'Bingo de l\'hallucination',
         'tri'       => 'Jeu de tri : qui est quoi ?',
         'workflow'  => 'Atelier workflow',
-        'candidat'  => 'Le candidat qui répond à côté',
         'avis'      => 'Votre avis',
         'carnet'    => 'Mon carnet de la journée',
     ],

@@ -42,16 +42,20 @@ function claude_message(string $systeme, string $texte, int $max_tokens = 16000)
             'anthropic-beta: server-side-fallback-2026-07-01',
         ],
         CURLOPT_RETURNTRANSFER => true,
+        // IPv4 seulement : un serveur à l'IPv6 sortante cassée échoue sinon
+        // (« Failed sending HTTP POST request ») au lieu de se rabattre sur l'IPv4
+        CURLOPT_IPRESOLVE      => CURL_IPRESOLVE_V4,
         CURLOPT_CONNECTTIMEOUT => 10,
         CURLOPT_TIMEOUT        => CLAUDE_DELAI,
     ]);
     $brut = curl_exec($ch);
     $code = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
     $err  = curl_error($ch);
+    $errno = curl_errno($ch);
     curl_close($ch);
 
     if ($brut === false) {
-        return ['erreur' => 'Claude injoignable : ' . $err];
+        return ['erreur' => 'Claude injoignable : ' . $err . ' (erreur curl ' . $errno . ')'];
     }
     $r = json_decode($brut, true);
     if ($code !== 200 || !is_array($r)) {
